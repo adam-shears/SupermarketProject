@@ -76,11 +76,11 @@ cd SupermarketProject
 3. Open this repository in VS Code
 4. When prompted (usually bottom right), click "Reopen in container"
 
-   > [!TIP]
-   > If you aren't given a prompt, you don't need to reopen the repository. Simply press `ctrl` + `shift` + `p` and look/search for `Dev Containers: Rebuild and Reopen in Container`
+> [!TIP]
+> If you aren't given a prompt, you don't need to reopen the repository. Simply press `ctrl` + `shift` + `p` and look/search for `Dev Containers: Rebuild and Reopen in Container`
 
-   > [!NOTE]
-   > This will take a while to run
+> [!NOTE]
+> This will take a while to run
 
 Once in the container, you will have access to a Debian-based environment with common tools for all team members.
 
