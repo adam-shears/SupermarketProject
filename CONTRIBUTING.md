@@ -32,7 +32,7 @@ The frontend service contains:
 - `routes.js` - Serving HTML based on the page requested
 
 > [!NOTE]
-> HTML templates are found in `services/frontend/views/` and style sheets are found in `services/frontend/styles`
+> HTML templates are found in `services/frontend/views/` and style sheets are found in `services/frontend/styles/`
 
 ## Rules
 > [!IMPORTANT]
@@ -231,3 +231,4 @@ db:
 Keep things simple and clean. If you're ever unsure where something belongs,
 - Ask the team
 - Prefer the stricter separation of concerns
+
