@@ -5,6 +5,8 @@
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
     "ghcr.io/devcontainers/features/git:1": {}
   },
+  // GPT-5.3-Codex was used to help debug some port forwarding issues within the container (L9:L28 and L38:L56)
+  // Prompt: when in the dev container for this project, clicking the localhost:3000 link in the terminal as logged by services/frontend/src/index.js:19 actually takes me to localhost:3001 in the browser. changing the url manually to 3000 does work, bt then resetting the services and rebuilding them throws an error that port 3001 is already in use. this only happens in the container, but does not happen on my normal machine. don't rewrite code, but could you identify the issue?
   "portsAttributes": {
     "3000": {
       "onAutoForward": "ignore"
