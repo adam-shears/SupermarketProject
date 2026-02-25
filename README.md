@@ -3,11 +3,9 @@
 This is a web-app built for an online only supermarket as part of UoL's COMP2850 Final Project
 
 ## Tech Stack
-
-- Node.js
-- PostgreSQL
-- Docker
-- HTML/CSS
+<p align="center">
+  <img width="320" height="50" alt="SupermarketProjectTechStack" src="https://github.com/user-attachments/assets/5114b8d4-5887-4ee8-afc7-86c657c86605" />
+</p>
 
 ## Architecture
 
