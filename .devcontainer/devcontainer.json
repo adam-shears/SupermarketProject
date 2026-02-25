@@ -1,0 +1,64 @@
+{
+  "name": "SupermarketProject",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  // GPT-5.3-Codex was used to help debug some port forwarding issues within the container (L9:L28 and L38:L56)
+  // Prompt: when in the dev container for this project, clicking the localhost:3000 link in the terminal as logged by services/frontend/src/index.js:19 actually takes me to localhost:3001 in the browser. changing the url manually to 3000 does work, bt then resetting the services and rebuilding them throws an error that port 3001 is already in use. this only happens in the container, but does not happen on my normal machine. don't rewrite code, but could you identify the issue?
+  "portsAttributes": {
+    "3000": {
+      "onAutoForward": "ignore"
+    },
+    "3001": {
+      "onAutoForward": "ignore"
+    },
+    "3002": {
+      "onAutoForward": "ignore"
+    },
+    "3003": {
+      "onAutoForward": "ignore"
+    },
+    "3004": {
+      "onAutoForward": "ignore"
+    }
+  },
+  "otherPortsAttributes": {
+    "onAutoForward": "ignore"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "remote.autoForwardPorts": false,
+        "remote.autoForwardPortsSource": "process",
+        "remote.forwardOnOpen": false,
+        "remote.restoreForwardedPorts": false,
+        "remote.portsAttributes": {
+          "3000": {
+            "onAutoForward": "ignore"
+          },
+          "3001": {
+            "onAutoForward": "ignore"
+          },
+          "3002": {
+            "onAutoForward": "ignore"
+          },
+          "3003": {
+            "onAutoForward": "ignore"
+          },
+          "3004": {
+            "onAutoForward": "ignore"
+          }
+        }
+      }
+    }
+  },
+  "postCreateCommand": "node -v && npm -v && docker --version && docker compose version"
+}

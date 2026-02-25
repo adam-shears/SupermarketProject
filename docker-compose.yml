@@ -1,0 +1,67 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: supermarket
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+
+  catalogue:
+    build: ./services/catalogue
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/supermarket
+    ports:
+      - "${CATALOGUE_PORT}:3000"
+    depends_on: [db]
+
+  orders:
+    build: ./services/orders
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/supermarket
+    ports:
+      - "${ORDERS_PORT}:3000"
+    depends_on: [db]
+
+  warehouse:
+    build: ./services/warehouse
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/supermarket
+    ports:
+      - "${WAREHOUSE_PORT}:3000"
+    depends_on: [db]
+
+  analytics:
+    build: ./services/analytics
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/supermarket
+    ports:
+      - "${ANALYTICS_PORT}:3000"
+    depends_on: [db]
+
+  frontend:
+    build: ./services/frontend
+    environment:
+      PORT: 3000
+      CATALOGUE_URL: http://catalogue:3000
+      ORDERS_URL: http://orders:3000
+      WAREHOUSE_URL: http://warehouse:3000
+      ANALYTICS_URL: http://analytics:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - catalogue
+      - orders
+      - warehouse
+      - analytics
+
+volumes:
+  pgdata:
