@@ -17,4 +17,8 @@ router.get("/", async (req, res) => {
   res.json({ message: "warehouse service" });
 });
 
+router.get("/health", async (req, res) => {
+  res.status(200).json({ message: "warehouse service is healthy" });
+});
+
 export default router;
