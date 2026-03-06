@@ -14,7 +14,7 @@ docker-compose.override.yml
 pgdata/
 postgres-data/
 *.sql
-!/db/*.sql
+!/db/*/*.sql
 
 # OS files
 .DS_Store
