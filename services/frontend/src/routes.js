@@ -30,4 +30,8 @@ router.get("/", async (req, res) => {
   });
 });
 
+router.get("/health", async (req, res) => {
+  res.status(200).json({ message: "frontend service is healthy." });
+});
+
 export default router;
