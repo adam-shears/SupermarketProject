@@ -17,8 +17,8 @@ jobs:
       - name: Create .env
         run: |
           cp .env.example .env
-          sed 's/username/${{ secrets.DATABASE_USERNAME }}/g' .env > .env.tmp && mv .env.tmp .env
-          sed 's/password/${{ secrets.DATABASE_PASSWORD }}/g' .env > .env.tmp && mv .env.tmp .env
+          sed -i 's/username/${{ secrets.DATABASE_USERNAME }}/g' .env
+          sed -i 's/password/${{ secrets.DATABASE_PASSWORD }}/g' .env
 
       - name: Build containers
         run: docker compose build
@@ -30,6 +30,8 @@ jobs:
         run: |
           for port in 3000 3001 3002 3003 3004; do
             timeout 30 bash -c "until curl -s http://localhost:$port/health > /dev/null; do sleep 1; done"
+          done
 
       - name: Stop containers
+        if: always()
         run: docker compose down -v
