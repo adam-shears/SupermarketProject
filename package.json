@@ -3,6 +3,17 @@
   "scripts": {
     "up": "docker compose up --build",
     "down": "docker compose down",
-    "reset": "docker compose down -v"
+    "reset": "docker compose down -v",
+    "logs": "docker compose logs -f",
+
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "eslint": "^10.0.0",
+    "globals": "^17.4.0",
+    "prettier": "^3.8.1"
   }
 }

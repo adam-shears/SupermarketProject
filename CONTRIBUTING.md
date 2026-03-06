@@ -15,8 +15,8 @@ The purpose of this document is to outline expectations and guidelines that all 
 
 ## Structure and Overview
 ### Backend
-All backend services follow this structure:  
-`services/<service name>/src/`  
+All backend services follow this structure:
+`services/<service name>/src/`
 within `src/` there are four JavaScript files.
 - `db.js` - Responsible for rading/writing from/to the database
 - `index.js` - Responsible only for Express setup
@@ -26,7 +26,7 @@ within `src/` there are four JavaScript files.
 ---
 
 ### Frontend
-The frontend service contains:  
+The frontend service contains:
 - `api.js` - Wrapper for HTTP requests to backend services
 - `index.js` - Express and Nunjucks setup
 - `routes.js` - Serving HTML based on the page requested
@@ -78,15 +78,15 @@ The frontend service contains:
 
 ## Development Workflow
 ### Branching Strategy
-Branches should be created for each feature/task as represented on the Project Board.  
+Branches should be created for each feature/task as represented on the Project Board.
 Naming conventions for branches:
 - `feat/<name of feature>`
 - `fix/<name of bug>`
 
 ### Commits
-Keep commit messages descriptive but simple. We use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) to maintain consistency across the project.  
+Keep commit messages descriptive but simple. We use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) to maintain consistency across the project.
 
-Commits should be written in the imperative form, i.e. "Fix bug" **not** "Fixes bug". As a rule of thumb, the commit message should make sense in this sentence: "If applied, this commit will _\<your subject line\>_"  
+Commits should be written in the imperative form, i.e. "Fix bug" **not** "Fixes bug". As a rule of thumb, the commit message should make sense in this sentence: "If applied, this commit will _\<your subject line\>_"
 Commit messages be written in the form `<type>[optional scope]: <description>`. Type should be one of the following, based roughly on [Angular conventions](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines) and adapted for our project:
 - `chore`: Minor and routine maintenance changes that don't affect functionality
 - `ci`: Changes to the CI config in GitHub Actions
@@ -123,8 +123,8 @@ docker compose logs -f <service name>
 ```
 
 ### Pull Requests and Code Review
-To merge any change into `main`, you must open the change as a Pull Request. To merge to `main`, at least one teammate must review and approve the changes. Preferably, this should be a teammate who did not work on the change and can therefore approach it with fresh eyes.  
-  
+To merge any change into `main`, you must open the change as a Pull Request. To merge to `main`, at least one teammate must review and approve the changes. Preferably, this should be a teammate who did not work on the change and can therefore approach it with fresh eyes.
+
 PRs should:
 - [ ] Have a clear title
 - [ ] Describe the changes
@@ -158,16 +158,16 @@ PRs should:
 
 ## Environment Variables
 > [!CAUTION]
-> Never commit `.env` or credential files  
+> Never commit `.env` or credential files
 
-If you introduce new environment variables, ensure that `.env.example` is kept up to date.  
+If you introduce new environment variables, ensure that `.env.example` is kept up to date.
 For database credentials, feel free to use whatever you like locally.
 
 ## Database
 > [!IMPORTANT]
-> All schema changes should go in `db/migrations`  
-> Don't edit existing migrations after they've been merged  
-> Create new migrations for any schema change  
+> All schema changes should go in `db/migrations`
+> Don't edit existing migrations after they've been merged
+> Create new migrations for any schema change
 
 ## API Conventions
 Appropriate HTTP status codes should always be used
@@ -177,7 +177,7 @@ Appropriate HTTP status codes should always be used
 - `400` Bad Request
 - `403` Forbidden
 - `404` Not Found
-- `500` Internal Server Error  
+- `500` Internal Server Error
 
 A full list can be found [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status)
 

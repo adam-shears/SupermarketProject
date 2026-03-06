@@ -36,6 +36,9 @@
       ],
       "settings": {
         "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "eslint.validate": ["javascript"],
+        "eslint.format.enable": true,
         "remote.autoForwardPorts": false,
         "remote.autoForwardPortsSource": "process",
         "remote.forwardOnOpen": false,
