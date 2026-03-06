@@ -1,0 +1,35 @@
+name: Build Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build project and check endpoints are healthy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env
+        run: |
+          cp .env.example .env
+          sed 's/username/${{ secrets.DATABASE_USERNAME }}/g' .env > .env.tmp && mv .env.tmp .env
+          sed 's/password/${{ secrets.DATABASE_PASSWORD }}/g' .env > .env.tmp && mv .env.tmp .env
+
+      - name: Build containers
+        run: docker compose build
+
+      - name: Start containers
+        run: docker compose up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          for port in 3000 3001 3002 3003 3004; do
+            timeout 30 bash -c "until curl -s http://localhost:$port/health > /dev/null; do sleep 1; done"
+
+      - name: Stop containers
+        run: docker compose down -v
