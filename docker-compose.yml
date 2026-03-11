@@ -9,7 +9,7 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+      - ./db/init:/docker-entrypoint-initdb.d:ro
 
   catalogue:
     build: ./services/catalogue

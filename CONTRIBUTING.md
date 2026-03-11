@@ -165,7 +165,7 @@ For database credentials, feel free to use whatever you like locally.
 
 ## Database
 > [!IMPORTANT]
-> All schema changes should go in `db/migrations`
+> All schema changes should go in `db/init`
 > Don't edit existing migrations after they've been merged
 > Create new migrations for any schema change
 
