@@ -17,7 +17,7 @@ app.use(express.json());
 
 app.use("/", routes);
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 app.listen(port, "0.0.0.0", () =>
   console.log(`catalogue service on port ${port}`),
 );

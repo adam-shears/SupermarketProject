@@ -10,15 +10,36 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
+import { getProductsWithDiscounts, getActiveDeals } from "./service.js";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
-  res.json({ message: "catalogue service" });
+    res.json({ message: "catalogue service" });
 });
 
 router.get("/health", async (req, res) => {
-  res.status(200).json({ message: "catalogue service is healthy." });
+    res.status(200).json({ message: "catalogue service is healthy." });
+});
+
+router.get("/products", async (req, res) => {
+    try {
+        const products = await getProductsWithDiscounts();
+        res.status(200).json(products);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "failed to get products" });
+    }
+});
+
+router.get("/deals", async (req, res) => {
+    try {
+        const deals = await getActiveDeals();
+        res.status(200).json(deals);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "failed to get deals" });
+    }
 });
 
 export default router;
