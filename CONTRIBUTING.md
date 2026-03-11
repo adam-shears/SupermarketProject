@@ -226,6 +226,16 @@ db:
     - ./db/migrations:/docker-entrypoint-initdb.d:ro,Z
 ```
 
+### Docker Client Version Too New (Codespaces)
+In Codespaces, the Docker client is too new for the Docker daemon and `docker compose up --build` fails. If you receive an error like:
+```bash
+Error response from daemon: client version X is too new. Maximum supported API version is Y: driver not connecting
+```
+Please use the provided npm wrapper in place of `docker compose up --build`:
+```
+npm run up:cs
+```
+
 ## Notes
 
 Keep things simple and clean. If you're ever unsure where something belongs,
