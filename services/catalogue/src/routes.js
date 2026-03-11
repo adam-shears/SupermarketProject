@@ -10,7 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { getProductsWithDiscounts, getActiveDeals } from "./service.js";
+import { getProductsWithDiscounts, getActiveDeals, getProductById } from "./service.js";
 
 const router = Router();
 
@@ -32,6 +32,16 @@ router.get("/products", async (req, res) => {
     }
 });
 
+router.get("/products/:id", async (req, res) => {
+    try {
+        const product = await getProductById(req.params.id);
+        res.status(200).json(product);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "failed to get product" });
+    }
+});
+
 router.get("/deals", async (req, res) => {
     try {
         const deals = await getActiveDeals();
@@ -42,4 +52,20 @@ router.get("/deals", async (req, res) => {
     }
 });
 
+router.get("/deals", async (req, res) => {
+  try {
+    const deals = await api.getDeals();
+
+    res.render("deals.njk", {
+      title: "Current Deals",
+      deals
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to load deals");
+  }
+});
+
 export default router;
+
+

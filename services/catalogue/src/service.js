@@ -14,42 +14,69 @@ This file should not be responsible for:
 - Any logic that is not directly related to the business logic of the analytics service
 */
 
+// product discounts feature
 import { pool } from "./db.js";
 
 export async function getProductsWithDiscounts() {
     const result = await pool.query(`
         SELECT
-            p.id AS product_id,
-            p.name AS product_name,
+            p.id,
+            p.name,
             p.description,
-            p.category_id,
-            p.listed,
+            pr.price_pence,
             d.id AS discount_id,
             d.code AS discount_code,
             d.name AS discount_name,
             d.type AS discount_type,
-            d.value AS discount_value,
-            d.starts_at,
-            d.ends_at,
-            d.active
+            d.value AS discount_value
         FROM products p
+        LEFT JOIN prices pr
+            ON pr.product_id = p.id
+           AND pr.starts_at <= NOW()
+           AND (pr.ends_at IS NULL OR pr.ends_at > NOW())
         LEFT JOIN product_discounts pd
             ON p.id = pd.product_id
         LEFT JOIN discounts d
             ON pd.discount_id = d.id
+           AND d.active = true
+           AND d.starts_at <= NOW()
+           AND (d.ends_at IS NULL OR d.ends_at > NOW())
         WHERE p.listed = true
-          AND (
-                d.id IS NULL
-                OR (
-                    d.active = true
-                    AND d.starts_at <= NOW()
-                    AND (d.ends_at IS NULL OR d.ends_at > NOW())
-                )
-          )
         ORDER BY p.id
     `);
 
     return result.rows;
+}
+
+export async function getProductById(id) {
+    const result = await pool.query(`
+        SELECT
+            p.id,
+            p.name,
+            p.description,
+            pr.price_pence,
+            d.id AS discount_id,
+            d.code AS discount_code,
+            d.name AS discount_name,
+            d.type AS discount_type,
+            d.value AS discount_value
+        FROM products p
+        LEFT JOIN prices pr
+            ON pr.product_id = p.id
+           AND pr.starts_at <= NOW()
+           AND (pr.ends_at IS NULL OR pr.ends_at > NOW())
+        LEFT JOIN product_discounts pd
+            ON p.id = pd.product_id
+        LEFT JOIN discounts d
+            ON pd.discount_id = d.id
+           AND d.active = true
+           AND d.starts_at <= NOW()
+           AND (d.ends_at IS NULL OR d.ends_at > NOW())
+        WHERE p.id = $1
+          AND p.listed = true
+    `, [id]);
+
+    return result.rows[0];
 }
 
 export async function getActiveDeals() {
@@ -60,9 +87,6 @@ export async function getActiveDeals() {
             d.name AS discount_name,
             d.type,
             d.value,
-            d.starts_at,
-            d.ends_at,
-            d.active,
             p.id AS product_id,
             p.name AS product_name
         FROM discounts d
