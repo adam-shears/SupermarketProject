@@ -1,5 +1,5 @@
 /*
-This file is responsible for implementing actual business logic for the analytics service.
+This file is responsible for implementing actual business logic for the catalogue service.
 
 If data from the db is required, it should be requested from db.js and processed here.
 Responsibilities:
@@ -11,95 +11,110 @@ Responsibilities:
 This file should not be responsible for:
 - Making SQL queries (db.js)
 - Handling HTTP requests and responses (index.js and routes.js)
-- Any logic that is not directly related to the business logic of the analytics service
+- Any logic that is not directly related to the business logic of the catalogue service
 */
 
-// product discounts feature
-import { pool } from "./db.js";
+import {
+  selectActiveDealRows,
+  selectListedProductByIdWithDiscountRows,
+  selectListedProductsWithDiscountRows,
+} from "./db.js";
+
+export class CatalogueError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.name = "CatalogueError";
+    this.statusCode = statusCode;
+  }
+}
+
+function toDiscount(row) {
+  if (row.discount_id === null) return null;
+
+  return {
+    id: row.discount_id,
+    code: row.discount_code,
+    name: row.discount_name,
+    type: row.discount_type,
+    value: row.discount_value,
+  };
+}
+
+function mergeProductRows(rows) {
+  const productMap = new Map();
+
+  for (const row of rows) {
+    if (!productMap.has(row.id)) {
+      productMap.set(row.id, {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        price_pence: row.price_pence,
+        discounts: [],
+      });
+    }
+
+    const discount = toDiscount(row);
+    if (discount !== null) {
+      const product = productMap.get(row.id);
+      const exists = product.discounts.some((item) => item.id === discount.id);
+      if (!exists) {
+        product.discounts.push(discount);
+      }
+    }
+  }
+
+  return Array.from(productMap.values());
+}
+
+function parseProductId(rawId) {
+  const productId = Number(rawId);
+  const isInteger = Number.isInteger(productId);
+  if (!isInteger || productId <= 0) {
+    throw new CatalogueError("product id must be a positive integer", 400);
+  }
+
+  return productId;
+}
 
 export async function getProductsWithDiscounts() {
-    const result = await pool.query(`
-        SELECT
-            p.id,
-            p.name,
-            p.description,
-            pr.price_pence,
-            d.id AS discount_id,
-            d.code AS discount_code,
-            d.name AS discount_name,
-            d.type AS discount_type,
-            d.value AS discount_value
-        FROM products p
-        LEFT JOIN prices pr
-            ON pr.product_id = p.id
-           AND pr.starts_at <= NOW()
-           AND (pr.ends_at IS NULL OR pr.ends_at > NOW())
-        LEFT JOIN product_discounts pd
-            ON p.id = pd.product_id
-        LEFT JOIN discounts d
-            ON pd.discount_id = d.id
-           AND d.active = true
-           AND d.starts_at <= NOW()
-           AND (d.ends_at IS NULL OR d.ends_at > NOW())
-        WHERE p.listed = true
-        ORDER BY p.id
-    `);
-
-    return result.rows;
+  const rows = await selectListedProductsWithDiscountRows();
+  return mergeProductRows(rows);
 }
 
 export async function getProductById(id) {
-    const result = await pool.query(`
-        SELECT
-            p.id,
-            p.name,
-            p.description,
-            pr.price_pence,
-            d.id AS discount_id,
-            d.code AS discount_code,
-            d.name AS discount_name,
-            d.type AS discount_type,
-            d.value AS discount_value
-        FROM products p
-        LEFT JOIN prices pr
-            ON pr.product_id = p.id
-           AND pr.starts_at <= NOW()
-           AND (pr.ends_at IS NULL OR pr.ends_at > NOW())
-        LEFT JOIN product_discounts pd
-            ON p.id = pd.product_id
-        LEFT JOIN discounts d
-            ON pd.discount_id = d.id
-           AND d.active = true
-           AND d.starts_at <= NOW()
-           AND (d.ends_at IS NULL OR d.ends_at > NOW())
-        WHERE p.id = $1
-          AND p.listed = true
-    `, [id]);
+  const productId = parseProductId(id);
+  const rows = await selectListedProductByIdWithDiscountRows(productId);
+  const products = mergeProductRows(rows);
 
-    return result.rows[0];
+  if (products.length === 0) {
+    throw new CatalogueError("product not found", 404);
+  }
+
+  return products[0];
 }
 
 export async function getActiveDeals() {
-    const result = await pool.query(`
-        SELECT
-            d.id AS discount_id,
-            d.code,
-            d.name AS discount_name,
-            d.type,
-            d.value,
-            p.id AS product_id,
-            p.name AS product_name
-        FROM discounts d
-        JOIN product_discounts pd
-            ON d.id = pd.discount_id
-        JOIN products p
-            ON pd.product_id = p.id
-        WHERE d.active = true
-          AND d.starts_at <= NOW()
-          AND (d.ends_at IS NULL OR d.ends_at > NOW())
-          AND p.listed = true
-        ORDER BY d.id, p.id
-    `);
+  const rows = await selectActiveDealRows();
+  const deals = new Map();
 
-    return result.rows;
+  for (const row of rows) {
+    if (!deals.has(row.discount_id)) {
+      deals.set(row.discount_id, {
+        id: row.discount_id,
+        code: row.code,
+        name: row.discount_name,
+        type: row.type,
+        value: row.value,
+        products: [],
+      });
+    }
+
+    deals.get(row.discount_id).products.push({
+      id: row.product_id,
+      name: row.product_name,
+    });
+  }
+
+  return Array.from(deals.values());
 }
