@@ -17,17 +17,38 @@ import { api } from "./api.js";
 const router = Router();
 
 router.get("/", async (req, res) => {
-  let products = [];
   try {
-    products = await api.listProducts();
-  } catch (e) {
-    products = [];
-  }
+    const products = await api.listProducts();
 
-  res.render("home.njk", {
-    title: "Supermarket",
-    products,
-  });
+    res.render("home.njk", {
+      title: "Supermarket",
+      products
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to load products");
+  }
+});
+
+router.get("/products/:id", async (req, res) => {
+  try {
+    const [product, products] = await Promise.all([
+      api.getProduct(req.params.id),
+      api.listProducts(),
+    ]);
+    const recommendations = products
+      .filter((item) => item.id !== product.id)
+      .slice(0, 4);
+
+    res.render("product.njk", {
+      title: product.name,
+      product,
+      recommendations,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to load product");
+  }
 });
 
 router.get("/health", async (req, res) => {

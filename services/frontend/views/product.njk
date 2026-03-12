@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ product.name }}</title>
+  <link rel="stylesheet" href="/product.css" />
+</head>
+<body>
+  <div class="header">
+    <div>
+      <a href="/">LOGO</a>
+    </div>
+    <div>
+      <input class="search" type="text" placeholder="Search" />
+    </div>
+    <div>
+      <a href="#">Login</a>
+      <a href="#">Basket</a>
+    </div>
+  </div>
+
+  <div class="back">
+    <a href="/">&larr; Back</a>
+  </div>
+
+  <div class="product-section">
+    <div class="product-container">
+      <div class="product-image">
+        <img src="https://via.placeholder.com/400" alt="{{ product.name }}" />
+      </div>
+
+      <div class="product-info">
+        <h1>{{ product.name }}</h1>
+        <p>{{ product.description }}</p>
+
+        <p class="price">&pound;{{ (product.price_pence / 100).toFixed(2) }}</p>
+
+        <div class="quantity">
+          <label>Quantity</label>
+          <input type="number" value="1" min="1" />
+        </div>
+
+        <button>Add to Basket</button>
+
+        {% if product.discounts and product.discounts.length > 0 %}
+        <div class="offer">Offer Available</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="recommend-section">
+    <h2>You might also like</h2>
+
+    <div class="recommend-list">
+      {% for item in recommendations %}
+      <div class="recommend-item">
+        <a href="/products/{{ item.id }}">
+          <h3>{{ item.name }}</h3>
+        </a>
+        <p>&pound;{{ (item.price_pence / 100).toFixed(2) }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>
