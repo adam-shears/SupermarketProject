@@ -32,11 +32,18 @@ router.get("/", async (req, res) => {
 
 router.get("/products/:id", async (req, res) => {
   try {
-    const product = await api.getProduct(req.params.id);
+    const [product, products] = await Promise.all([
+      api.getProduct(req.params.id),
+      api.listProducts(),
+    ]);
+    const recommendations = products
+      .filter((item) => item.id !== product.id)
+      .slice(0, 4);
 
     res.render("product.njk", {
       title: product.name,
-      product
+      product,
+      recommendations,
     });
   } catch (error) {
     console.error(error);
