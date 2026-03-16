@@ -22,11 +22,6 @@
 
         <p class="price">&pound;{{ (product.price_pence / 100).toFixed(2) }}</p>
 
-        <div class="quantity">
-          <label>Quantity</label>
-          <input type="number" value="1" min="1" />
-        </div>
-
         <form action = "/basket/items" method = "POST">
           <input type = "hidden" name = "productId" value = "{{ product.id }}">
           <div class = "quantity">
