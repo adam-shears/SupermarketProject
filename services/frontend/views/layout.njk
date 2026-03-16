@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="/layout.css" />
+  {% block styles %}
+  {% endblock %}
+</head>
+<body>
+    <div class = "header">
+        <div>
+            <a href = "/"> LOGO </a>
+        </div>
+        <div>
+            <input class = "search" type = "text" placeholder = "Search" />
+        </div>
+        <div>
+            <a href = '#'> Login </a>
+            <a href = "/basket"> Basket </a>
+        </div>
+    </div>
+
+    {% block content %} {% endblock %}
+</body>
+</html>
