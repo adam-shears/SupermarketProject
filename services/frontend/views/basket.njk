@@ -1,53 +1,44 @@
-{% extends "layout.njk" %}
-
-{% block styles %}
-<link rel = "stylesheet" href = "/basket.css" />
-{% endblock %}
-
-{% block content %}
-
-<div class = "basket-page">
-    <div class = "items-column">
-        <h2>Your Items</h2>
-        {% for item in items %}
-        
-        <div class = "item-card">
-            <img src = "{{ item.image_url}}" alt = "{{ item.name }}" class = "product-thumbnail">
-            <div class = "item-details">
-                <h3>{{ item.name }}</h3>
-                <p>&pound;{{ (item.price_pence / 100).toFixed(2) }}</p>
-            </div>
-            <div class = "item-actions">
-                <input type = "number" value = "{{ item.quantity }}" class = "quantity-input">
-                <button class = "delete-button">X</button>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <div class = "summary-column">
-        <h2>Summary</h2>
-        <div class = "subtotal">
-            <h3>Subtotal &pound;{{ (subtotal / 100).toFixed(2) }}</h3>
-        </div>
-        {% if discounts > 0 %}
-        <div class = "discount">
-            <h3>Discount -&pound;{{ (discounts / 100).toFixed(2) }}</h3>
-        </div>
-        {% endif %}
-        <div class = "promo">
-            <input type = "text" placeholder = "Promo">
-            <button>Add</button>
-        </div>
-        <div class = "total">
-            <h3>Total &pound;{{ (total / 100).toFixed(2) }}</h3>
-        </div>
-
-        <button class = "proceed">Proceed &rarr;</button>
-
-    </div>
-
+<div class="basket-page">
+  <div class="items-column" id="basket-items">
+    <!-- Items will be injected by JS -->
+  </div>
+  <div class="summary-column" id="basket-summary">
+    <!-- Totals will be injected by JS -->
+  </div>
 </div>
 
+<script type="module">
+  import * as service from '/service.js'; // make sure service.js is accessible in browser
 
-{% endblock %}
+  function renderBasket() {
+    const items = service.getBasket();
+    const totals = service.calculateTotals();
+
+    const itemsColumn = document.getElementById('basket-items');
+    itemsColumn.innerHTML = '';
+    items.forEach(item => {
+      itemsColumn.innerHTML += `
+        <div class="item-card">
+          <img src="${item.image_url}" alt="${item.name}" class="product-thumbnail">
+          <div class="item-details">
+            <h3>${item.name}</h3>
+            <p>£${(item.price_pence / 100).toFixed(2)}</p>
+          </div>
+          <div class="item-actions">
+            <input type="number" value="${item.quantity}" class="quantity-input" data-id="${item.productId}">
+            <button class="delete-button" data-id="${item.productId}">X</button>
+          </div>
+        </div>
+      `;
+    });
+
+    const summaryColumn = document.getElementById('basket-summary');
+    summaryColumn.innerHTML = `
+      <h2>Summary</h2>
+      <div class="subtotal"><h3>Subtotal £${(totals.subtotal / 100).toFixed(2)}</h3></div>
+      <div class="total"><h3>Total £${(totals.total / 100).toFixed(2)}</h3></div>
+    `;
+  }
+
+  renderBasket();
+</script>

@@ -15,6 +15,7 @@ const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("styles"));
+app.use(express.static("src"));
 
 nunjucks.configure("views", {
   autoescape: true,
@@ -24,6 +25,4 @@ nunjucks.configure("views", {
 app.use("/", routes);
 
 const port = process.env.PORT || 3000;
-app.listen(port, "0.0.0.0", () =>
-  console.log(`frontend on :${port} http://localhost:${port}`),
-);
+app.listen(port, "0.0.0.0", () => console.log(`frontend on :${port} http://localhost:${port}`));
