@@ -51,6 +51,46 @@ router.get("/products/:id", async (req, res) => {
   }
 });
 
+router.post("/basket/items", async (req, res) => {
+  try {
+    const { productId, quantity } = req.body;
+    /*await api.addToBasket(productId, quantity);*/ /* uncomment this when backend orders service is ready */
+    console.log(`Adding product ${productId} with quantity ${quantity} to basket`); /* temporary log to view post request is working */
+    res.status(200).json({ message: "Item added to basket" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add item to basket" });
+  }
+});
+
+router.get("/basket", async (req, res) => {
+  try {
+    /*const basket = await api.getBasket();*/ /* uncomment this when backend orders service is ready */
+    
+    /* temporary hardcoded basket to view basket page*/
+    const basket = {
+      items: [
+        { name: "Cheese", price_pence: 299, quantity: 1, image_url: "https://via.placeholder.com/100" },
+        { name: "Milk", price_pence: 150, quantity: 2, image_url: "https://via.placeholder.com/100" }
+      ],
+      subtotal: 599,
+      discounts: 100,
+      total: 499
+    };
+    
+    res.render("basket.njk", {
+      title: "Your Basket",
+      items: basket.items,
+      subtotal: basket.subtotal,
+      discounts: basket.discounts,
+      total: basket.total,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to load basket");
+  }
+});
+
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "frontend service is healthy." });
 });

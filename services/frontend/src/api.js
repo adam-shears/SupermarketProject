@@ -34,4 +34,7 @@ async function postJson(url, body) {
 export const api = {
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
+
+  getBasket: () => getJson(`${ORDERS_URL}/basket`),
+  addToBasket: (productId, quantity) => postJson(`${ORDERS_URL}/basket/items`, { productId, quantity }),
 };

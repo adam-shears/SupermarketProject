@@ -1,22 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>{{ product.name }}</title>
-  <link rel="stylesheet" href="/product.css" />
-</head>
-<body>
-  <div class="header">
-    <div>
-      <a href="/">LOGO</a>
-    </div>
-    <div>
-      <input class="search" type="text" placeholder="Search" />
-    </div>
-    <div>
-      <a href="#">Login</a>
-      <a href="#">Basket</a>
-    </div>
-  </div>
+{% extends "layout.njk" %}
+
+{% block styles %}
+<link rel = "stylesheet" href = "/product.css" />
+{% endblock %}
+
+{% block content %}
 
   <div class="back">
     <a href="/">&larr; Back</a>
@@ -34,13 +22,15 @@
 
         <p class="price">&pound;{{ (product.price_pence / 100).toFixed(2) }}</p>
 
-        <div class="quantity">
-          <label>Quantity</label>
-          <input type="number" value="1" min="1" />
-        </div>
-
-        <button>Add to Basket</button>
-
+        <form action = "/basket/items" method = "POST">
+          <input type = "hidden" name = "productId" value = "{{ product.id }}">
+          <div class = "quantity">
+            <h3>Quantity</h3>
+            <input type = "number" name = "quantity" value = "1" min = "1" />
+          </div>
+          <button type = "submit">Add to Basket</button>
+        </form>
+        
         {% if product.discounts and product.discounts.length > 0 %}
         <div class="offer">Offer Available</div>
         {% endif %}
@@ -62,5 +52,5 @@
       {% endfor %}
     </div>
   </div>
-</body>
-</html>
+
+{% endblock %}
