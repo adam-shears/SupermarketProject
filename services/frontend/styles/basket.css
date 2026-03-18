@@ -65,7 +65,9 @@
   margin-top: 0;
 }
 
-.subtotal, .discount, .total {
+.subtotal,
+.discount,
+.total {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -97,6 +99,10 @@
   font-weight: bold;
   cursor: pointer;
   margin-top: 10px;
+}
+
+.proceed:hover {
+  background: #27ae60;
 }
 
 .proceed:hover {

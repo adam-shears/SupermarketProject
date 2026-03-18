@@ -44,7 +44,36 @@ export function removeFromBasket(productId) {
 export function calculateTotals() {
   const basket = getBasket();
   const subtotal = basket.reduce((sum, i) => sum + i.price_pence * i.quantity, 0);
-  const discounts = 0; // implement later if needed
+  const discounts = 0; // implement later 
   const total = subtotal - discounts;
   return { subtotal, discounts, total };
+}
+
+
+
+// --- Product list logic ---
+const PRODUCTS_KEY = "products";
+
+export function cacheProducts(products) {
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+}
+
+export function getCachedProducts() {
+  const data = localStorage.getItem(PRODUCTS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export function filterProducts(term) {
+  const products = getCachedProducts();
+  return products.filter(p => p.name.toLowerCase().includes(term.toLowerCase()));
+}
+
+export function getProductById(id) {
+  const products = getCachedProducts();
+  return products.find(p => p.id == id);
+}
+
+export function getRecommendations(productId) {
+  const products = getCachedProducts();
+  return products.filter(p => p.id != productId).slice(0, 4);
 }
