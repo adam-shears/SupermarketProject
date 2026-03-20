@@ -28,6 +28,7 @@ export class OrdersError extends Error {
 export async function registerNewUser(input) {
   const email = input.email.trim().toLowerCase();
   const password = input.password;
+  const confirmPassword = input.confirmPassword;
   const firstName = input.firstName.trim();
   const lastName = input.lastName.trim();
   const phone = input.phone ? input.phone.trim() : null;
@@ -55,6 +56,10 @@ export async function registerNewUser(input) {
 
   if (!firstName || !lastName) {
     throw new OrdersError("First name and last name are required", 400);
+  }
+
+  if (password !== confirmPassword) {
+    throw new OrdersError("Passwords do not match", 400);
   }
 
   // check if email is already in use

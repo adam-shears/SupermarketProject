@@ -14,7 +14,7 @@ export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export async function selectCustomerByEmail(email) {
   const result = await pool.query(
-    `SELECT id, email, password, password_hash, first_name, last_name, phone, created_at FROM customers WHERE email = $1`,
+    `SELECT id, email, password_hash, first_name, last_name, phone, created_at FROM customers WHERE email = $1`,
     [email]
   );
   return result.rows[0] || null;
