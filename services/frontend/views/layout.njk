@@ -15,7 +15,15 @@
             <input class = "search" type = "text" placeholder = "Search" />
         </div>
         <div>
-            <a href = '#'> Login </a>
+          {% if user %}
+            <span>Hello, {{ user.first_name }} {{user.last_name}}</span>
+            <form action="/logout" method="POST" style="display:inline;">
+              <button type="submit">Logout</button>
+            </form>
+          {% else %}
+            <a href = "/login"> Login </a>
+            <a href = "/register"> Register </a>
+          {% endif %}
             <a href = "/basket"> Basket </a>
         </div>
     </div>
