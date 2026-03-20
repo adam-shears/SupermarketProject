@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
 
     res.render("home.njk", {
       title: "Supermarket",
-      products
+      products,
     });
   } catch (error) {
     console.error(error);
@@ -36,9 +36,7 @@ router.get("/products/:id", async (req, res) => {
       api.getProduct(req.params.id),
       api.listProducts(),
     ]);
-    const recommendations = products
-      .filter((item) => item.id !== product.id)
-      .slice(0, 4);
+    const recommendations = products.filter((item) => item.id !== product.id).slice(0, 4);
 
     res.render("product.njk", {
       title: product.name,
@@ -55,7 +53,9 @@ router.post("/basket/items", async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     /*await api.addToBasket(productId, quantity);*/ /* uncomment this when backend orders service is ready */
-    console.log(`Adding product ${productId} with quantity ${quantity} to basket`); /* temporary log to view post request is working */
+    console.log(
+      `Adding product ${productId} with quantity ${quantity} to basket`
+    ); /* temporary log to view post request is working */
     res.status(200).json({ message: "Item added to basket" });
   } catch (error) {
     console.error(error);
@@ -66,18 +66,28 @@ router.post("/basket/items", async (req, res) => {
 router.get("/basket", async (req, res) => {
   try {
     /*const basket = await api.getBasket();*/ /* uncomment this when backend orders service is ready */
-    
+
     /* temporary hardcoded basket to view basket page*/
     const basket = {
       items: [
-        { name: "Cheese", price_pence: 299, quantity: 1, image_url: "https://via.placeholder.com/100" },
-        { name: "Milk", price_pence: 150, quantity: 2, image_url: "https://via.placeholder.com/100" }
+        {
+          name: "Cheese",
+          price_pence: 299,
+          quantity: 1,
+          image_url: "https://via.placeholder.com/100",
+        },
+        {
+          name: "Milk",
+          price_pence: 150,
+          quantity: 2,
+          image_url: "https://via.placeholder.com/100",
+        },
       ],
       subtotal: 599,
       discounts: 100,
-      total: 499
+      total: 499,
     };
-    
+
     res.render("basket.njk", {
       title: "Your Basket",
       items: basket.items,
@@ -89,6 +99,51 @@ router.get("/basket", async (req, res) => {
     console.error(error);
     res.status(500).send("Failed to load basket");
   }
+});
+
+router.get("/login", (req, res) => {
+  res.render("login.njk", { title: "Login", error: null });
+});
+
+router.post("/login", async (req, res) => {
+  try {
+    const user = await api.login({ email: req.body.email, password: req.body.password });
+
+    req.session.user = user;
+    res.redirect("/");
+  } catch (error) {
+    res.status(401).render("login.njk", { title: "Login", error: "Invalid email or password" });
+  }
+});
+
+router.get("/register", (req, res) => {
+  res.render("register.njk", { title: "Register", error: null });
+});
+
+router.post("/register", async (req, res) => {
+  try {
+    const user = await api.register({
+      email: req.body.email,
+      password: req.body.password,
+      confirmPassword: req.body.confirm_password,
+      firstName: req.body.first_name,
+      lastName: req.body.last_name,
+      phone: req.body.phone,
+    });
+
+    req.session.user = user;
+    res.redirect("/");
+  } catch (error) {
+    res
+      .status(400)
+      .render("register.njk", { title: "Register", error: error.message || "Failed to register" });
+  }
+});
+
+router.post("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/");
+  });
 });
 
 router.get("/health", async (req, res) => {

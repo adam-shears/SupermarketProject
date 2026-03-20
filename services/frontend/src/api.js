@@ -17,8 +17,9 @@ const ANALYTICS_URL = process.env.ANALYTICS_URL || "http://analytics:3000";
 
 async function getJson(url) {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Request failed ${res.status}: ${url}`);
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  return data;
 }
 
 async function postJson(url, body) {
@@ -27,8 +28,11 @@ async function postJson(url, body) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`Request failed ${res.status}: ${url}`);
-  return res.json();
+
+  const data = await res.json();
+
+  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  return data;
 }
 
 export const api = {
@@ -36,5 +40,9 @@ export const api = {
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
 
   getBasket: () => getJson(`${ORDERS_URL}/basket`),
-  addToBasket: (productId, quantity) => postJson(`${ORDERS_URL}/basket/items`, { productId, quantity }),
+  addToBasket: (productId, quantity) =>
+    postJson(`${ORDERS_URL}/basket/items`, { productId, quantity }),
+
+  register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
+  login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 };
