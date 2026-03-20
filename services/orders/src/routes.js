@@ -10,8 +10,36 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
+import { logCustomerIn, OrdersError, registerNewUser } from "./service.js";
 
 const router = Router();
+
+function sendErrorResponse(res, error, fallbackMessage) {
+  if (error instanceof OrdersError) {
+    return res.status(error.statusCode).json({ message: error.message });
+  }
+
+  console.error(error);
+  return res.status(500).json({ message: fallbackMessage });
+}
+
+router.post("/auth/login", async (req, res) => {
+  try {
+    const user = await logCustomerIn(req.body);
+    res.status(200).json(user);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to log in.");
+  }
+});
+
+router.post("/auth/register", async (req, res) => {
+  try {
+    const user = await registerNewUser(req.body);
+    res.status(201).json(user);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to register new user.");
+  }
+});
 
 router.get("/", async (req, res) => {
   res.json({ message: "orders service" });
