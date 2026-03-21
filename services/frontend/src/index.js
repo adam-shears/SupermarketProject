@@ -36,6 +36,7 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
+app.use(express.static("src"));
 
 nunjucks.configure("views", {
   autoescape: true,

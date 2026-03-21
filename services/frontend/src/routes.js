@@ -16,10 +16,10 @@ import { api } from "./api.js";
 
 const router = Router();
 
+// Home page (optional, can list featured products)
 router.get("/", async (req, res) => {
   try {
     const products = await api.listProducts();
-
     res.render("home.njk", {
       title: "Supermarket",
       products,
@@ -30,6 +30,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Product details page
 router.get("/products/:id", async (req, res) => {
   try {
     const [product, products] = await Promise.all([
@@ -49,6 +50,21 @@ router.get("/products/:id", async (req, res) => {
   }
 });
 
+// ** Product List Page**
+router.get("/product-list", async (req, res) => {
+  try {
+    const products = await api.listProducts(); // fetch all products
+    res.render("product-list.njk", {
+      title: "All Products",
+      products,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to load product list");
+  }
+});
+
+// Basket POST endpoint (temporary)
 router.post("/basket/items", async (req, res) => {
   try {
     const { productId, quantity } = req.body;
@@ -63,6 +79,7 @@ router.post("/basket/items", async (req, res) => {
   }
 });
 
+// Basket GET endpoint (temporary hardcoded)
 router.get("/basket", async (req, res) => {
   try {
     /*const basket = await api.getBasket();*/ /* uncomment this when backend orders service is ready */
@@ -146,6 +163,7 @@ router.post("/logout", (req, res) => {
   });
 });
 
+// Health check
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "frontend service is healthy." });
 });
