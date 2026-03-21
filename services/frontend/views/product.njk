@@ -1,56 +1,88 @@
 {% extends "layout.njk" %}
 
 {% block styles %}
-<link rel = "stylesheet" href = "/product.css" />
+<link rel="stylesheet" href="/product.css" />
 {% endblock %}
 
 {% block content %}
 
-  <div class="back">
-    <a href="/">&larr; Back</a>
-  </div>
+<div class="back">
+  <a href="/">&larr; Back</a>
+</div>
 
-  <div class="product-section">
-    <div class="product-container">
-      <div class="product-image">
-        <img src="https://via.placeholder.com/400" alt="{{ product.name }}" />
-      </div>
+<div class="product-section">
+  <div class="product-container">
+    <div class="product-image">
+      <img src="https://via.placeholder.com/400" alt="{{ product.name }}" />
+    </div>
 
-      <div class="product-info">
-        <h1>{{ product.name }}</h1>
-        <p>{{ product.description }}</p>
+    <div class="product-info">
+      <h1>{{ product.name }}</h1>
+      <p>{{ product.description }}</p>
 
-        <p class="price">&pound;{{ (product.price_pence / 100).toFixed(2) }}</p>
+      <p class="price">&pound;{{ (product.price_pence / 100).toFixed(2) }}</p>
 
-        <form action = "/basket/items" method = "POST">
-          <input type = "hidden" name = "productId" value = "{{ product.id }}">
-          <div class = "quantity">
-            <h3>Quantity</h3>
-            <input type = "number" name = "quantity" value = "1" min = "1" />
-          </div>
-          <button type = "submit">Add to Basket</button>
-        </form>
-        
-        {% if product.discounts and product.discounts.length > 0 %}
-        <div class="offer">Offer Available</div>
-        {% endif %}
-      </div>
+      <!-- Updated form to use JS service -->
+      <form id="add-to-basket-form">
+        <input type="hidden" id="product-id" value="{{ product.id }}">
+        <input type="hidden" id="product-name" value="{{ product.name }}">
+        <input type="hidden" id="product-price" value="{{ product.price_pence }}">
+        <input type="hidden" id="product-image" value="https://via.placeholder.com/400">
+
+        <div class="quantity">
+          <h3>Quantity</h3>
+          <input type="number" id="quantity" value="1" min="1" />
+        </div>
+
+        <button type="submit">Add to Basket</button>
+      </form>
+      <p id="add-success" style="display:none;color:green;">Added to basket!</p>
+
+      {% if product.discounts and product.discounts.length > 0 %}
+      <div class="offer">Offer Available</div>
+      {% endif %}
     </div>
   </div>
+</div>
 
-  <div class="recommend-section">
-    <h2>You might also like</h2>
+<div class="recommend-section">
+  <h2>You might also like</h2>
 
-    <div class="recommend-list">
-      {% for item in recommendations %}
-      <div class="recommend-item">
-        <a href="/products/{{ item.id }}">
-          <h3>{{ item.name }}</h3>
-        </a>
-        <p>&pound;{{ (item.price_pence / 100).toFixed(2) }}</p>
-      </div>
-      {% endfor %}
+  <div class="recommend-list">
+    {% for item in recommendations %}
+    <div class="recommend-item">
+      <a href="/products/{{ item.id }}">
+        <h3>{{ item.name }}</h3>
+      </a>
+      <p>&pound;{{ (item.price_pence / 100).toFixed(2) }}</p>
     </div>
+    {% endfor %}
   </div>
+</div>
+
+<!-- Frontend JS to handle basket -->
+<script type="module">
+  import * as service from '/service.js'; // make sure this path points to your frontend service.js
+
+  const form = document.getElementById("add-to-basket-form");
+  const successMsg = document.getElementById("add-success");
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault(); // prevent normal form submit
+
+    const productId = Number(document.getElementById("product-id").value);
+    const name = document.getElementById("product-name").value;
+    const price_pence = Number(document.getElementById("product-price").value);
+    const image_url = document.getElementById("product-image").value;
+    const quantity = Number(document.getElementById("quantity").value);
+
+    // Use your service.js to add to basket
+    service.addToBasket(productId, quantity, name, price_pence, image_url);
+
+    // Show confirmation
+    successMsg.style.display = "block";
+    setTimeout(() => successMsg.style.display = "none", 2000);
+  });
+</script>
 
 {% endblock %}
