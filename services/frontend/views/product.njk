@@ -20,7 +20,7 @@
       <h1>{{ product.name }}</h1>
       <p>{{ product.description }}</p>
 
-      <p class="price">&pound;{{ (product.price_pence / 100).toFixed(2) }}</p>
+      <p class="price">&pound;{{ (product.price_pence / 100) | round(2, 'common') }}</p>
 
       <!-- Updated form to use JS service -->
       <form id="add-to-basket-form">
@@ -54,7 +54,7 @@
       <a href="/products/{{ item.id }}">
         <h3>{{ item.name }}</h3>
       </a>
-      <p>&pound;{{ (item.price_pence / 100).toFixed(2) }}</p>
+      <p>&pound;{{ (item.price_pence / 100) | round(2, 'common') }}</p>
     </div>
     {% endfor %}
   </div>
@@ -62,7 +62,7 @@
 
 <!-- Frontend JS to handle basket -->
 <script type="module">
-  import * as service from '/service.js'; // make sure this path points to your frontend service.js
+  import * as service from '/service.js'; 
 
   const form = document.getElementById("add-to-basket-form");
   const successMsg = document.getElementById("add-success");
@@ -76,7 +76,7 @@
     const image_url = document.getElementById("product-image").value;
     const quantity = Number(document.getElementById("quantity").value);
 
-    // Use your service.js to add to basket
+    // Used service.js to add to basket
     service.addToBasket(productId, quantity, name, price_pence, image_url);
 
     // Show confirmation
