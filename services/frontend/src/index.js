@@ -8,6 +8,7 @@ that isn't related to setting up the express server.
 */
 
 import express from "express";
+import session from "express-session";
 import nunjucks from "nunjucks";
 import routes from "./routes.js";
 
@@ -15,6 +16,26 @@ const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("styles"));
+app.use(express.static("scripts"));
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "default",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  })
+);
+
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
 app.use(express.static("src"));
 
 nunjucks.configure("views", {
