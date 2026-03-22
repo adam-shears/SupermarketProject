@@ -70,4 +70,9 @@ export const api = {
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
+
+  getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  addShoppingListItem: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
+  updateShoppingListItem: (customerId, productId, payload) => patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
+  deleteShoppingListItem: (customerId, productId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
 };
