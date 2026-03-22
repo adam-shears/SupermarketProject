@@ -171,6 +171,15 @@ router.post("/logout", (req, res) => {
   });
 });
 
+router.get("/api/products/search", async (req, res) => {
+  try {
+    const products = await api.searchProducts(req.query.q || "");
+    res.json(products);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Couldn't search products" });
+  }
+});
 
 /*
 Shopping list endpoints
