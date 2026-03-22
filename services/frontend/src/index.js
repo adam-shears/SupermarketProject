@@ -17,9 +17,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("styles"));
 app.use(express.static("src"));
 
-nunjucks.configure("views", {
+const env = nunjucks.configure("views", {
   autoescape: true,
   express: app,
+});
+
+// Add helper filter for fixed two-decimal prices (e.g. 2.50)
+env.addFilter("toFixed", (value, decimals = 2) => {
+  const num = Number(value);
+  if (Number.isNaN(num)) return value;
+  return num.toFixed(Number(decimals));
 });
 
 app.use("/", routes);

@@ -20,7 +20,7 @@
       <h1>{{ product.name }}</h1>
       <p>{{ product.description }}</p>
 
-      <p class="price">&pound;{{ (product.price_pence / 100) | round(2, 'common') }}</p>
+      <p class="price">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
 
       <!-- Updated form to use JS service -->
       <form id="add-to-basket-form">
@@ -54,7 +54,7 @@
       <a href="/products/{{ item.id }}">
         <h3>{{ item.name }}</h3>
       </a>
-      <p>&pound;{{ (item.price_pence / 100) | round(2, 'common') }}</p>
+      <p>&pound;{{ (item.price_pence / 100) | toFixed(2) }}</p>
     </div>
     {% endfor %}
   </div>
