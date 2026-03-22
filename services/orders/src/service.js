@@ -45,9 +45,9 @@ export async function updateShoppingListItem(customerId, productId, input) {
   const quantity = input.quantity;
   const checked = input.checked;
 
-  if(!Number.isInteger(quantity) || quantity <= 0) {
-    throw new OrdersError("quantity must be a positive integer", 400);
-  }
+  //if(!Number.isInteger(quantity) || quantity <= 0) {
+  //  throw new OrdersError("quantity must be a positive integer", 400);
+  //}
 
   const result = await updateShoppingList(customerId, productId, {quantity, checked});
 
