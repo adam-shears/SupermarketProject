@@ -17,3 +17,92 @@ body {
   width: 400px;
   padding: 8px;
 }
+
+.shopping-list-widget {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+}
+
+.shopping-list-toggle {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 999px;
+  background: #1f7a3d;
+  color: white;
+  cursor: pointer;
+}
+
+.shopping-list-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  width: 320px;
+  max-height: 420px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.shopping-list-panel.hidden {
+  display: none;
+}
+
+.shopping-list-header,
+.shopping-list-form,
+.shopping-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+}
+
+.shopping-list-items {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.shopping-list-row .checked {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.shopping-list-search {
+  position: relative;
+  padding: 12px;
+}
+
+.shopping-list-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+.shopping-list-suggestions {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(100% - 4px);
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+
+.shopping-list-suggestion {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shopping-list-suggestion:hover {
+  background: #f3f3f3;
+}

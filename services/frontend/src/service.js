@@ -1,5 +1,3 @@
-import { api } from "./api.js";
-
 const BASKET_KEY = "basket";
 const SHOPPING_LIST_KEY = "shopping_list_guest";
 
@@ -147,6 +145,7 @@ export async function addShoppingListItem(item) {
 }
 
 export async function checkShoppingListItem(productId, checked) {
+  // mark an item as checked off
   if (getUserId()) {
     await fetch(`/api/shopping-list/items/${productId}`, {
       method: "PATCH",
@@ -185,5 +184,9 @@ export async function searchProducts(term) {
   if (term.trim().length < 2) {
     return [];
   }
-  return api.searchProducts(term);
+  const res = await fetch(`/api/products/search?q=${encodeURIComponent(term)}`);
+  if(!res.ok) {
+    throw new Error("Couldn't search products");
+  }
+  return res.json();
 }
