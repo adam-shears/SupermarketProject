@@ -1,9 +1,9 @@
 import {
-    addShoppingListItem,
-    checkShoppingListItem,
-    deleteShoppingListItem,
-    getShoppingList,
-    searchProducts,
+  addShoppingListItem,
+  checkShoppingListItem,
+  deleteShoppingListItem,
+  getShoppingList,
+  searchProducts,
 } from "/service.js";
 
 const toggle = document.getElementById("shopping-list-toggle");
@@ -41,14 +41,14 @@ async function showList() {
 
   list.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
     checkbox.addEventListener("change", async (event) => {
-      await checkShoppingListItem(event.target.dataset.id, event.target.checked);
+      await checkShoppingListItem(Number(event.target.dataset.id), event.target.checked);
       await showList();
     });
   });
 
   list.querySelectorAll("[data-remove]").forEach((button) => {
     button.addEventListener("click", async (event) => {
-      await deleteShoppingListItem(event.target.dataset.remove);
+      await deleteShoppingListItem(Number(event.target.dataset.remove));
       await showList();
     });
   });
