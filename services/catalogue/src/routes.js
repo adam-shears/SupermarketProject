@@ -15,6 +15,7 @@ import {
   getActiveDeals,
   getProductById,
   getProductsWithDiscounts,
+  searchProducts,
 } from "./service.js";
 
 const router = Router();
@@ -60,6 +61,15 @@ router.get("/deals", async (req, res) => {
     res.status(200).json(deals);
   } catch (error) {
     sendErrorResponse(res, error, "failed to get deals");
+  }
+});
+
+router.get("/products/search", async (req, res) => {
+  try {
+    const products = await searchProducts(req.query.q || "");
+    res.status(200).json(products);
+  } catch (error) {
+    sendErrorResponse(res, error, "couldn't search products");
   }
 });
 

@@ -18,6 +18,7 @@ import {
   selectActiveDealRows,
   selectListedProductByIdWithDiscountRows,
   selectListedProductsWithDiscountRows,
+  selectProductsBySearchTerm,
 } from "./db.js";
 
 export class CatalogueError extends Error {
@@ -117,4 +118,15 @@ export async function getActiveDeals() {
   }
 
   return Array.from(deals.values());
+}
+
+export async function searchProducts(searchTerm) {
+  const term = searchTerm.trim();
+
+  if (term.length < 2) {
+    return [];
+  }
+
+  const rows = await selectProductsBySearchTerm(term);
+  return mergeProductRows(rows);
 }

@@ -84,3 +84,38 @@ export async function selectActiveDealRows() {
 
   return result.rows;
 }
+
+export async function selectProductsBySearchTerm(term) {
+  const result = await pool.query(
+    `
+      SELECT
+        p.id,
+        p.name,
+        p.description,
+        pr.price_pence,
+        d.id AS discount_id,
+        d.code AS discount_code,
+        d.name AS discount_name,
+        d.type AS discount_type,
+        d.value AS discount_value
+      FROM products p
+      LEFT JOIN LATERAL (
+        SELECT price_pence
+        FROM prices
+        WHERE product_id = p.id
+          AND starts_at <= NOW()
+          AND (ends_at IS NULL OR ends_at > NOW())
+        ORDER BY starts_at DESC
+        LIMIT 1
+      ) pr ON true
+      LEFT JOIN product_discounts pd ON pd.product_id = p.id
+      LEFT JOIN discounts d ON d.id = pd.discount_id
+      WHERE p.listed = TRUE
+        AND p.name ILIKE $1
+      ORDER BY p.name ASC
+      LIMIT 8
+    `,
+    [`%${term}%`]
+  );
+  return result.rows;
+}
