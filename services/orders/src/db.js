@@ -67,7 +67,8 @@ export async function insertShoppingListItem(customerID, productID, quantity) {
       RETURNING product_id, quantity, checked
     `,
     [customerID, productID, quantity]
-  )
+  );
+  return result.rows[0];
 }
 
 export async function updateShoppingList(customerID, productID, fields) {
