@@ -85,4 +85,9 @@ input.addEventListener("input", () => {
     showSuggestions(products);
   }, 200);
 });
+
+window.addEventListener("shopping-list-updated", async () => {
+  await showList();
+});
+
 showList();

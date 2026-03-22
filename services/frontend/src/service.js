@@ -177,7 +177,15 @@ export async function deleteShoppingListItem(productId) {
 }
 
 export async function autoCheck(productId) {
-  await checkShoppingListItem(productId, true);
+  try {
+    await checkShoppingListItem(productId, true);
+
+    window.dispatchEvent(new CustomEvent("shopping-list-updated", {
+      detail: { productId, checked: true},
+    }));
+  } catch (error) {
+    console.error("Couldn't automatically check off shopping list item", error);
+  }
 }
 
 export async function searchProducts(term) {
