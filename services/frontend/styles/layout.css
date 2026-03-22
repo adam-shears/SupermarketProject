@@ -111,3 +111,17 @@ body {
 .shopping-list-suggestion:hover {
   background: #f3f3f3;
 }
+
+.shopping-list-category {
+  padding: 8px 0;
+}
+
+.shopping-list-category-header {
+  margin: 0;
+  padding: 8px 12px 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1f7a3d;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

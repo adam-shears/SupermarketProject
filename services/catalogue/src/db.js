@@ -17,6 +17,7 @@ const PRODUCTS_BASE_SELECT = `
     p.id,
     p.name,
     p.description,
+    c.name AS category_name,
     pr.price_pence,
     d.id AS discount_id,
     d.code AS discount_code,
@@ -24,6 +25,8 @@ const PRODUCTS_BASE_SELECT = `
     d.type AS discount_type,
     d.value AS discount_value
   FROM products p
+  LEFT JOIN categories c
+    ON c.id = p.category_id
   LEFT JOIN prices pr
     ON pr.product_id = p.id
    AND pr.starts_at <= NOW()
@@ -92,6 +95,7 @@ export async function selectProductsBySearchTerm(term) {
         p.id,
         p.name,
         p.description,
+        c.name AS category_name,
         pr.price_pence,
         d.id AS discount_id,
         d.code AS discount_code,
@@ -99,6 +103,8 @@ export async function selectProductsBySearchTerm(term) {
         d.type AS discount_type,
         d.value AS discount_value
       FROM products p
+      LEFT JOIN categories c
+        ON c.id = p.category_id
       LEFT JOIN LATERAL (
         SELECT price_pence
         FROM prices

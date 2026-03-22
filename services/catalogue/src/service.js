@@ -50,6 +50,7 @@ function mergeProductRows(rows) {
         id: row.id,
         name: row.name,
         description: row.description,
+        category_name: row.category_name,
         price_pence: row.price_pence,
         discounts: [],
       });

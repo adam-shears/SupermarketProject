@@ -35,9 +35,10 @@ export async function insertNewCustomer(email, passwordHash, firstName, lastName
 export async function selectShoppingListByCustomerID(customerID) {
   const result = await pool.query(
     `
-      SELECT sl.product_id, sl.quantity, sl.checked, p.name, p.description, COALESCE(pr.price_pence, 0) AS price_pence
+      SELECT sl.product_id, sl.quantity, sl.checked, p.name, p.description, c.name AS category_name, COALESCE(pr.price_pence, 0) AS price_pence
       FROM shopping_list_items sl
       JOIN products p ON p.id = sl.product_id
+      LEFT JOIN categories c ON c.id = p.category_id
       LEFT JOIN LATERAL (
         SELECT price_pence
         FROM prices

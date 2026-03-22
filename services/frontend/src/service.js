@@ -136,6 +136,7 @@ export async function addShoppingListItem(item) {
     items.push({
       product_id: item.id,
       name: item.name,
+      category_name: item.category_name,
       price_pence: item.price_pence,
       quantity: 1,
       checked: false,
