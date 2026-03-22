@@ -35,6 +35,31 @@ async function postJson(url, body) {
   return data;
 }
 
+async function patchJson(url, body) {
+  const res = await fetch(url, {
+    methdod: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (res.status === 204) {
+    return null;
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  return data;
+}
+
+async function deleteRequest(url) {
+  const res = await fetch(url, {
+    method: "DELETE"
+  });
+  if (res.status !== 204 && !res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || `Request failed ${res.status}: ${url}`);s
+  }
+}
+
 export const api = {
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
