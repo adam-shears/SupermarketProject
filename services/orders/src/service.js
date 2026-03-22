@@ -25,12 +25,12 @@ export class OrdersError extends Error {
   }
 }
 
-export async function getShoppingList(customerID) {
-  return selectShoppingListByCustomerID(customerID);
+export async function getShoppingList(customerId) {
+  return selectShoppingListByCustomerID(customerId);
 }
 
-export async function addShoppingListItem(customerID, input) {
-  const productID = input.productID;
+export async function addShoppingListItem(customerId, input) {
+  const productId = input.productId;
   const quantity = input.quantity ?? 1;
 
   if(!Number.isInteger(quantity) || quantity <= 0) {
@@ -38,10 +38,10 @@ export async function addShoppingListItem(customerID, input) {
     throw new OrdersError("quantity must be a positive integer", 400);
   }
 
-  return insertShoppingListItem(customerID, productID, quantity);
+  return insertShoppingListItem(customerId, productId, quantity);
 }
 
-export async function updateShoppingListItem(customerID, productID, input) {
+export async function updateShoppingListItem(customerId, productId, input) {
   const quantity = input.quantity;
   const checked = input.checked;
 
@@ -49,7 +49,7 @@ export async function updateShoppingListItem(customerID, productID, input) {
     throw new OrdersError("quantity must be a positive integer", 400);
   }
 
-  const result = await updateShoppingList(customerID, productID, {quantity, checked});
+  const result = await updateShoppingList(customerId, productId, {quantity, checked});
 
   if (!result) {
     // if there's no result then that item doesn't exist in the shopping list so we can't update
@@ -59,8 +59,8 @@ export async function updateShoppingListItem(customerID, productID, input) {
   return result;
 }
 
-export async function removeShoppingListItem(customerID, productID) {
-  await deleteShoppingListItem(customerID, productID);
+export async function removeShoppingListItem(customerId, productId) {
+  await deleteShoppingListItem(customerId, productId);
 }
 
 export async function registerNewUser(input) {
