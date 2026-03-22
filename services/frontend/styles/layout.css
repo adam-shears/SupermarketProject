@@ -44,7 +44,7 @@ body {
   border: 1px solid #ddd;
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
+  overflow: visble;
 }
 
 .shopping-list-panel.hidden {
@@ -92,8 +92,9 @@ body {
   border-radius: 10px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   z-index: 20;
-  max-height: 220px;
+  max-height: 180px;
   overflow-y: auto;
+  padding-bottom: 4px;
 }
 
 .shopping-list-suggestion {
@@ -104,6 +105,7 @@ body {
   color: #222;
   text-align: left;
   cursor: pointer;
+  display: block;
 }
 
 .shopping-list-suggestion:hover {
