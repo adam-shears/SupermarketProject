@@ -63,6 +63,7 @@ async function deleteRequest(url) {
 export const api = {
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
+  searchProducts: (term) => getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
 
   getBasket: () => getJson(`${ORDERS_URL}/basket`),
   addToBasket: (productId, quantity) =>

@@ -1,3 +1,5 @@
+import { api } from "./api.js";
+
 const BASKET_KEY = "basket";
 const SHOPPING_LIST_KEY = "shopping_list_guest";
 
@@ -22,6 +24,7 @@ export function addToBasket(productId, quantity, name, price_pence, image_url) {
     basket.push({ productId, quantity, name, price_pence, image_url });
   }
   saveBasket(basket);
+  autoCheck(productId);
 }
 
 // Update quantity
@@ -176,4 +179,11 @@ export async function deleteShoppingListItem(productId) {
 
 export async function autoCheck(productId) {
   await checkShoppingListItem(productId, true);
+}
+
+export async function searchProducts(term) {
+  if (term.trim().length < 2) {
+    return [];
+  }
+  return api.searchProducts(term);
 }
