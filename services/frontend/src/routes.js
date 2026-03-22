@@ -16,6 +16,14 @@ import { api } from "./api.js";
 
 const router = Router();
 
+// function to check if user is logged in for accessing certain endpoints
+function requireAuth(req, res, next) {
+  if(!req.session.user) {
+    return res.status(401),json({ messgae: "You must be logged in"});
+  }
+  next();
+}
+
 // Home page (optional, can list featured products)
 router.get("/", async (req, res) => {
   try {
