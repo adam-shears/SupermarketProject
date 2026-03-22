@@ -41,7 +41,7 @@ export async function addShoppingListItem(customerID, input) {
   return insertShoppingListItem(customerID, productID, quantity);
 }
 
-export async function updateShoppingListItem(custoemrID, productID, input) {
+export async function updateShoppingListItem(customerID, productID, input) {
   const quantity = input.quantity;
   const checked = input.checked;
 

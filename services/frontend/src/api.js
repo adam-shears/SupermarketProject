@@ -56,7 +56,7 @@ async function deleteRequest(url) {
   });
   if (res.status !== 204 && !res.ok) {
     const data = await res.json();
-    throw new Error(data.message || `Request failed ${res.status}: ${url}`);s
+    throw new Error(data.message || `Request failed ${res.status}: ${url}`);
   }
 }
 
