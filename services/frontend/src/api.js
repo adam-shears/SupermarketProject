@@ -37,7 +37,7 @@ async function postJson(url, body) {
 
 async function patchJson(url, body) {
   const res = await fetch(url, {
-    methdod: "PATCH",
+    method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
