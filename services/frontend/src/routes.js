@@ -171,6 +171,56 @@ router.post("/logout", (req, res) => {
   });
 });
 
+
+/*
+Shopping list endpoints
+All of these endpoints require user to be logged in to their account
+*/
+
+// GET shopping list items for a logged in user
+router.get("/api/shopping-list", requireAuth, async (req, res) => {
+  try {
+    const items = await api.getShoppingList(req.session.user.id);
+    res.json(items);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get shopping list" });
+  }
+});
+
+// Add an item to the shopping list
+router.post("/api/shopping-list/items", requireAuth, async (req, res) => {
+  try {
+    const item = await api.addShoppingListItem(req.session.user.id, req.body);
+    res.status(201).json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add item to shopping list" });
+  }
+});
+
+// Update an item in the shopping list
+router.patch("/api/shopping-list/items/:productId", requireAuth, async (req, res) => {
+  try {
+    const item = await api.updateShoppingListItem(req.session.user.id, req.params.productId, req.body);
+    res.json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update shopping list item" });
+  }
+});
+
+// Delete an item from the shopping list
+router.delete("/api/shopping-list/items/:productId", requireAuth, async (req, res) => {
+  try {
+    await api.deleteShoppingListItem(req.session.user.id, req.params.productId);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to remove item from shopping list"});
+  }
+});
+
 // Health check
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "frontend service is healthy." });
