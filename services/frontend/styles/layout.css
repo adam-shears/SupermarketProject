@@ -92,6 +92,8 @@ body {
   border-radius: 10px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 .shopping-list-suggestion {
@@ -99,6 +101,7 @@ body {
   padding: 10px 12px;
   border: none;
   background: white;
+  color: #222;
   text-align: left;
   cursor: pointer;
 }
