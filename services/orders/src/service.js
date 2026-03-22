@@ -15,7 +15,7 @@ This file should not be responsible for:
 */
 
 import bcrypt from "bcrypt";
-import { insertNewCustomer, selectCustomerByEmail } from "./db.js";
+import { deleteShoppingListItem, insertNewCustomer, insertShoppingListItem, selectCustomerByEmail, selectShoppingListByCustomerID, updateShoppingList } from "./db.js";
 
 export class OrdersError extends Error {
   constructor(message, statusCode) {
@@ -23,6 +23,44 @@ export class OrdersError extends Error {
     this.name = "OrdersError";
     this.statusCode = statusCode || 400;
   }
+}
+
+export async function getShoppingList(customerID) {
+  return selectShoppingListByCustomerID(customerID);
+}
+
+export async function addShoppingListItem(customerID, input) {
+  const productID = input.productID;
+  const quantity = input.quantity ?? 1;
+
+  if(!Number.isInteger(quantity) || quantity <= 0) {
+    // basic check to make sure a valid quantity was provided
+    throw new OrdersError("quantity must be a positive integer", 400);
+  }
+
+  return insertShoppingListItem(customerID, productID, quantity);
+}
+
+export async function updateShoppingListItem(custoemrID, productID, input) {
+  const quantity = input.quantity;
+  const checked = input.checked;
+
+  if(!Number.isInteger(quantity) || quantity <= 0) {
+    throw new OrdersError("quantity must be a positive integer", 400);
+  }
+
+  const result = await updateShoppingList(customerID, productID, {quantity, checked});
+
+  if (!result) {
+    // if there's no result then that item doesn't exist in the shopping list so we can't update
+    throw new OrdersError("shopping list item not found", 404);
+  }
+
+  return result;
+}
+
+export async function removeShoppingListItem(customerID, productID) {
+  await deleteShoppingListItem(customerID, productID);
 }
 
 export async function registerNewUser(input) {
