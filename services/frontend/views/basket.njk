@@ -67,11 +67,13 @@
     items.forEach(item => {
       itemsColumn.innerHTML += `
         <div class="item-card">
-          <img src="${item.image_url}" alt="${item.name}" class="product-thumbnail">
-          <div class="item-details">
-            <h3>${item.name}</h3>
-            <p>&pound;${(item.price_pence / 100).toFixed(2)}</p>
-          </div>
+          <a href="/products/${item.productId}">
+            <img src="${item.image_url}" alt="${item.name}" class="product-thumbnail">
+            <div class="item-details">
+              <h3>${item.name}</h3>
+              <p>&pound;${(item.price_pence / 100).toFixed(2)}</p>
+            </div>
+          </a>
           <div class="item-actions">
             <input type="number" value="${item.quantity}" class="quantity-input" data-id="${item.productId}" min="1">
             <button class="delete-button" data-id="${item.productId}">X</button>
