@@ -9,3 +9,4 @@ CREATE TABLE shopping_list_items (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE (customer_id, product_id)
 );
+COMMIT;
