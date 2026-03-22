@@ -1,3 +1,19 @@
+.banner-box {
+    background-color: #4caf50;
+    width: 40%;
+    height: 300px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin: 30px auto 30px auto;
+}
+
+.banner-text {
+    text-align: center;
+}
+
 .button-row {
     display: flex;
     gap: 15px;
@@ -54,4 +70,9 @@
 
 .cat-item:hover .image-square {
     background: #e0e0e0;
+}
+
+.content-area {
+    width: 80%;
+    margin: 0 auto;
 }

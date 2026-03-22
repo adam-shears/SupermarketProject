@@ -13,11 +13,31 @@ body {
   border-bottom: 1px solid #ddd;
 }
 
-.header a {
+.logo a {
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.user-actions a, .logout-button {
   text-decoration: none;
   color: #333;
   font-weight: 500;
   margin-left: 15px;
+}
+
+.logout-button {
+    background: none;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+    border: none;
+}
+
+.user-actions a:hover, .logout-button:hover {
+  text-decoration: underline;
+  color: #007BFF;
 }
 
 .search {

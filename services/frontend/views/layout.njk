@@ -8,23 +8,23 @@
 </head>
 <body>
     <div class = "header">
-        <div>
-            <a href = "/"> LOGO </a>
+        <div class = "logo">
+            <a href = "/">Supermarket</a>
         </div>
         <div>
             <input class = "search" type = "text" placeholder = "Search" />
         </div>
-        <div>
+        <div class = "user-actions">
           {% if user %}
             <span>Hello, {{ user.first_name }} {{user.last_name}}</span>
             <form action="/logout" method="POST" style="display:inline;">
-              <button type="submit">Logout</button>
+              <button type="submit" class = "logout-button">Logout</button>
             </form>
           {% else %}
-            <a href = "/login"> Login </a>
-            <a href = "/register"> Register </a>
+            <a href = "/login">Login</a>
+            <a href = "/register">Register</a>
           {% endif %}
-            <a href = "/basket"> Basket </a>
+            <a href = "/basket">Basket</a>
         </div>
     </div>
 
