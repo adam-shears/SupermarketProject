@@ -76,3 +76,15 @@
     width: 80%;
     margin: 0 auto;
 }
+
+.category-title-bar a {
+    text-decoration: none;
+    color: #333;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.category-title-bar a:hover {
+    text-decoration: underline;
+    color: #007BFF;
+}
