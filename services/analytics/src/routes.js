@@ -25,11 +25,12 @@ router.get("/health", async (req, res) => {
 router.get("/management", async (req, res) => {
   try {
     const scale = req.query.scale || 'week';
-    const data = await getManagementData(scale);
+    const search = req.query.search || '';
+    const data = await getManagementData(scale, search);
     res.json(data);
   } catch (error) {
-  console.error("management route error:", error);
-  res.status(400).json({ message: error.message || "unknown error" });
+    console.error("management route error:", error);
+    res.status(400).json({ message: error.message || "unknown error" });
   }
 });
 

@@ -46,7 +46,7 @@ export const api = {
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
   
-  getManagementView: async (scale = "week") => {
+  getManagementView: async (scale = "week", search = "") => {
     const mockData = {
       day: {
         totalSalesPence: 48230,
@@ -113,13 +113,16 @@ export const api = {
     };
 
     try {
-      return await getJson(`${ANALYTICS_URL}/management?scale=${scale}`);
+      const params = new URLSearchParams({ scale, search }).toString();
+      return await getJson(`${ANALYTICS_URL}/management?${params}`);
     } catch (error) {
       console.warn("Using mock management data:", error.message);
       return mockData[scale] || mockData.week;
     }
   },
 
-  getSalesByCategoryCsvUrl: (scale = "week") =>
-    `/management/export.csv?scale=${scale}`,
+  getSalesByCategoryCsvUrl: (scale = "week", search = "") => {
+    const params = new URLSearchParams({ scale, search }).toString();
+    return `/management/export.csv?${params}`;
+  },
 };
