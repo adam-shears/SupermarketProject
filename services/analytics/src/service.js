@@ -13,3 +13,38 @@ This file should not be responsible for:
 - Handling HTTP requests and responses (index.js and routes.js)
 - Any logic that is not directly related to the business logic of the analytics service
 */
+
+import { getTotalSales, getBestSellers, getSalesPerCategory, getTrendingItems } from './db.js';
+
+export async function getManagementData(scale = 'week') {
+  if (!['day', 'week', 'month'].includes(scale)) {
+    throw new Error('Invalid scale. Must be day, week, or month.');
+  }
+
+  const [totalSalesPence, bestSellers, salesPerCategory, trendingItems] = await Promise.all([
+    getTotalSales(scale),
+    getBestSellers(scale),
+    getSalesPerCategory(scale),
+    getTrendingItems(scale)
+  ]);
+
+  // Transform bestSellers to match frontend: remove units_sold, keep id and name
+  const bestSellersFormatted = bestSellers.map(item => ({ id: item.id, name: item.name }));
+
+  // salesPerCategory already has category and sales_pence, rename to salesPence
+  const salesPerCategoryFormatted = salesPerCategory.map(item => ({ category: item.category, salesPence: item.sales_pence }));
+
+  // trendingItems: rank them and include unitsSold
+  const trendingItemsFormatted = trendingItems.map((item, index) => ({
+    rank: index + 1,
+    name: item.name,
+    unitsSold: item.units_sold
+  }));
+
+  return {
+    totalSalesPence,
+    bestSellers: bestSellersFormatted,
+    salesPerCategory: salesPerCategoryFormatted,
+    trendingItems: trendingItemsFormatted
+  };
+}

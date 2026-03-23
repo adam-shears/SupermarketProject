@@ -10,6 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
+import { getManagementData } from './service.js';
 
 const router = Router();
 
@@ -19,6 +20,17 @@ router.get("/", async (req, res) => {
 
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "analytics service is healthy." });
+});
+
+router.get("/management", async (req, res) => {
+  try {
+    const scale = req.query.scale || 'week';
+    const data = await getManagementData(scale);
+    res.json(data);
+  } catch (error) {
+  console.error("management route error:", error);
+  res.status(400).json({ message: error.message || "unknown error" });
+  }
 });
 
 export default router;
