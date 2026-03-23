@@ -134,8 +134,8 @@ export async function logCustomerIn(input) {
   return {
     id: customer.id,
     email: customer.email,
-    firstName: customer.first_name,
-    lastName: customer.last_name,
+    first_name: customer.first_name,
+    last_name: customer.last_name,
     phone: customer.phone,
     createdAt: customer.created_at,
   };

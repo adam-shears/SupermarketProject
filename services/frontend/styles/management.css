@@ -1,0 +1,185 @@
+.management-page {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem 2rem;
+}
+
+.management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.management-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+}
+
+.management-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.management-filter-form {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.management-filter-form label {
+  font-weight: 600;
+}
+
+.management-filter-form select {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+.management-export-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.export-button {
+  display: inline-block;
+  padding: 0.65rem 1rem;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  text-decoration: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.export-button--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.management-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.management-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.management-card h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.card-subtitle {
+  margin: 0.5rem 0 1rem;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.total-sales-card {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.total-sales-value {
+  margin: 0.75rem 0 0;
+  font-size: 3rem;
+  font-weight: 800;
+}
+
+.best-sellers-list {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.best-seller-item {
+  width: 110px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.best-seller-placeholder {
+  width: 100%;
+  height: 80px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.best-seller-item p {
+  margin: 0;
+}
+
+.data-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.98rem;
+}
+
+.data-row span:last-child {
+  font-weight: 600;
+}
+
+.data-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .management-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .management-controls {
+    align-items: stretch;
+  }
+
+  .management-export-buttons {
+    justify-content: flex-start;
+  }
+
+  .management-filter-form {
+    justify-content: space-between;
+  }
+}

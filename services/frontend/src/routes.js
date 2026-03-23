@@ -170,6 +170,64 @@ router.post("/logout", (req, res) => {
     res.redirect("/");
   });
 });
+//management view
+router.get("/management", async (req, res) => {
+  try {
+    const allowedScales = ["day", "week", "month"];
+    const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
+
+    const management = await api.getManagementView(scale);
+
+    res.render("management.njk", {
+      title: "Management View",
+      management,
+      scale,
+    });
+  } catch (error) {
+    console.error("Management view error:", error);
+    res.status(500).send(`Failed to load management view: ${error.message}`);
+  }
+});
+
+router.get("/management/export.csv", async (req, res) => {
+  try {
+    const allowedScales = ["day", "week", "month"];
+    const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
+
+    const management = await api.getManagementView(scale);
+
+    const lines = [
+      "Metric,Value",
+      `Time Scale,${scale}`,
+      `Total Sales,${(management.totalSalesPence / 100).toFixed(2)}`,
+      "",
+      "Trending Item,Units Sold",
+      ...management.trendingItems.map((item) => `${item.name},${item.unitsSold}`),
+      "",
+      "Category,Sales",
+      ...management.salesPerCategory.map(
+        (item) => `${item.category},${(item.salesPence / 100).toFixed(2)}`
+      ),
+      "",
+      "Best Sellers",
+      ...management.bestSellers.map((item) => item.name),
+    ];
+
+    const csv = lines.join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="management-${scale}.csv"`
+    );
+
+    res.send(csv);
+  } catch (error) {
+    console.error("CSV export error:", error);
+    res.status(500).send(`Failed to export CSV: ${error.message}`);
+  }
+});
+
 
 router.get("/api/products/search", async (req, res) => {
   try {
