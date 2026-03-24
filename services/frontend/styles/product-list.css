@@ -1,21 +1,102 @@
+.product-list-page {
+  padding: 60px;
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
+  gap: 30px;
 }
 
 .product-card {
   border: 1px solid #ccc;
-  padding: 10px;
+  padding: 15px;
   text-align: center;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
 }
 
 .product-card img {
   max-width: 100%;
   height: auto;
+  margin-bottom: 10px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+
+
+.product-card a {
+  text-decoration: none;
+  color: inherit;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card h3 {
+  margin: 10px 0;
+  font-size: 1.1rem;
+}
+
+.product-card a:hover h3 {
+  text-decoration: underline;
+  color: #007bff;
 }
 
 .offer {
-  color: red;
+  color: #d9534f;
+  font-weight: bold;
+  margin-bottom: 10px;
+  min-height: 1.2em;
+}
+
+.basket-controls {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  height: 30px;
+}
+
+.quantity-input {
+  padding: 5px;
+  width: 30px;
+  text-align: center;
+}
+
+.add-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.add-btn:hover {
+  background-color: #218838;
+}
+
+.add-btn:active {
+  transform: scale(0.9);
+}
+
+.image-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.image-container p {
+  margin-top: auto;
+  margin-bottom: 0;
+  padding: 10px 0;
   font-weight: bold;
 }

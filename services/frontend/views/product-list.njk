@@ -15,9 +15,11 @@
 
       <!-- Clickable product (navigates to product details page) -->
       <a href="/products/{{ product.id }}?from={{ encodedCategory }}">
-        <img src="{{ product.image_url | default('https://via.placeholder.com/200') }}" alt="{{ product.name }}">
-        <h3>{{ product.name }}</h3>
-        <p>&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
+        <div class="image-container">
+          <img src="{{ product.image_url | default('https://via.placeholder.com/200') }}" alt="{{ product.name }}">
+          <h3>{{ product.name }}</h3>
+          <p>&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
+        </div>
       </a>
 
       <!-- Display offer if product has discounts -->
@@ -42,7 +44,7 @@
           data-name="{{ product.name }}"
           data-price="{{ product.price_pence }}"
           data-image="{{ product.image_url }}">
-          Add to Basket
+          Add
         </button>
       </div>
 
@@ -87,7 +89,15 @@
         service.addToBasket(productId, quantity, name, price, image);
 
         // Provide feedback to the user
-        alert(`${quantity} x ${name} added to basket`);
+        const originalText = btn.textContent;
+        btn.textContent = 'Added!';
+        btn.disabled = true;
+
+        // Reset button after 1.5 seconds
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 1500);
       });
     });
   }
