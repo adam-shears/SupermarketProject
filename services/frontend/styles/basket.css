@@ -30,6 +30,11 @@
   border-bottom: 1px solid #eee;
 }
 
+.item-card a {
+  text-decoration: none;
+  color: inherit;
+}
+
 .product-thumbnail {
   width: 80px;
   height: 80px;

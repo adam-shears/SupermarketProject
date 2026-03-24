@@ -7,7 +7,7 @@
 {% block content %}
 
 <div class="product-list-page">
-  <h1>All Products</h1>
+  <h1>{{ category | default('All Products') }}</h1>
 
   <div class="products-grid">
     {% for product in products %}

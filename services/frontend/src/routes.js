@@ -21,7 +21,7 @@ router.get("/", async (req, res) => {
   try {
     const products = await api.listProducts();
     res.render("home.njk", {
-      title: "Supermarket",
+      title: "Home",
       products,
     });
   } catch (error) {
@@ -53,9 +53,11 @@ router.get("/products/:id", async (req, res) => {
 // ** Product List Page**
 router.get("/product-list", async (req, res) => {
   try {
+    const category = req.query.category;
     const products = await api.listProducts(); // fetch all products
     res.render("product-list.njk", {
       title: "All Products",
+      category,
       products,
     });
   } catch (error) {
@@ -106,7 +108,7 @@ router.get("/basket", async (req, res) => {
     };
 
     res.render("basket.njk", {
-      title: "Your Basket",
+      title: "Basket",
       items: basket.items,
       subtotal: basket.subtotal,
       discounts: basket.discounts,

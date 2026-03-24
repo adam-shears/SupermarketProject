@@ -1,1 +1,80 @@
 {% extends "layout.njk" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/home.css" />
+{% endblock %}
+
+{% block content %}
+<div class="home-wrapper">
+    
+    <div class="banner-box">
+        <div class="banner-text">
+            <h1>Fresh Groceries</h1>
+            <p>From our warehouse to your house.</p>
+            <a href="/product-list" class="shop-link">View All Products</a>
+        </div>
+    </div>
+
+    <div class="content-area">
+        <div class="button-row">
+            <div class="action-card">
+                <div class="placeholder-icon"></div> <div>Repeat Last Order</div>
+            </div>
+            <div class="action-card">
+                <div class="placeholder-icon"></div> <div>Saved Baskets</div>
+            </div>
+            <div class="action-card">
+                <div class="placeholder-icon"></div> <div>Loyalty Card</div>
+            </div>
+        </div>
+
+        <div class="category-area">
+            <div class="category-title-bar">
+                <h2>Shop By Category | <a href="/product-list">All products ></a></h2>
+            </div>
+
+            <div class="grid-container">
+                <a href="/product-list?category=Groceries & Essentials" class="cat-item">
+                    <div class="image-square"></div> <span>Groceries & Essentials</span>
+                </a>
+
+                <a href="/product-list?category=Fresh Food" class="cat-item">
+                    <div class="image-square"></div> <span>Fresh Food</span>
+                </a>
+
+                <a href="/product-list?category=Bakery" class="cat-item">
+                    <div class="image-square"></div> <span>Bakery</span>
+                </a>
+
+                <a href="/product-list?category=Frozen Food" class="cat-item">
+                    <div class="image-square"></div> <span>Frozen Food</span>
+                </a>
+
+                <a href="/product-list?category=Treats & Snacks" class="cat-item">
+                    <div class="image-square"></div> <span>Treats & Snacks</span>
+                </a>
+
+                <a href="/product-list?category=Drinks" class="cat-item">
+                    <div class="image-square"></div> <span>Drinks</span>
+                </a>
+
+                <a href="/product-list?category=Baby & Toddler" class="cat-item">
+                    <div class="image-square"></div> <span>Baby & Toddler</span>
+                </a>
+
+                <a href="/product-list?category=Health & Beauty" class="cat-item">
+                    <div class="image-square"></div> <span>Health & Beauty</span>
+                </a>
+
+                <a href="/product-list?category=Pets" class="cat-item">
+                    <div class="image-square"></div> <span>Pets</span>
+                </a>
+
+                <a href="/product-list?category=Household & Cleaning" class="cat-item">
+                    <div class="image-square"></div> <span>Household & Cleaning</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
