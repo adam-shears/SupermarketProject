@@ -30,12 +30,17 @@
       <!-- Basket controls -->
       <div class="basket-controls">
         <!-- Quantity input -->
-        <input 
-          type="number" 
-          value="1" 
-          min="1" 
-          class="quantity-input"
-        />
+        <div class="quantity-selector">
+          <button type="button" class="quantity-minus" onclick="this.parentNode.querySelector('.quantity-input').stepDown()">-</button>
+          <input 
+            type="number" 
+            value="1" 
+            min="1" 
+            class="quantity-input"
+            readonly
+          />
+          <button type="button" class="quantity-plus" onclick="this.parentNode.querySelector('.quantity-input').stepUp()">+</button>
+        </div>
 
         <!-- Add to basket button with product data stored in data-* attributes -->
         <button 
