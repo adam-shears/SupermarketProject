@@ -59,14 +59,29 @@ router.get("/products/:id", async (req, res) => {
 });
 
 // ** Product List Page**
-router.get("/product-list", async (req, res) => {
+router.get("/products", async (req, res) => {
   try {
-    const category = req.query.category;
-    const products = await api.listProducts(); // fetch all products
+    const category = req.query.category || "";
+    const searchTerm = req.query.q ? req.query.q.trim() : "";
+    let products, title;
+
+    if(searchTerm) {
+      products = await api.searchProducts(searchTerm);
+      title = `Results for "${searchTerm}"`;
+    } else {
+      products = await api.listProducts(); // fetch all products if no search term provided
+      title = "All Products";
+    }
+
+    if(category) { // filter products by category if it was provided
+      products = products.filter((product) => product.category_name.toLowerCase() === category.toLowerCase());
+      title += ` in "${category}"`;
+    }
     res.render("product-list.njk", {
-      title: "All Products",
+      title: title,
       category,
       products,
+      searchTerm,
     });
   } catch (error) {
     console.error(error);
