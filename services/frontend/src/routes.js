@@ -167,17 +167,26 @@ router.get("/management", async (req, res) => {
   try {
     const allowedScales = ["day", "week", "month"];
     const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
+    const search = req.query.search || "";
 
-    const management = await api.getManagementView(scale);
+    const management = await api.getManagementView(scale, search);
 
     res.render("management.njk", {
       title: "Management View",
       management,
       scale,
+      search,
     });
   } catch (error) {
     console.error("Management view error:", error);
-    res.status(500).send(`Failed to load management view: ${error.message}`);
+    // Show a friendly error message instead of technical details
+    res.render("management.njk", {
+      title: "Management View",
+      management: { bestSellers: [], salesPerCategory: [], trendingItems: [], totalSalesPence: 0 },
+      scale: "week",
+      search: "",
+      error: "Management data is temporarily unavailable. Please try again later."
+    });
   }
 });
 
@@ -185,12 +194,14 @@ router.get("/management/export.csv", async (req, res) => {
   try {
     const allowedScales = ["day", "week", "month"];
     const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
+    const search = req.query.search || "";
 
-    const management = await api.getManagementView(scale);
+    const management = await api.getManagementView(scale, search);
 
     const lines = [
       "Metric,Value",
       `Time Scale,${scale}`,
+      `Search Filter,${search || "none"}`,
       `Total Sales,${(management.totalSalesPence / 100).toFixed(2)}`,
       "",
       "Trending Item,Units Sold",
@@ -216,7 +227,7 @@ router.get("/management/export.csv", async (req, res) => {
     res.send(csv);
   } catch (error) {
     console.error("CSV export error:", error);
-    res.status(500).send(`Failed to export CSV: ${error.message}`);
+    res.status(500).json({ message: "Failed to export CSV. Please try again later." });
   }
 });
 
