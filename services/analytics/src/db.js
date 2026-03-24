@@ -86,8 +86,13 @@ export async function getTrendingItems(scale) {
       cp.id, 
       cp.name, 
       cp.current_units as units_sold,
-      COALESCE(ROUND(((cp.current_units - COALESCE(pp.previous_units, 0))::float / NULLIF(pp.previous_units, 0)) * 100, 2), 
-        CASE WHEN pp.previous_units IS NULL AND cp.current_units > 0 THEN 999999 ELSE 0 END) as growth_rate
+      COALESCE(
+        ROUND(
+          ((cp.current_units - COALESCE(pp.previous_units, 0))::numeric / NULLIF(pp.previous_units, 0)::numeric) * 100,
+          2
+        ),
+        CASE WHEN pp.previous_units IS NULL AND cp.current_units > 0 THEN 999999 ELSE 0 END
+      ) as growth_rate
     FROM current_period cp
     LEFT JOIN previous_period pp ON cp.id = pp.id
     WHERE cp.current_units > 0
