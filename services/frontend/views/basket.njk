@@ -67,7 +67,7 @@
     items.forEach(item => {
       itemsColumn.innerHTML += `
         <div class="item-card">
-          <a href="/products/${item.productId}">
+          <a href="/products/${item.productId}?from=basket">
             <img src="${item.image_url}" alt="${item.name}" class="product-thumbnail">
             <div class="item-details">
               <h3>${item.name}</h3>

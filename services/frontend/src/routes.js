@@ -33,6 +33,19 @@ router.get("/", async (req, res) => {
 // Product details page
 router.get("/products/:id", async (req, res) => {
   try {
+    const from = req.query.from;
+
+    let backlink = "/product-list";
+    let backtext = "Back to all products";
+    
+    if (from === "basket") {
+      backlink = "/basket";
+      backtext = "Back to Basket";
+    } else {
+      backlink = `/product-list?category=${encodeURIComponent(from)}`;
+      backtext = `Back to ${from}`;
+    }
+
     const [product, products] = await Promise.all([
       api.getProduct(req.params.id),
       api.listProducts(),
@@ -43,6 +56,8 @@ router.get("/products/:id", async (req, res) => {
       title: product.name,
       product,
       recommendations,
+      backlink,
+      backtext,
     });
   } catch (error) {
     console.error(error);
@@ -54,10 +69,13 @@ router.get("/products/:id", async (req, res) => {
 router.get("/product-list", async (req, res) => {
   try {
     const category = req.query.category;
+    const encodedCategory = encodeURIComponent(category);
+    console.log(`Category query parameter: ${category}`);
+    console.log(`Encoded category: ${encodedCategory}`);
     const products = await api.listProducts(); // fetch all products
     res.render("product-list.njk", {
-      title: "All Products",
-      category,
+      title: category,
+      encodedCategory,
       products,
     });
   } catch (error) {

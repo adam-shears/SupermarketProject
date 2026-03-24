@@ -7,14 +7,14 @@
 {% block content %}
 
 <div class="product-list-page">
-  <h1>{{ category | default('All Products') }}</h1>
+  <h1>{{ title }}</h1>
 
   <div class="products-grid">
     {% for product in products %}
     <div class="product-card">
 
       <!-- Clickable product (navigates to product details page) -->
-      <a href="/products/{{ product.id }}">
+      <a href="/products/{{ product.id }}?from={{ encodedCategory }}">
         <img src="{{ product.image_url | default('https://via.placeholder.com/200') }}" alt="{{ product.name }}">
         <h3>{{ product.name }}</h3>
         <p>&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
