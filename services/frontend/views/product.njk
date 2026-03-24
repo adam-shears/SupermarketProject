@@ -5,7 +5,6 @@
 {% endblock %}
 
 {% block content %}
-
 <div class="back">
   <a href="/">&larr; Back</a>
 </div>
@@ -19,10 +18,8 @@
     <div class="product-info">
       <h1>{{ product.name }}</h1>
       <p>{{ product.description }}</p>
-
       <p class="price">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
 
-      <!-- Updated form to use JS service -->
       <form id="add-to-basket-form">
         <input type="hidden" id="product-id" value="{{ product.id }}">
         <input type="hidden" id="product-name" value="{{ product.name }}">
@@ -36,7 +33,8 @@
 
         <button type="submit">Add to Basket</button>
       </form>
-      <p id="add-success" style="display:none;color:green;">Added to basket!</p>
+      
+      <p id="add-feedback" style="display:none; font-weight: bold; margin-top: 10px;"></p>
 
       {% if product.discounts and product.discounts.length > 0 %}
       <div class="offer">Offer Available</div>
@@ -45,44 +43,36 @@
   </div>
 </div>
 
-<div class="recommend-section">
-  <h2>You might also like</h2>
-
-  <div class="recommend-list">
-    {% for item in recommendations %}
-    <div class="recommend-item">
-      <a href="/products/{{ item.id }}">
-        <h3>{{ item.name }}</h3>
-      </a>
-      <p>&pound;{{ (item.price_pence / 100) | toFixed(2) }}</p>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-
-<!-- Frontend JS to handle basket -->
 <script type="module">
   import * as service from '/service.js'; 
 
   const form = document.getElementById("add-to-basket-form");
-  const successMsg = document.getElementById("add-success");
+  const feedbackMsg = document.getElementById("add-feedback");
 
   form.addEventListener("submit", (e) => {
-    e.preventDefault(); // prevent normal form submit
+    e.preventDefault(); 
 
+    // Extract data
     const productId = Number(document.getElementById("product-id").value);
     const name = document.getElementById("product-name").value;
     const price_pence = Number(document.getElementById("product-price").value);
     const image_url = document.getElementById("product-image").value;
     const quantity = Number(document.getElementById("quantity").value);
 
-    // Used service.js to add to basket
-    service.addToBasket(productId, quantity, name, price_pence, image_url);
+    // Call the validated service function
+    const result = service.addToBasket(productId, quantity, name, price_pence, image_url);
 
-    // Show confirmation
-    successMsg.style.display = "block";
-    setTimeout(() => successMsg.style.display = "none", 2000);
+    // Update UI based on validation success or failure
+    if (result.success) {
+      feedbackMsg.textContent = `Added ${quantity} x ${name} to basket!`;
+      feedbackMsg.style.color = "green";
+    } else {
+      feedbackMsg.textContent = result.message; // e.g., "Maximum 50 units..."
+      feedbackMsg.style.color = "red";
+    }
+
+    feedbackMsg.style.display = "block";
+    setTimeout(() => feedbackMsg.style.display = "none", 4000);
   });
 </script>
-
 {% endblock %}

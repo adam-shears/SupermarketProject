@@ -1,0 +1,51 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ddd;">
+    <h1>Final Review</h1>
+    
+    {% if not user %}
+    <div style="background: #fff3cd; padding: 15px; margin-bottom: 20px;">
+        <strong>Guest Checkout:</strong> Please enter your email for the receipt.
+        <input type="email" id="email" required placeholder="email@example.com" style="width:100%; padding:10px; margin-top:10px;">
+    </div>
+    {% else %}
+    <p>Logged in as: <strong>{{ user.first_name }}</strong></p>
+    {% endif %}
+
+    <div id="items-summary"></div>
+    <hr>
+    <h2 id="final-total">Total: £0.00</h2>
+
+    <form action="/checkout/confirm" method="POST" id="checkout-form">
+        <button type="submit" style="width:100%; background:green; color:white; padding:15px; border:none; cursor:pointer;">
+            Place Order
+        </button>
+    </form>
+</div>
+
+<script type="module">
+    import * as service from '/service.js';
+
+    const basket = service.getBasket();
+    const totals = service.calculateTotals();
+
+    document.getElementById('items-summary').innerHTML = basket.map(i => `
+        <div style="display:flex; justify-content:space-between;">
+            <span>${i.quantity} x ${i.name}</span>
+            <span>£${((i.price_pence * i.quantity)/100).toFixed(2)}</span>
+        </div>
+    `).join('');
+
+    document.getElementById('final-total').textContent = `Total: £${(totals.total/100).toFixed(2)}`;
+
+    document.getElementById('checkout-form').onsubmit = (e) => {
+        const email = document.getElementById('email');
+        if (email && !email.value) {
+            e.preventDefault();
+            return alert("Email required for guest checkout.");
+        }
+        service.clearBasket(); // Requirement: Clean up after order
+    };
+</script>
+{% endblock %}

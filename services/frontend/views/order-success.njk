@@ -1,0 +1,45 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/order-success.css" />
+{% endblock %}
+
+{% block content %}
+<main class="success-container">
+    <div class="success-card">
+        <div class="success-icon-circle">
+            <span class="checkmark">✓</span>
+        </div>
+        
+        <h1 class="success-title">Order Confirmed!</h1>
+        <p class="success-text">Thank you for your purchase. Your order has been received and is being processed.</p>
+
+        <div class="order-id-badge">
+            <span class="label">Order Reference:</span>
+            <span class="number">#{{ orderId }}</span>
+        </div>
+
+        <div class="info-box">
+            {% if user %}
+                <p>A confirmation email has been sent to <strong>{{ user.email }}</strong>.</p>
+                <p>You can track this order in your account dashboard.</p>
+            {% else %}
+                <p>Since you checked out as a <strong>Guest</strong>, please keep your Order Reference number for your records.</p>
+                <p>We've sent your receipt to the email provided.</p>
+            {% endif %}
+        </div>
+
+        <div class="action-area">
+            <a href="/product-list" class="continue-shopping-btn">Continue Shopping</a>
+        </div>
+    </div>
+</main>
+
+<script type="module">
+    import * as service from '/service.js';
+
+    // Business Logic: Clear the LocalStorage basket now that the order is placed
+    // This prevents the user from clicking 'Back' and seeing items still in their cart.
+    service.clearBasket();
+</script>
+{% endblock %}

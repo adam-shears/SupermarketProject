@@ -2,131 +2,96 @@
 
 {% block styles %}
   <link rel="stylesheet" href="/basket.css" />
+  <style>
+    .proceed:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.6; }
+    .cost-row { display: flex; justify-content: space-between; margin: 10px 0; }
+    .total-row { font-weight: bold; font-size: 1.2rem; border-top: 2px solid #333; padding-top: 10px; }
+  </style>
 {% endblock %}
 
 {% block content %}
-
 <div class="basket-page">
     <div class="items-column">
         <h2>Your Items</h2>
-        <div id="basket-items">
-            <!-- Items will be rendered by JavaScript from LocalStorage -->
-        </div>
+        <div id="basket-items"></div>
     </div>
 
     <div class="summary-column">
-        <h2>Summary</h2>
-        <div class="subtotal" id="subtotal-div">
-            <h3>Subtotal &pound;0.00</h3>
+        <h2>Order Summary</h2>
+        <div class="cost-row">
+            <span>Subtotal</span>
+            <span id="subtotal-value">£0.00</span>
         </div>
-        <div class="discount" id="discount-div" style="display: none;">
-            <h3 id="discount-text">Discount -&pound;0.00</h3>
-        </div>
-        <div class="promo">
-            <input type="text" placeholder="Promo">
-            <button>Add</button>
-        </div>
-        <div class="total">
-            <h3 id="total-text">Total &pound;0.00</h3>
+        <div class="cost-row total-row">
+            <span>Total</span>
+            <span id="total-value">£0.00</span>
         </div>
 
-        <button class="proceed">Proceed &rarr;</button>
+        <button id="proceed-button" class="proceed" style="width: 100%; padding: 15px; margin-top: 20px; cursor: pointer;">
+            Proceed to Checkout &rarr;
+        </button>
     </div>
 </div>
 
 <script type="module">
   import * as service from '/service.js';
 
-  // Update subtotal, discount, and total in the summary
+  const proceedBtn = document.getElementById('proceed-button');
+
   function updateTotals() {
     const totals = service.calculateTotals();
+    const isEmpty = service.isBasketEmpty();
 
-    document.getElementById('subtotal-div').innerHTML = `<h3>Subtotal &pound;${(totals.subtotal / 100).toFixed(2)}</h3>`;
-    document.getElementById('total-text').textContent = `Total £${(totals.total / 100).toFixed(2)}`;
+    document.getElementById('subtotal-value').textContent = `£${(totals.subtotal / 100).toFixed(2)}`;
+    document.getElementById('total-value').textContent = `£${(totals.total / 100).toFixed(2)}`;
 
-    if (totals.discounts > 0) {
-      document.getElementById('discount-div').style.display = 'block';
-      document.getElementById('discount-text').textContent = `Discount -£${(totals.discounts / 100).toFixed(2)}`;
-    } else {
-      document.getElementById('discount-div').style.display = 'none';
-    }
+    // Disable button if basket is empty
+    proceedBtn.disabled = isEmpty;
   }
 
-  // Render all basket items
   function renderBasket() {
     const items = service.getBasket();
     const itemsColumn = document.getElementById('basket-items');
     itemsColumn.innerHTML = '';
 
     if (items.length === 0) {
-      itemsColumn.innerHTML = '<p>Your basket is empty</p>';
+      itemsColumn.innerHTML = '<p>Your basket is empty.</p>';
       updateTotals();
       return;
     }
 
     items.forEach(item => {
       itemsColumn.innerHTML += `
-        <div class="item-card">
-          <img src="${item.image_url}" alt="${item.name}" class="product-thumbnail">
-          <div class="item-details">
+        <div class="item-card" style="display:flex; gap:20px; border-bottom:1px solid #eee; padding:15px 0;">
+          <img src="${item.image_url}" width="80">
+          <div>
             <h3>${item.name}</h3>
-            <p>&pound;${(item.price_pence / 100).toFixed(2)}</p>
-          </div>
-          <div class="item-actions">
-            <input type="number" value="${item.quantity}" class="quantity-input" data-id="${item.productId}" min="1">
-            <button class="delete-button" data-id="${item.productId}">X</button>
+            <p>£${(item.price_pence / 100).toFixed(2)}</p>
+            <input type="number" value="${item.quantity}" class="qty-input" data-id="${item.productId}" style="width:50px;">
+            <button class="remove-btn" data-id="${item.productId}">Remove</button>
           </div>
         </div>
       `;
     });
 
-    attachEventListeners();
+    // Handle updates
+    document.querySelectorAll('.qty-input').forEach(i => i.onchange = (e) => {
+        const res = service.updateQuantity(Number(e.target.dataset.id), e.target.value);
+        if(!res.success) alert(res.message);
+        renderBasket();
+    });
+
+    document.querySelectorAll('.remove-btn').forEach(b => b.onclick = (e) => {
+        service.removeFromBasket(Number(e.target.dataset.id));
+        renderBasket();
+    });
+
     updateTotals();
   }
 
-  // Attach event listeners to delete buttons and quantity inputs
-  function attachEventListeners() {
-    // Delete item
-    document.querySelectorAll('.delete-button').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const productId = Number(e.target.dataset.id);
-        service.removeFromBasket(productId);
-        renderBasket();
-      });
-    });
+  // User Story: "Taken to the next step at once"
+  proceedBtn.onclick = () => window.location.href = '/checkout';
 
-    // Quantity change
-    document.querySelectorAll('.quantity-input').forEach(input => {
-      input.addEventListener('input', (e) => {
-        const productId = Number(e.target.dataset.id);
-        let quantity = parseInt(e.target.value) || 1;
-
-        if (quantity < 1) {
-          quantity = 1;
-          e.target.value = 1;
-        }
-
-        service.updateQuantity(productId, quantity);
-        updateTotals();
-      });
-
-      input.addEventListener('change', (e) => {
-        const productId = Number(e.target.dataset.id);
-        let quantity = parseInt(e.target.value) || 1;
-
-        if (quantity < 1) {
-          quantity = 1;
-          e.target.value = 1;
-        }
-
-        service.updateQuantity(productId, quantity);
-        updateTotals();
-      });
-    });
-  }
-
-  // Initial render on page load
   renderBasket();
 </script>
-
 {% endblock %}

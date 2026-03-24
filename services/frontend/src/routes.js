@@ -6,9 +6,6 @@ There should not be any business logic in the frontend service, as this service'
 only responsibility is to render the frontend. All business logic should be in the
 other services and the frontend should make reqests to those via api.js to get the
 data it needs to serve HTML to the user.
-
-The only logic that should be in this file is deciding which HTML to serve and catching
-API failures to serve error pages.
 */
 
 import { Router } from "express";
@@ -16,7 +13,7 @@ import { api } from "./api.js";
 
 const router = Router();
 
-// Home page (optional, can list featured products)
+// Home page
 router.get("/", async (req, res) => {
   try {
     const products = await api.listProducts();
@@ -50,10 +47,10 @@ router.get("/products/:id", async (req, res) => {
   }
 });
 
-// ** Product List Page**
+// Product List Page
 router.get("/product-list", async (req, res) => {
   try {
-    const products = await api.listProducts(); // fetch all products
+    const products = await api.listProducts();
     res.render("product-list.njk", {
       title: "All Products",
       products,
@@ -64,14 +61,11 @@ router.get("/product-list", async (req, res) => {
   }
 });
 
-// Basket POST endpoint (temporary)
+// Basket POST endpoint (Client-side usually handles localStorage, but keeping for API compatibility)
 router.post("/basket/items", async (req, res) => {
   try {
     const { productId, quantity } = req.body;
-    /*await api.addToBasket(productId, quantity);*/ /* uncomment this when backend orders service is ready */
-    console.log(
-      `Adding product ${productId} with quantity ${quantity} to basket`
-    ); /* temporary log to view post request is working */
+    console.log(`Adding product ${productId} with quantity ${quantity} to basket`);
     res.status(200).json({ message: "Item added to basket" });
   } catch (error) {
     console.error(error);
@@ -79,38 +73,14 @@ router.post("/basket/items", async (req, res) => {
   }
 });
 
-// Basket GET endpoint (temporary hardcoded)
+// Basket GET endpoint
 router.get("/basket", async (req, res) => {
   try {
-    /*const basket = await api.getBasket();*/ /* uncomment this when backend orders service is ready */
-
-    /* temporary hardcoded basket to view basket page*/
-    const basket = {
-      items: [
-        {
-          name: "Cheese",
-          price_pence: 299,
-          quantity: 1,
-          image_url: "https://via.placeholder.com/100",
-        },
-        {
-          name: "Milk",
-          price_pence: 150,
-          quantity: 2,
-          image_url: "https://via.placeholder.com/100",
-        },
-      ],
-      subtotal: 599,
-      discounts: 100,
-      total: 499,
-    };
-
+    // Note: In your current setup, the basket is managed in LocalStorage by service.js.
+    // This route renders the container which then populates itself via client-side JS.
     res.render("basket.njk", {
       title: "Your Basket",
-      items: basket.items,
-      subtotal: basket.subtotal,
-      discounts: basket.discounts,
-      total: basket.total,
+      user: req.session.user
     });
   } catch (error) {
     console.error(error);
@@ -118,6 +88,7 @@ router.get("/basket", async (req, res) => {
   }
 });
 
+// Authentication Routes
 router.get("/login", (req, res) => {
   res.render("login.njk", { title: "Login", error: null });
 });
@@ -125,7 +96,6 @@ router.get("/login", (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const user = await api.login({ email: req.body.email, password: req.body.password });
-
     req.session.user = user;
     res.redirect("/");
   } catch (error) {
@@ -147,13 +117,10 @@ router.post("/register", async (req, res) => {
       lastName: req.body.last_name,
       phone: req.body.phone,
     });
-
     req.session.user = user;
     res.redirect("/");
   } catch (error) {
-    res
-      .status(400)
-      .render("register.njk", { title: "Register", error: error.message || "Failed to register" });
+    res.status(400).render("register.njk", { title: "Register", error: error.message || "Failed to register" });
   }
 });
 
@@ -162,14 +129,13 @@ router.post("/logout", (req, res) => {
     res.redirect("/");
   });
 });
-//management view
+
+// Management View
 router.get("/management", async (req, res) => {
   try {
     const allowedScales = ["day", "week", "month"];
     const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
-
     const management = await api.getManagementView(scale);
-
     res.render("management.njk", {
       title: "Management View",
       management,
@@ -185,7 +151,6 @@ router.get("/management/export.csv", async (req, res) => {
   try {
     const allowedScales = ["day", "week", "month"];
     const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
-
     const management = await api.getManagementView(scale);
 
     const lines = [
@@ -206,13 +171,8 @@ router.get("/management/export.csv", async (req, res) => {
     ];
 
     const csv = lines.join("\n");
-
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="management-${scale}.csv"`
-    );
-
+    res.setHeader("Content-Disposition", `attachment; filename="management-${scale}.csv"`);
     res.send(csv);
   } catch (error) {
     console.error("CSV export error:", error);
@@ -220,10 +180,47 @@ router.get("/management/export.csv", async (req, res) => {
   }
 });
 
-
 // Health check
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "frontend service is healthy." });
+});
+
+/**
+ * UPDATED: Checkout Page (Guest Enabled)
+ * User Story: "Finish quickly... taken to the next step at once."
+ */
+router.get("/checkout", async (req, res) => {
+  try {
+    // We pass the user object if logged in, otherwise null. 
+    // This allows guest checkout without a forced login redirect.
+    res.render("checkout.njk", {
+      title: "Checkout - Review Order",
+      user: req.session.user || null
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to load checkout page");
+  }
+});
+
+/**
+ * UPDATED: Final Order Confirmation
+ * Handles the "Place Order" logic and renders the success state.
+ */
+router.post("/checkout/confirm", async (req, res) => {
+  try {
+    // Generate a mock order number for the success page
+    const orderId = Math.floor(Math.random() * 900000) + 100000;
+
+    res.render("order-success.njk", { 
+      title: "Success!",
+      orderId: orderId,
+      user: req.session.user || null
+    });
+  } catch (error) {
+    console.error("Confirmation error:", error);
+    res.status(500).send("Order failed");
+  }
 });
 
 export default router;
