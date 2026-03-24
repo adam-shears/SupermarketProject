@@ -51,7 +51,7 @@
   <div class="recommend-list">
     {% for item in recommendations %}
     <div class="recommend-item">
-      <a href="/products/{{ item.id }}">
+      <a href="/products/{{ item.id }}?from={{ product.id }}">
         <h3>{{ item.name }}</h3>
       </a>
       <p>&pound;{{ (item.price_pence / 100) | toFixed(2) }}</p>
