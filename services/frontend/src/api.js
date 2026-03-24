@@ -35,9 +35,35 @@ async function postJson(url, body) {
   return data;
 }
 
+async function patchJson(url, body) {
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (res.status === 204) {
+    return null;
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  return data;
+}
+
+async function deleteRequest(url) {
+  const res = await fetch(url, {
+    method: "DELETE"
+  });
+  if (res.status !== 204 && !res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  }
+}
+
 export const api = {
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
+  searchProducts: (term) => getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
 
   getBasket: () => getJson(`${ORDERS_URL}/basket`),
   addToBasket: (productId, quantity) =>
@@ -45,6 +71,11 @@ export const api = {
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
+
+  getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  addShoppingListItem: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
+  updateShoppingListItem: (customerId, productId, payload) => patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
+  deleteShoppingListItem: (customerId, productId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
   
   getManagementView: async (scale = "week", search = "") => {
     const mockData = {

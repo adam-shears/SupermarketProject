@@ -10,7 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { logCustomerIn, OrdersError, registerNewUser } from "./service.js";
+import { addShoppingListItem, getShoppingList, logCustomerIn, OrdersError, registerNewUser, removeShoppingListItem, updateShoppingListItem } from "./service.js";
 
 const router = Router();
 
@@ -22,6 +22,42 @@ function sendErrorResponse(res, error, fallbackMessage) {
   console.error(error);
   return res.status(500).json({ message: fallbackMessage });
 }
+
+router.get("/customers/:customerId/shopping-list", async (req, res) => {
+  try {
+    const items = await getShoppingList(req.params.customerId);
+    res.status(200).json(items);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get shopping list.");
+  }
+});
+
+router.post("/customers/:customerId/shopping-list/items", async (req, res) => {
+  try {
+    const item = await addShoppingListItem(req.params.customerId, req.body);
+    res.status(201).json(item);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to add item to shopping list.");
+  }
+});
+
+router.patch("/customers/:customerId/shopping-list/items/:productId", async (req, res) => {
+  try {
+    const item = await updateShoppingListItem(req.params.customerId, req.params.productId, req.body);
+    res.status(200).json(item);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to update item in shopping list.");
+  }
+});
+
+router.delete("/customers/:customerId/shopping-list/items/:productId", async (req, res) => {
+  try {
+    await removeShoppingListItem(req.params.customerId, req.params.productId);
+    res.status(204).send();
+  } catch (error) {
+    sendErrorResponse(res, error, "Faield to delete shopping list item.");
+  }
+});
 
 router.post("/auth/login", async (req, res) => {
   try {
