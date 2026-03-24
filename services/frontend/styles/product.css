@@ -8,6 +8,13 @@
   font-weight: bold;
 }
 
+.main-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 20px;
+}
+
 .product-section {
   display: flex;
   justify-content: center;
@@ -36,14 +43,14 @@
   padding-left: 40px;
 }
 
+.product-info form {
+  display: flex;
+}
+
 .price {
   font-size: 28px;
   font-weight: bold;
   margin: 20px 0;
-}
-
-.quantity {
-  margin-top: 20px;
 }
 
 button {
@@ -71,6 +78,7 @@ button {
 .recommend-list {
   display: flex;
   gap: 30px;
+  flex-direction: column;
 }
 
 .recommend-item {
@@ -79,4 +87,56 @@ button {
   width: 200px;
   text-align: center;
   background: #fafafa;
+}
+
+.recommend-item a {
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+}
+
+.recommend-item a:hover {
+  text-decoration: underline;
+  color: #007BFF;
+}
+
+.quantity-input {
+  width: 40px;
+  height: 30px;
+  font-size: 1rem;
+}
+
+.quantity-minus, .quantity-plus {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  width: 50px; 
+  height: 50px;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.quantity-minus:hover, .quantity-plus:hover {
+  background-color: #0056b3;
+}
+
+.add-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  margin-left: 30px;
+  cursor: pointer;
+  border-radius: 4px;
+  height: 50px;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.add-btn:hover {
+  background-color: #218838;
 }
