@@ -5,16 +5,19 @@
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 30px;
+  gap: 20px;
 }
 
 .product-card {
-  border: 1px solid #ccc;
+  border: none;
   padding: 15px;
   text-align: center;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .product-card:hover {
@@ -28,6 +31,7 @@
   margin-bottom: 10px;
   aspect-ratio: 1 / 1;
   object-fit: contain;
+  background-color: #f9f9f9;
 }
 
 
@@ -77,17 +81,25 @@
   padding: 5px;
   width: 45px;
   text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
 }
 
 .quantity-minus, .quantity-plus {
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 5px 8px;
   cursor: pointer;
   border-radius: 4px;
   width: 40px; 
   height: 100%;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.quantity-minus:hover, .quantity-plus:hover {
+  background-color: #0056b3;
 }
 
 .add-btn {
@@ -121,4 +133,5 @@
   margin-bottom: 0;
   padding: 10px 0;
   font-weight: bold;
+  font-size: 1.2rem;
 }
