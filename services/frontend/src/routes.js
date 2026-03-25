@@ -41,8 +41,28 @@ router.get("/", async (req, res) => {
 // Product details page
 router.get("/products/:id", async (req, res) => {
   try {
+    const from = req.query.from;
+    const productId = req.params.id;
+
+    let backlink = "/product-list";
+    let backtext = "Back to all products";
+    
+    if (from === undefined) {
+      backlink = "/product-list?category=All Products";
+      backtext = "Back to All Products";
+    } else if (from === "basket") {
+      backlink = "/basket";
+      backtext = "Back to Basket";
+    } else if (!isNaN(from)) {
+      backlink = `/products/${from}`;
+      backtext = "Back to previous product";
+    } else {
+      backlink = `/product-list?category=${encodeURIComponent(from)}`;
+      backtext = `Back to ${from}`;
+    }
+
     const [product, products] = await Promise.all([
-      api.getProduct(req.params.id),
+      api.getProduct(productId),
       api.listProducts(),
     ]);
     const recommendations = products.filter((item) => item.id !== product.id).slice(0, 4);
@@ -51,6 +71,8 @@ router.get("/products/:id", async (req, res) => {
       title: product.name,
       product,
       recommendations,
+      backlink,
+      backtext,
     });
   } catch (error) {
     console.error(error);
