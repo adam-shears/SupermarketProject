@@ -15,6 +15,7 @@ import {
   getActiveDeals,
   getProductById,
   getProductsWithDiscounts,
+  searchProducts,
 } from "./service.js";
 
 const router = Router();
@@ -42,6 +43,16 @@ router.get("/products", async (req, res) => {
     res.status(200).json(products);
   } catch (error) {
     sendErrorResponse(res, error, "failed to get products");
+  }
+});
+
+// keep the products/search route above products/:id otherwise reqs to /search go to /:id
+router.get("/products/search", async (req, res) => {
+  try {
+    const products = await searchProducts(req.query.q || "");
+    res.status(200).json(products);
+  } catch (error) {
+    sendErrorResponse(res, error, "couldn't search products");
   }
 });
 

@@ -16,6 +16,14 @@ import { api } from "./api.js";
 
 const router = Router();
 
+// function to check if user is logged in for accessing certain endpoints
+function requireAuth(req, res, next) {
+  if(!req.session.user) {
+    return res.status(401).json({ messgae: "You must be logged in"});
+  }
+  next();
+}
+
 // Home page (optional, can list featured products)
 router.get("/", async (req, res) => {
   try {
@@ -73,17 +81,29 @@ router.get("/products/:id", async (req, res) => {
 });
 
 // ** Product List Page**
-router.get("/product-list", async (req, res) => {
+router.get("/products", async (req, res) => {
   try {
-    const category = req.query.category;
-    const encodedCategory = encodeURIComponent(category);
-    console.log(`Category query parameter: ${category}`);
-    console.log(`Encoded category: ${encodedCategory}`);
-    const products = await api.listProducts(); // fetch all products
+    const category = req.query.category || "";
+    const searchTerm = req.query.q ? req.query.q.trim() : "";
+    let products, title;
+
+    if(searchTerm) {
+      products = await api.searchProducts(searchTerm);
+      title = `Results for "${searchTerm}"`;
+    } else {
+      products = await api.listProducts(); // fetch all products if no search term provided
+      title = "All Products";
+    }
+
+    if(category) { // filter products by category if it was provided
+      products = products.filter((product) => product.category_name.toLowerCase() === category.toLowerCase());
+      title += ` in "${category}"`;
+    }
     res.render("product-list.njk", {
-      title: category,
-      encodedCategory,
+      title: title,
+      category,
       products,
+      searchTerm,
     });
   } catch (error) {
     console.error(error);
@@ -258,6 +278,65 @@ router.get("/management/export.csv", async (req, res) => {
   }
 });
 
+
+router.get("/api/products/search", async (req, res) => {
+  try {
+    const products = await api.searchProducts(req.query.q || "");
+    res.json(products);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Couldn't search products" });
+  }
+});
+
+/*
+Shopping list endpoints
+All of these endpoints require user to be logged in to their account
+*/
+
+// GET shopping list items for a logged in user
+router.get("/api/shopping-list", requireAuth, async (req, res) => {
+  try {
+    const items = await api.getShoppingList(req.session.user.id);
+    res.json(items);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get shopping list" });
+  }
+});
+
+// Add an item to the shopping list
+router.post("/api/shopping-list/items", requireAuth, async (req, res) => {
+  try {
+    const item = await api.addShoppingListItem(req.session.user.id, req.body);
+    res.status(201).json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add item to shopping list" });
+  }
+});
+
+// Update an item in the shopping list
+router.patch("/api/shopping-list/items/:productId", requireAuth, async (req, res) => {
+  try {
+    const item = await api.updateShoppingListItem(req.session.user.id, req.params.productId, req.body);
+    res.json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update shopping list item" });
+  }
+});
+
+// Delete an item from the shopping list
+router.delete("/api/shopping-list/items/:productId", requireAuth, async (req, res) => {
+  try {
+    await api.deleteShoppingListItem(req.session.user.id, req.params.productId);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to remove item from shopping list"});
+  }
+});
 
 // Health check
 router.get("/health", async (req, res) => {

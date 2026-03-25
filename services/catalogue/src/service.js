@@ -18,6 +18,7 @@ import {
   selectActiveDealRows,
   selectListedProductByIdWithDiscountRows,
   selectListedProductsWithDiscountRows,
+  selectProductsBySearchTerm,
 } from "./db.js";
 
 export class CatalogueError extends Error {
@@ -49,6 +50,7 @@ function mergeProductRows(rows) {
         id: row.id,
         name: row.name,
         description: row.description,
+        category_name: row.category_name,
         price_pence: row.price_pence,
         discounts: [],
       });
@@ -117,4 +119,15 @@ export async function getActiveDeals() {
   }
 
   return Array.from(deals.values());
+}
+
+export async function searchProducts(searchTerm) {
+  const term = searchTerm.trim();
+
+  if (term.length < 2) {
+    return [];
+  }
+
+  const rows = await selectProductsBySearchTerm(term);
+  return mergeProductRows(rows);
 }
