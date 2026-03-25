@@ -7,48 +7,58 @@
 {% block content %}
 
 <div class="product-list-page">
-  <h1>{{ category | default('All Products') }}</h1>
+  {% if searchTerm %}
+    <h1>Search results for "{{ searchTerm }}"</h1>
+  {% else %}
+    <h1>{{ category | default('All Products') }}</h1>
+  {% endif %}
 
-  <div class="products-grid">
-    {% for product in products %}
-    <div class="product-card">
+  {% if products.length === 0 %}
+    <p>No matches</p>
+    <p>Check the spelling or try searching for something else</P>
+    <a href="/products">Browse full catalogue</a>
+  {% else %}
+    <div class="products-grid">
+      {% for product in products %}
+      <div class="product-card">
 
-      <!-- Clickable product (navigates to product details page) -->
-      <a href="/products/{{ product.id }}">
-        <img src="{{ product.image_url | default('https://via.placeholder.com/200') }}" alt="{{ product.name }}">
-        <h3>{{ product.name }}</h3>
-        <p>&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
-      </a>
+        <!-- Clickable product (navigates to product details page) -->
+        <a href="/products/{{ product.id }}">
+          <img src="{{ product.image_url | default('https://via.placeholder.com/200') }}" alt="{{ product.name }}">
+          <h3>{{ product.name }}</h3>
+          <p>&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
+        </a>
 
-      <!-- Display offer if product has discounts -->
-      {% if product.discounts and product.discounts.length > 0 %}
-        <div class="offer">Offer Available</div>
-      {% endif %}
+        <!-- Display offer if product has discounts -->
+        {% if product.discounts and product.discounts.length > 0 %}
+          <div class="offer">Offer Available</div>
+        {% endif %}
 
-      <!-- Basket controls -->
-      <div class="basket-controls">
-        <!-- Quantity input -->
-        <input 
-          type="number" 
-          value="1" 
-          min="1" 
-          class="quantity-input"
-        />
+        <!-- Basket controls -->
+        <div class="basket-controls">
+          <!-- Quantity input -->
+          <input
+            type="number"
+            value="1"
+            min="1"
+            class="quantity-input"
+          />
 
-        <!-- Add to basket button with product data stored in data-* attributes -->
-        <button 
-          class="add-btn"
-          data-id="{{ product.id }}"
-          data-name="{{ product.name }}"
-          data-price="{{ product.price_pence }}"
-          data-image="{{ product.image_url }}">
-          Add to Basket
-        </button>
+          <!-- Add to basket button with product data stored in data-* attributes -->
+          <button
+            class="add-btn"
+            data-id="{{ product.id }}"
+            data-name="{{ product.name }}"
+            data-price="{{ product.price_pence }}"
+            data-image="{{ product.image_url }}">
+            Add to Basket
+          </button>
+        </div>
+
       </div>
-
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
+  {% endif %}
 </div>
 
 <!-- JavaScript module -->

@@ -15,7 +15,12 @@
             <a href = "/">Supermarket</a>
         </div>
         <div>
-            <input class = "search" type = "text" placeholder = "Search" />
+          <div>
+            <form action="/products" method="GET">
+              <input class="search" type="text" name="q" placeholder="Search for products..." />
+              <button>Search</button>
+            </form>
+          </div>
         </div>
         <div class = "user-actions">
           {% if user %}
