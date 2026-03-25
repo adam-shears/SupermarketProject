@@ -12,7 +12,18 @@
     <p>Shop our latest arrivals and seasonal favorites.</p>
   </div>
   <h1>{{ title }}</h1>
+  
+  {% if searchTerm %}
+    <h1>Search results for "{{ searchTerm }}"</h1>
+  {% else %}
+    <h1>{{ category | default('All Products') }}</h1>
+  {% endif %}
 
+  {% if products.length === 0 %}
+    <p>No matches</p>
+    <p>Check the spelling or try searching for something else</P>
+    <a href="/products">Browse full catalogue</a>
+  {% else %}
   <div class="products-grid">
     {% for product in products %}
     <div class="product-card">
