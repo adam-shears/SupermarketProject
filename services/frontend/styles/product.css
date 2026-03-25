@@ -1,111 +1,129 @@
+.main-content {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 20px;
+  justify-content: center;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.left-column {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .back {
-  padding: 15px 40px;
+  position: sticky;
+  top: 80px;
+  z-index: 1000;
+  padding: 10px 24px;
+  width: fit-content;
+  border-radius: 50px;
+  margin-left: 30px;
+  
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid #eeeeee;
+  
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .back a {
   text-decoration: none;
-  color: #3498db;
-  font-weight: bold;
-}
-
-.main-content {
+  color: #333333;
+  font-weight: 600;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  padding: 20px;
+  gap: 8px;
+  font-size: 0.95rem;
 }
 
-.product-section {
-  display: flex;
-  justify-content: center;
-  padding: 40px;
-  background: white;
-  margin: 30px;
+.back:hover {
+  background: #ffffff;
+  transform: translateX(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-color: #dddddd;
 }
 
+
+/* Main Product Section */
 .product-container {
   display: flex;
-  width: 100%;
-  max-width: 1200px;
+  justify-content: center;
+  padding: 30px 40px 40px 40px;
+  background: white;
+  margin: 0 30px 30px 30px;
+  position: sticky;
+  top: 130px;
+  border-radius: 40px;
+  box-shadow: 
+    0 10px 10px rgba(0, 0, 0, 0.3),
+    0 30px 20px rgba(0, 0, 0, 0.25),
+    0 0 40px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-container:hover {
+  transform: translateY(-15px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.15), 
+    0 50px 100px rgba(0, 0, 0, 0.2);
 }
 
 .product-image {
   flex: 1;
-}
-
-.product-image img {
-  width: 100%;
   max-width: 400px;
+  max-height: 400px;
 }
 
 .product-info {
-  flex: 1;
   padding-left: 40px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 400px;
+  gap: 20px;
 }
 
-.product-info form {
-  display: flex;
+.product-name {
+  margin: 0;
+}
+
+.product-description {
+  margin: 0;
+  padding-top: 30px;
 }
 
 .price {
   font-size: 28px;
   font-weight: bold;
-  margin: 20px 0;
+  margin-top: auto;
+  margin-bottom: 20px;
 }
 
-button {
-  margin-top: 20px;
-  padding: 12px 25px;
-  background: #2ecc71;
-  color: white;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.offer {
-  margin-top: 20px;
-  color: red;
-  font-weight: bold;
-}
-
-.recommend-section {
-  margin: 30px;
-  padding: 30px;
-  background: white;
-}
-
-.recommend-list {
+#add-to-basket-form {
   display: flex;
-  gap: 30px;
-  flex-direction: column;
+  flex-wrap: wrap; 
+  align-items: center;
+  gap: 20px;
 }
 
-.recommend-item {
-  border: 1px solid #ddd;
-  padding: 20px;
-  width: 200px;
-  text-align: center;
-  background: #fafafa;
-}
+.quantity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 
-.recommend-item a {
-  text-decoration: none;
-  color: #333;
-  font-weight: bold;
-  display: block;
-  margin-top: 10px;
-}
-
-.recommend-item a:hover {
-  text-decoration: underline;
-  color: #007BFF;
 }
 
 .quantity-input {
-  width: 40px;
-  height: 30px;
-  font-size: 1rem;
+  width: 42px;
+  height: 52px;
+  font-size: 1.5rem;
 }
 
 .quantity-minus, .quantity-plus {
@@ -114,7 +132,7 @@ button {
   border: none;
   cursor: pointer;
   border-radius: 4px;
-  width: 50px; 
+  width: 50px;
   height: 50px;
   font-size: 1.5rem;
   line-height: 1;
@@ -139,4 +157,108 @@ button {
 
 .add-btn:hover {
   background-color: #218838;
+}
+
+.offer {
+  margin-top: 20px;
+  color: red;
+  font-weight: bold;
+}
+
+
+/* Recommendations Section */
+.recommend-section {
+  margin: 20px 30px 30px 30px;
+  padding: 30px;
+  border-radius: 20px;
+  background: #fcfcfc;
+  border: 1px solid #f0f0f0;
+}
+
+.recommend-list {
+  display: flex;
+  gap: 20px;
+  flex-direction: column;
+}
+
+.recommend-item {
+  background: white;
+  border: 1px solid #eef0f2;
+  border-radius: 12px;
+  padding: 24px;
+  width: 340px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+.recommend-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  background-color: #ffffff;
+  border-color: #007BFF;
+}
+
+.product-link {
+  text-decoration: none;
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.product-link::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.recommend-item .price {
+  font-size: 20px;
+  margin-top: 10px;
+  position: relative; 
+  z-index: 2;
+}
+
+.recommend-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  position: relative; 
+  z-index: 2;
+}
+
+/* Target buttons ONLY inside the recommendation section */
+.recommend-item button, 
+.recommend-item .add-btn {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  height: 32px;
+  margin-left: 10px;
+}
+
+/* Target the +/- quantity buttons in the recommendation items */
+.recommend-item .quantity-minus, 
+.recommend-item .quantity-plus {
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+}
+
+/* Target the number input in the sidebar */
+.recommend-item .quantity-input {
+  width: 30px;
+  height: 28px;
+  font-size: 0.8rem;
 }

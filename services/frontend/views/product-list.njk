@@ -20,9 +20,9 @@
       <!-- Clickable product (navigates to product details page) -->
       <a href="/products/{{ product.id }}?from={{ encodedCategory }}">
         <div class="product-details">
-          <img src="{{ product.image_url | default('https://via.placeholder.com/200') }}" alt="{{ product.name }}">
-          <h3>{{ product.name }}</h3>
-          <p>&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
+          <img class="product-image" src="{{ product.image_url | default('https://via.placeholder.com/200') }}" alt="{{ product.name }}">
+          <h3 class="product-name">{{ product.name }}</h3>
+          <p class="product-price">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
         </div>
       </a>
 

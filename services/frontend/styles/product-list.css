@@ -25,7 +25,7 @@
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
-  background-color: #fff;
+  background-color: #FFFFFF;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
@@ -55,7 +55,7 @@
 }
 
 .offer {
-  color: #d9534f;
+  color: #E74C3C;
   font-weight: bold;
   margin-bottom: 10px;
   min-height: 1.2em;
@@ -132,7 +132,7 @@
   margin-bottom: 15px;
 }
 
-.product-details p {
+.product-price {
   margin-top: auto;
   margin-bottom: 0;
   padding: 10px 0;
@@ -141,12 +141,12 @@
   color: #525252;
 }
 
-.product-details h3 {
+.product-name {
   font-size: 1rem;
-  color: #222;
+  color: #1A1F36;
 }
 
-.product-details img {
+.product-image {
   max-width: 100%;
   height: auto;
   margin-bottom: 10px;

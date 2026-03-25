@@ -6,20 +6,21 @@
 
 {% block content %}
 
-<div class="back">
-  <a href="{{ backlink }}">&larr; {{ backtext }}</a>
-</div>
-
 <div class = "main-content">
-  <div class="product-section">
+
+  <div class="left-column">
+    <div class="back">
+      <a href="{{ backlink }}">&larr; {{ backtext }}</a>
+    </div>
+
     <div class="product-container">
       <div class="product-image">
         <img src="https://via.placeholder.com/400" alt="{{ product.name }}" />
       </div>
 
       <div class="product-info">
-        <h1>{{ product.name }}</h1>
-        <p>{{ product.description }}</p>
+        <h1 class="product-name">{{ product.name }}</h1>
+        <p class="product-description">{{ product.description }}</p>
 
         <p class="price">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
 
@@ -53,10 +54,25 @@
     <div class="recommend-list">
       {% for item in recommendations %}
       <div class="recommend-item">
-        <a href="/products/{{ item.id }}?from={{ product.id }}">
-          <h3>{{ item.name }}</h3>
+        <a class="product-link" href="/products/{{ item.id }}?from={{ product.id }}">
+          <h3 class="product-name">{{ item.name }}</h3>
         </a>
-        <p>&pound;{{ (item.price_pence / 100) | toFixed(2) }}</p>
+        <p class="price">&pound;{{ (item.price_pence / 100) | toFixed(2) }}</p>
+        <form id="add-to-basket-form" class="recommend-buttons">
+          <input type="hidden" id="product-id" value="{{ product.id }}">
+          <input type="hidden" id="product-name" value="{{ product.name }}">
+          <input type="hidden" id="product-price" value="{{ product.price_pence }}">
+          <input type="hidden" id="product-image" value="https://via.placeholder.com/400">
+
+          <div class="quantity">
+            <button type="button" class="quantity-minus" onclick="this.parentNode.querySelector('.quantity-input').stepDown()">-</button>
+            <input type="number" id="quantity" value="1" min="1" class="quantity-input" readonly/>
+            <button type="button" class="quantity-plus" onclick="this.parentNode.querySelector('.quantity-input').stepUp()">+</button>
+          </div>
+
+          <button type="submit" class="add-btn">Add to Basket</button>
+        </form>
+        <p id="add-success" style="display:none;color:green;">Added to basket!</p>
       </div>
       {% endfor %}
     </div>
