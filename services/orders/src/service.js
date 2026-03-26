@@ -15,7 +15,7 @@ This file should not be responsible for:
 */
 
 import bcrypt from "bcrypt";
-import { deleteShoppingListItem, insertNewCustomer, insertShoppingListItem, selectCustomerByEmail, selectShoppingListByCustomerID, updateShoppingList } from "./db.js";
+import { deleteShoppingListItem, insertNewCustomer, insertShoppingListItem, selectCustomerByEmail, selectShoppingListByCustomerID, selectStaffByEmail, updateShoppingList } from "./db.js";
 
 export class OrdersError extends Error {
   constructor(message, statusCode) {
@@ -120,23 +120,32 @@ export async function logCustomerIn(input) {
     throw new OrdersError("Email and password are required", 400);
   }
 
-  const customer = await selectCustomerByEmail(email);
-  if (!customer) {
+  let user;
+  if (email.endsWith("@supermarket.com")) {
+    // then user is a staff member and in a different table
+    user = await selectStaffByEmail(email);
+  }
+  else {
+    user = await selectCustomerByEmail(email);
+  }
+
+  if (!user) {
     throw new OrdersError("Invalid email or password", 401);
   }
 
-  const passwordMatch = await bcrypt.compare(password, customer.password_hash);
+  const passwordMatch = await bcrypt.compare(password, user.password_hash);
   if (!passwordMatch) {
     throw new OrdersError("Invalid email or password", 401);
   }
 
   // then user is authenticated, return details without the password hash
   return {
-    id: customer.id,
-    email: customer.email,
-    first_name: customer.first_name,
-    last_name: customer.last_name,
-    phone: customer.phone,
-    createdAt: customer.created_at,
+    id: user.id,
+    admin_level: user.admin_level || 0, // default to 0 if not a staff member
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    phone: user.phone,
+    createdAt: user.created_at,
   };
 }

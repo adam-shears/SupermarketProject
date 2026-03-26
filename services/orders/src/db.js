@@ -20,6 +20,15 @@ export async function selectCustomerByEmail(email) {
   return result.rows[0] || null;
 }
 
+export async function selectStaffByEmail(email) {
+  const result = await pool.query(
+    `SELECT id, admin_level, email, password_hash, first_name, last_name, phone, created_at FROM staff WHERE email = $1`,
+    [email]
+  );
+  return result.rows[0] || null;
+}
+
+
 export async function insertNewCustomer(email, passwordHash, firstName, lastName, phone) {
   const result = await pool.query(
     `
