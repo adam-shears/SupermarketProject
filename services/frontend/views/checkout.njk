@@ -1,24 +1,27 @@
 {% extends "layout.njk" %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ddd;">
+<div style="max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ddd; background: #fff; border-radius: 8px;">
     <h1>Final Review</h1>
     
     {% if not user %}
-    <div style="background: #fff3cd; padding: 15px; margin-bottom: 20px;">
+    <div style="background: #fff3cd; padding: 15px; margin-bottom: 20px; border: 1px solid #ffeeba; border-radius: 4px;">
         <strong>Guest Checkout:</strong> Please enter your email for the receipt.
-        <input type="email" id="email" required placeholder="email@example.com" style="width:100%; padding:10px; margin-top:10px;">
+        <input type="email" id="email-field" required placeholder="email@example.com" style="width:100%; padding:10px; margin-top:10px; border: 1px solid #ccc; border-radius: 4px;">
     </div>
     {% else %}
-    <p>Logged in as: <strong>{{ user.first_name }}</strong></p>
+    <p style="background: #e7f3ff; padding: 10px; border-radius: 4px;">Logged in as: <strong>{{ user.first_name }}</strong></p>
     {% endif %}
 
-    <div id="items-summary"></div>
-    <hr>
-    <h2 id="final-total">Total: £0.00</h2>
+    <div id="items-summary" style="margin-bottom: 20px;"></div>
+    <hr style="border: 0; border-top: 1px solid #eee;">
+    <h2 id="final-total" style="text-align: right; color: #333;">Total: £0.00</h2>
 
     <form action="/checkout/confirm" method="POST" id="checkout-form">
-        <button type="submit" style="width:100%; background:green; color:white; padding:15px; border:none; cursor:pointer;">
+        <input type="hidden" name="basket_data" id="basket-data-input">
+        <input type="hidden" name="guest_email" id="guest-email-input">
+        
+        <button type="submit" id="place-order-btn" style="width:100%; background:#28a745; color:white; padding:15px; border:none; cursor:pointer; font-size: 1.1rem; border-radius: 4px; font-weight: bold;">
             Place Order
         </button>
     </form>
@@ -30,22 +33,42 @@
     const basket = service.getBasket();
     const totals = service.calculateTotals();
 
-    document.getElementById('items-summary').innerHTML = basket.map(i => `
-        <div style="display:flex; justify-content:space-between;">
-            <span>${i.quantity} x ${i.name}</span>
-            <span>£${((i.price_pence * i.quantity)/100).toFixed(2)}</span>
-        </div>
-    `).join('');
+    // 1. Display items to the user
+    const summary = document.getElementById('items-summary');
+    if (basket.length === 0) {
+        summary.innerHTML = "<p>Your basket is empty.</p>";
+        document.getElementById('place-order-btn').disabled = true;
+        document.getElementById('place-order-btn').style.background = "#ccc";
+    } else {
+        summary.innerHTML = basket.map(i => `
+            <div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
+                <span>${i.quantity} x ${i.name}</span>
+                <span>£${((i.price_pence * i.quantity)/100).toFixed(2)}</span>
+            </div>
+        `).join('');
+    }
 
+    // 2. Display total
     document.getElementById('final-total').textContent = `Total: £${(totals.total/100).toFixed(2)}`;
 
+    // 3. Handle Order submission
     document.getElementById('checkout-form').onsubmit = (e) => {
-        const email = document.getElementById('email');
-        if (email && !email.value) {
+        const guestEmailField = document.getElementById('email-field');
+        
+        // Ensure guest email is present if not logged in
+        if (guestEmailField && !guestEmailField.value) {
             e.preventDefault();
-            return alert("Email required for guest checkout.");
+            return alert("Please enter your email address to continue.");
         }
-        service.clearBasket(); // Requirement: Clean up after order
+
+        // Move browser data into the form inputs
+        document.getElementById('basket-data-input').value = JSON.stringify(basket);
+        if (guestEmailField) {
+            document.getElementById('guest-email-input').value = guestEmailField.value;
+        }
+
+        // NOTE: We do NOT clear the basket here. 
+        // We clear it in the order-success page to ensure the order was saved first.
     };
 </script>
 {% endblock %}

@@ -43,6 +43,9 @@ export const api = {
   addToBasket: (productId, quantity) =>
     postJson(`${ORDERS_URL}/basket/items`, { productId, quantity }),
 
+  // NEW: Sends the basket data to the backend to be saved in the DB
+  createOrder: (payload) => postJson(`${ORDERS_URL}/orders`, payload),
+
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
   

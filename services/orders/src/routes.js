@@ -10,7 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { logCustomerIn, OrdersError, registerNewUser } from "./service.js";
+import { logCustomerIn, OrdersError, registerNewUser, createOrder } from "./service.js";
 
 const router = Router();
 
@@ -38,6 +38,28 @@ router.post("/auth/register", async (req, res) => {
     res.status(201).json(user);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to register new user.");
+  }
+});
+
+router.post("/orders", async (req, res) => {
+  try {
+    const order = await createOrder(req.body);
+    res.status(201).json(order);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to create order.");
+  }
+});
+
+router.post("/orders", async (req, res) => {
+  try {
+    const order = await createOrder(req.body);
+    res.status(201).json(order);
+  } catch (error) {
+    if (error instanceof OrdersError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error("Create order error:", error);
+    res.status(500).json({ message: "Failed to create order." });
   }
 });
 

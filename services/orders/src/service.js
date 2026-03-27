@@ -15,7 +15,7 @@ This file should not be responsible for:
 */
 
 import bcrypt from "bcrypt";
-import { insertNewCustomer, selectCustomerByEmail } from "./db.js";
+import { insertNewCustomer, selectCustomerByEmail, insertOrder, insertOrderItem } from "./db.js";
 
 export class OrdersError extends Error {
   constructor(message, statusCode) {
@@ -25,6 +25,10 @@ export class OrdersError extends Error {
   }
 }
 
+/**
+ * Handles the business logic for creating a new order.
+ * Validates basket contents and calculates totals on the server-side to prevent tampering.
+ */
 export async function registerNewUser(input) {
   const email = input.email.trim().toLowerCase();
   const password = input.password;
@@ -100,5 +104,104 @@ export async function logCustomerIn(input) {
     last_name: customer.last_name,
     phone: customer.phone,
     createdAt: customer.created_at,
+  };
+}
+
+export async function createOrder(input) {
+  const items = Array.isArray(input.items) ? input.items : [];
+  if (!items.length) {
+    throw new OrdersError("Basket cannot be empty", 400);
+  }
+
+  const customerId = input.customerId || null;
+  const guestEmail = input.guestEmail ? String(input.guestEmail).trim().toLowerCase() : null;
+  const guestName = input.guestName ? String(input.guestName).trim() : null;
+  const guestPhone = input.guestPhone ? String(input.guestPhone).trim() : null;
+
+  if (!customerId && !guestEmail) {
+    throw new OrdersError("Either customer session or guest email is required", 400);
+  }
+
+  let subtotalPence = 0;
+  let discountPence = 0;
+
+  const validatedItems = items.map((item) => {
+    if (!item.productId || isNaN(Number(item.productId))) {
+      throw new OrdersError("Invalid product id", 400);
+    }
+    const quantity = Number(item.quantity);
+    if (!quantity || quantity < 1 || quantity > 999) {
+      throw new OrdersError("Invalid item quantity", 400);
+    }
+    const price = Number(item.price_pence);
+    if (isNaN(price) || price < 0) {
+      throw new OrdersError("Invalid item price", 400);
+    }
+
+    const lineSubtotal = quantity * price;
+    const lineDiscount = item.line_discount_pence ? Number(item.line_discount_pence) : 0;
+    const lineTotal = lineSubtotal - lineDiscount;
+
+    if (lineTotal < 0) {
+      throw new OrdersError("Discounts cannot exceed line total", 400);
+    }
+
+    subtotalPence += lineSubtotal;
+    discountPence += lineDiscount;
+
+    return {
+      productId: Number(item.productId),
+      quantity,
+      pricePencePerUnit: price,
+      lineSubtotalPence: lineSubtotal,
+      lineDiscountPence: lineDiscount,
+      appliedDiscountId: item.applied_discount_id || null,
+      lineTotalPence: lineTotal,
+    };
+  });
+
+  const totalPence = subtotalPence - discountPence;
+  if (totalPence < 0) {
+    throw new OrdersError("Total cannot be negative", 400);
+  }
+
+  // create the order record
+  const orderRecord = await insertOrder(
+    customerId,
+    guestEmail,
+    guestName,
+    guestPhone,
+    "CREATED",
+    subtotalPence,
+    discountPence,
+    totalPence
+  );
+
+  // create each item in order_items
+  for (const item of validatedItems) {
+    await insertOrderItem(
+      orderRecord.id,
+      item.productId,
+      item.quantity,
+      item.pricePencePerUnit,
+      item.lineSubtotalPence,
+      item.lineDiscountPence,
+      item.appliedDiscountId,
+      item.lineTotalPence
+    );
+  }
+
+  return {
+    id: orderRecord.id,
+    customerId: orderRecord.customer_id,
+    guestEmail: orderRecord.guest_email,
+    guestName: orderRecord.guest_name,
+    guestPhone: orderRecord.guest_phone,
+    status: orderRecord.status,
+    subtotalPence: orderRecord.subtotal_pence,
+    discountPence: orderRecord.discount_pence,
+    totalPence: orderRecord.total_pence,
+    createdAt: orderRecord.created_at,
+    updatedAt: orderRecord.last_updated,
   };
 }

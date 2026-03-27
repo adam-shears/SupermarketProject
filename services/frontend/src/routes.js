@@ -61,7 +61,7 @@ router.get("/product-list", async (req, res) => {
   }
 });
 
-// Basket POST endpoint (Client-side usually handles localStorage, but keeping for API compatibility)
+// Basket POST endpoint
 router.post("/basket/items", async (req, res) => {
   try {
     const { productId, quantity } = req.body;
@@ -76,8 +76,6 @@ router.post("/basket/items", async (req, res) => {
 // Basket GET endpoint
 router.get("/basket", async (req, res) => {
   try {
-    // Note: In your current setup, the basket is managed in LocalStorage by service.js.
-    // This route renders the container which then populates itself via client-side JS.
     res.render("basket.njk", {
       title: "Your Basket",
       user: req.session.user
@@ -186,13 +184,10 @@ router.get("/health", async (req, res) => {
 });
 
 /**
- * UPDATED: Checkout Page (Guest Enabled)
- * User Story: "Finish quickly... taken to the next step at once."
+ * Checkout Page (Guest Enabled)
  */
 router.get("/checkout", async (req, res) => {
   try {
-    // We pass the user object if logged in, otherwise null. 
-    // This allows guest checkout without a forced login redirect.
     res.render("checkout.njk", {
       title: "Checkout - Review Order",
       user: req.session.user || null
@@ -205,21 +200,31 @@ router.get("/checkout", async (req, res) => {
 
 /**
  * UPDATED: Final Order Confirmation
- * Handles the "Place Order" logic and renders the success state.
+ * No longer uses a mock ID. Now sends real basket data from the browser to the database.
  */
 router.post("/checkout/confirm", async (req, res) => {
   try {
-    // Generate a mock order number for the success page
-    const orderId = Math.floor(Math.random() * 900000) + 100000;
+    // 1. Get the basket and email from the submitted form body
+    // basket_data is sent as a JSON string from the hidden input in checkout.njk
+    const items = JSON.parse(req.body.basket_data);
+    const guestEmail = req.body.guest_email || null;
 
+    // 2. Call the orders service to create the DB record
+    const orderResponse = await api.createOrder({
+      items: items,
+      customerId: req.session.user ? req.session.user.id : null,
+      guestEmail: guestEmail
+    });
+
+    // 3. Render success with the REAL ID returned from the database
     res.render("order-success.njk", { 
       title: "Success!",
-      orderId: orderId,
+      orderId: orderResponse.id, 
       user: req.session.user || null
     });
   } catch (error) {
     console.error("Confirmation error:", error);
-    res.status(500).send("Order failed");
+    res.status(500).send("Order failed to save to database. Please try again.");
   }
 });
 
