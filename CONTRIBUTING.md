@@ -231,9 +231,12 @@ In Codespaces, the Docker client is too new for the Docker daemon and `docker co
 ```bash
 Error response from daemon: client version X is too new. Maximum supported API version is Y: driver not connecting
 ```
-Please use the provided npm wrapper in place of `docker compose up --build`:
+Please use the provided npm wrappers
 ```
 npm run up:cs
+npm run down:cs
+npm run reset:cs
+npm run logs:cs
 ```
 
 ## Notes
