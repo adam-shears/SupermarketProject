@@ -9,7 +9,9 @@ and sending the response.
 Actual validation should be done in service.js.
 */
 
+
 import { Router } from "express";
+import * as service from "./service.js";
 
 const router = Router();
 
@@ -19,6 +21,47 @@ router.get("/", async (req, res) => {
 
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "warehouse service is healthy." });
+});
+
+
+router.get("/picker/orders", async (req, res) => {
+  try {
+    const orders = await service.getPickerOrders();
+    res.json(orders);
+  } catch (error) {
+    console.error("Failed to load picker orders:", error);
+    res.status(500).json({ message: "Failed to load picker orders" });
+  }
+});
+
+
+router.post("/picker/orders/:orderId/items/:itemId/complete", async (req, res) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const result = await service.completePickerItem(orderId, itemId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to complete picker item:", error);
+    res.status(500).json({ message: error.message || "Failed to complete picker item" });
+  }
+});
+
+
+router.post("/picker/orders/:orderId/items/:itemId/issue", async (req, res) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const { substituteProductId, reason } = req.body;
+
+    const result = await service.reportPickerIssue(orderId, itemId, {
+      substituteProductId,
+      reason,
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to report picker issue:", error);
+    res.status(500).json({ message: error.message || "Failed to report picker issue" });
+  }
 });
 
 export default router;
