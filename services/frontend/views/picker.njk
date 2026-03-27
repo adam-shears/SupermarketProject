@@ -8,19 +8,19 @@
   <div class="picker-page">
     <h1>Picker View</h1>
 
-    {% if orders.length === 0 %}
-      <p>No picker orders available.</p>
+    {% if completed %}
+      <p class="success-message">Item marked as completed.</p>
+    {% endif %}
+
+    {% if issueSubmitted %}
+      <p class="success-message">Issue submitted successfully.</p>
     {% endif %}
 
     {% for order in orders %}
       <section class="order-card">
         <div class="order-summary">
-          <div class="order-summary-left">
-            <strong>{{ order.customer_name }}</strong>
-          </div>
-          <div class="order-summary-right">
-            {{ order.order_info }}
-          </div>
+          <div><strong>{{ order.customer_name }}</strong></div>
+          <div>{{ order.order_info }}</div>
         </div>
 
         <div class="order-body">
@@ -29,24 +29,27 @@
 
           <div class="item-list">
             {% for item in order.items %}
-              <div class="picker-item">
+              <div class="picker-item {% if item.picked %}picked-item{% endif %}">
                 <div class="item-row">
                   <div class="item-name">
                     {{ item.product_name }}
+                    {% if item.quantity %}
+                      <span class="qty-badge">x{{ item.quantity }}</span>
+                    {% endif %}
+                    {% if item.picked %}
+                      <span class="picked-badge">Picked</span>
+                    {% endif %}
                   </div>
 
                   <div class="item-actions">
-                    <form method="POST" action="/picker/orders/{{ order.id }}/items/{{ item.id }}/complete">
-                      <button type="submit" class="complete-button" aria-label="Mark item as completed">
-                        ✓
-                      </button>
+                    <form method="POST" action="/picker/orders/{{ order.id }}/items/{{ item.product_id }}/complete">
+                      <button type="submit" class="complete-button" {% if item.picked %}disabled{% endif %}>✓</button>
                     </form>
 
                     <button
                       type="button"
                       class="warning-button"
-                      aria-label="Report issue"
-                      data-target="issue-form-{{ order.id }}-{{ item.id }}"
+                      data-target="issue-form-{{ order.id }}-{{ item.product_id }}"
                     >
                       ⚠
                     </button>
@@ -57,25 +60,18 @@
                   </div>
                 </div>
 
-                <div class="issue-popup hidden" id="issue-form-{{ order.id }}-{{ item.id }}">
-                  <form method="POST" action="/picker/orders/{{ order.id }}/items/{{ item.id }}/issue">
-                    <label for="substitute-{{ order.id }}-{{ item.id }}">Substituted with</label>
-                    <select
-                      id="substitute-{{ order.id }}-{{ item.id }}"
-                      name="substituteProductId"
-                    >
+                <div class="issue-popup hidden" id="issue-form-{{ order.id }}-{{ item.product_id }}">
+                  <form method="POST" action="/picker/orders/{{ order.id }}/items/{{ item.product_id }}/issue">
+                    <label for="substitute-{{ order.id }}-{{ item.product_id }}">Substituted with</label>
+                    <select id="substitute-{{ order.id }}-{{ item.product_id }}" name="substituteProductId">
                       <option value="">Select substitute</option>
                       {% for substitute in item.substitutes %}
                         <option value="{{ substitute.id }}">{{ substitute.name }}</option>
                       {% endfor %}
                     </select>
 
-                    <label for="reason-{{ order.id }}-{{ item.id }}">Reason</label>
-                    <select
-                      id="reason-{{ order.id }}-{{ item.id }}"
-                      name="reason"
-                      required
-                    >
+                    <label for="reason-{{ order.id }}-{{ item.product_id }}">Reason</label>
+                    <select id="reason-{{ order.id }}-{{ item.product_id }}" name="reason" required>
                       <option value="">Select reason</option>
                       <option value="out_of_stock">Out of stock</option>
                       <option value="damaged">Damaged</option>

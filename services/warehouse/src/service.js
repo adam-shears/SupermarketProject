@@ -10,87 +10,81 @@ Responsibilities:
 */
 
 
-const mockOrders = [
-  {
-    id: 101,
-    customer_name: "Alice Smith",
-    order_info: "2 items in order",
-    items: [
-      {
-        id: 1,
-        product_id: 11,
-        product_name: "Milk",
-        location_code: "A-12",
-        picked: false,
-        substitutes: [
-          { id: 201, name: "Semi-skimmed Milk" },
-          { id: 202, name: "Whole Milk" },
-        ],
-      },
-      {
-        id: 2,
-        product_id: 12,
-        product_name: "Bread",
-        location_code: "B-04",
-        picked: false,
-        substitutes: [
-          { id: 203, name: "Brown Bread" },
-          { id: 204, name: "Seeded Bread" },
-        ],
-      },
-    ],
-  },
-  {
-    id: 102,
-    customer_name: "John Smith",
-    order_info: "1 item in order",
-    items: [
-      {
-        id: 3,
-        product_id: 13,
-        product_name: "Eggs",
-        location_code: "C-03",
-        picked: false,
-        substitutes: [
-          { id: 205, name: "Free Range Eggs" },
-        ],
-      },
-    ],
-  },
-];
+import * as db from "./db.js";
 
 export async function getPickerOrders() {
-  return mockOrders;
+  const rows = await db.getPickerOrdersRows();
+  const ordersMap = new Map();
+
+  for (const row of rows) {
+    if (!ordersMap.has(row.order_id)) {
+      ordersMap.set(row.order_id, {
+        id: row.order_id,
+        customer_name: row.customer_name,
+        order_info: `${row.item_count} ${row.item_count === 1 ? "item" : "items"} in order`,
+        items: [],
+      });
+    }
+
+    const substitutes = await db.getSubstituteProducts(row.product_id);
+
+    ordersMap.get(row.order_id).items.push({
+      product_id: row.product_id,
+      product_name: row.product_name,
+      quantity: row.quantity,
+      location_code: row.location_code,
+      picked: row.picked,
+      substitutes,
+    });
+  }
+
+  return Array.from(ordersMap.values());
 }
 
-export async function completePickerItem(orderId, itemId) {
-  if (!orderId || !itemId) {
-    throw new Error("orderId and itemId are required");
+export async function completePickerItem(orderId, productId) {
+  if (!orderId || !productId) {
+    throw new Error("orderId and productId are required");
+  }
+
+  const item = await db.getOrderItem(orderId, productId);
+  if (!item) {
+    throw new Error("Order item not found");
+  }
+
+  const updated = await db.markItemAsPicked(orderId, productId);
+  if (!updated) {
+    throw new Error("Failed to mark item as picked");
   }
 
   return {
     message: "Picker item marked as completed",
-    orderId: Number(orderId),
-    itemId: Number(itemId),
+    item: updated,
   };
 }
 
-export async function reportPickerIssue(orderId, itemId, payload) {
-  if (!orderId || !itemId) {
-    throw new Error("orderId and itemId are required");
+export async function reportPickerIssue(orderId, productId, payload) {
+  if (!orderId || !productId) {
+    throw new Error("orderId and productId are required");
   }
 
   if (!payload?.reason) {
     throw new Error("Reason is required");
   }
 
+  const item = await db.getOrderItem(orderId, productId);
+  if (!item) {
+    throw new Error("Order item not found");
+  }
+
+  const issue = await db.insertPickerIssue(
+    orderId,
+    productId,
+    payload.substituteProductId || null,
+    payload.reason
+  );
+
   return {
     message: "Picker issue reported successfully",
-    orderId: Number(orderId),
-    itemId: Number(itemId),
-    reason: payload.reason,
-    substituteProductId: payload.substituteProductId
-      ? Number(payload.substituteProductId)
-      : null,
+    issue,
   };
 }

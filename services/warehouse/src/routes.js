@@ -23,22 +23,20 @@ router.get("/health", async (req, res) => {
   res.status(200).json({ message: "warehouse service is healthy." });
 });
 
-
 router.get("/picker/orders", async (req, res) => {
   try {
     const orders = await service.getPickerOrders();
     res.json(orders);
   } catch (error) {
     console.error("Failed to load picker orders:", error);
-    res.status(500).json({ message: "Failed to load picker orders" });
+    res.status(500).json({ message: error.message || "Failed to load picker orders" });
   }
 });
 
-
-router.post("/picker/orders/:orderId/items/:itemId/complete", async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/complete", async (req, res) => {
   try {
-    const { orderId, itemId } = req.params;
-    const result = await service.completePickerItem(orderId, itemId);
+    const { orderId, productId } = req.params;
+    const result = await service.completePickerItem(orderId, productId);
     res.status(200).json(result);
   } catch (error) {
     console.error("Failed to complete picker item:", error);
@@ -46,13 +44,12 @@ router.post("/picker/orders/:orderId/items/:itemId/complete", async (req, res) =
   }
 });
 
-
-router.post("/picker/orders/:orderId/items/:itemId/issue", async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) => {
   try {
-    const { orderId, itemId } = req.params;
+    const { orderId, productId } = req.params;
     const { substituteProductId, reason } = req.body;
 
-    const result = await service.reportPickerIssue(orderId, itemId, {
+    const result = await service.reportPickerIssue(orderId, productId, {
       substituteProductId,
       reason,
     });
