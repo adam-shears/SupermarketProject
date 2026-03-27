@@ -1,0 +1,101 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/picker.css" />
+{% endblock %}
+
+{% block content %}
+  <div class="picker-page">
+    <h1>Picker View</h1>
+
+    {% if orders.length === 0 %}
+      <p>No picker orders available.</p>
+    {% endif %}
+
+    {% for order in orders %}
+      <section class="order-card">
+        <div class="order-summary">
+          <div class="order-summary-left">
+            <strong>{{ order.customer_name }}</strong>
+          </div>
+          <div class="order-summary-right">
+            {{ order.order_info }}
+          </div>
+        </div>
+
+        <div class="order-body">
+          <h2>Order {{ order.id }}</h2>
+          <p class="customer-name">{{ order.customer_name }}</p>
+
+          <div class="item-list">
+            {% for item in order.items %}
+              <div class="picker-item">
+                <div class="item-row">
+                  <div class="item-name">
+                    {{ item.product_name }}
+                  </div>
+
+                  <div class="item-actions">
+                    <form method="POST" action="/picker/orders/{{ order.id }}/items/{{ item.id }}/complete">
+                      <button type="submit" class="complete-button" aria-label="Mark item as completed">
+                        ✓
+                      </button>
+                    </form>
+
+                    <button
+                      type="button"
+                      class="warning-button"
+                      aria-label="Report issue"
+                      data-target="issue-form-{{ order.id }}-{{ item.id }}"
+                    >
+                      ⚠
+                    </button>
+
+                    <div class="location-code">
+                      {{ item.location_code }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="issue-popup hidden" id="issue-form-{{ order.id }}-{{ item.id }}">
+                  <form method="POST" action="/picker/orders/{{ order.id }}/items/{{ item.id }}/issue">
+                    <label for="substitute-{{ order.id }}-{{ item.id }}">Substituted with</label>
+                    <select
+                      id="substitute-{{ order.id }}-{{ item.id }}"
+                      name="substituteProductId"
+                    >
+                      <option value="">Select substitute</option>
+                      {% for substitute in item.substitutes %}
+                        <option value="{{ substitute.id }}">{{ substitute.name }}</option>
+                      {% endfor %}
+                    </select>
+
+                    <label for="reason-{{ order.id }}-{{ item.id }}">Reason</label>
+                    <select
+                      id="reason-{{ order.id }}-{{ item.id }}"
+                      name="reason"
+                      required
+                    >
+                      <option value="">Select reason</option>
+                      <option value="out_of_stock">Out of stock</option>
+                      <option value="damaged">Damaged</option>
+                      <option value="missing">Missing</option>
+                      <option value="wrong_item">Wrong item</option>
+                    </select>
+
+                    <div class="issue-popup-actions">
+                      <button type="submit" class="submit-issue-button">Submit</button>
+                      <button type="button" class="cancel-issue-button">Cancel</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+
+  <script type="module" src="/picker.js"></script>
+{% endblock %}

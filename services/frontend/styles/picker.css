@@ -1,0 +1,133 @@
+.picker-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.picker-page h1 {
+  margin-bottom: 1.5rem;
+}
+
+.order-card {
+  border: 1px solid #d9d9d9;
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+}
+
+.order-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #d9d9d9;
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
+  background: #fafafa;
+}
+
+.order-body h2 {
+  margin: 0 0 0.3rem;
+}
+
+.customer-name {
+  margin-bottom: 1rem;
+  color: #666;
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.picker-item {
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  padding: 0.9rem;
+  background: #fcfcfc;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.item-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.complete-button,
+.warning-button,
+.submit-issue-button,
+.cancel-issue-button {
+  border: 1px solid #bfbfbf;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.complete-button:hover,
+.warning-button:hover,
+.submit-issue-button:hover,
+.cancel-issue-button:hover {
+  background: #f5f5f5;
+}
+
+.location-code {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.45rem 0.8rem;
+  min-width: 90px;
+  text-align: center;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+.issue-popup {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #d8d8d8;
+  border-radius: 12px;
+  background: #fff;
+  max-width: 360px;
+}
+
+.issue-popup form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.issue-popup label {
+  font-weight: 500;
+}
+
+.issue-popup select {
+  padding: 0.55rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.issue-popup-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.hidden {
+  display: none;
+}

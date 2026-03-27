@@ -342,7 +342,19 @@ router.delete("/api/shopping-list/items/:productId", requireAuth, async (req, re
     res.status(500).json({ message: "Failed to remove item from shopping list"});
   }
 });
+router.get("/picker", async (req, res) => {
+  try {
+    const orders = await api.getPickerOrders();
 
+    res.render("picker.njk", {
+      title: "Picker View",
+      orders,
+    });
+  } catch (error) {
+    console.error("Failed to load picker view:", error);
+    res.status(500).send(`Failed to load picker view: ${error.message}`);
+  }
+});
 // Health check
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "frontend service is healthy." });

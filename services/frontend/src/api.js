@@ -156,4 +156,11 @@ export const api = {
     const params = new URLSearchParams({ scale, search }).toString();
     return `/management/export.csv?${params}`;
   },
+  getPickerOrders: () => getJson(`${WAREHOUSE_URL}/picker/orders`),
+
+  completePickerItem: (orderId, itemId) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${itemId}/complete`, {}),
+
+  reportPickerIssue: (orderId, itemId, payload) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${itemId}/issue`, payload),
 };
