@@ -17,11 +17,16 @@ import { api } from "./api.js";
 const router = Router();
 
 // function to check if user is logged in for accessing certain endpoints
-function requireAuth(req, res, next) {
-  if(!req.session.user) {
-    return res.status(401).json({ messgae: "You must be logged in"});
-  }
-  next();
+function requireAuth(requiredAdminLevel) {
+  return (req, res, next) => {
+    if(!req.session.user) {
+      return res.status(401).json({ message: "You must be logged in to access this resource"});
+    }
+    if ((req.session.user.admin_level || 0) < requiredAdminLevel) {
+      return res.status(403).json({ message: "You do not have permission to access this resource"});
+    }
+    next();
+  };
 }
 
 // Home page (optional, can list featured products)
@@ -46,7 +51,7 @@ router.get("/products/:id", async (req, res) => {
 
     let backlink = "/product-list";
     let backtext = "Back to all products";
-    
+
     if (from === undefined) {
       backlink = "/product-list?category=All Products";
       backtext = "Back to All Products";
@@ -210,7 +215,7 @@ router.post("/logout", (req, res) => {
   });
 });
 //management view
-router.get("/management", async (req, res) => {
+router.get("/management", requireAuth(2), async (req, res) => {
   try {
     const allowedScales = ["day", "week", "month"];
     const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
@@ -237,7 +242,7 @@ router.get("/management", async (req, res) => {
   }
 });
 
-router.get("/management/export.csv", async (req, res) => {
+router.get("/management/export.csv", requireAuth(2), async (req, res) => {
   try {
     const allowedScales = ["day", "week", "month"];
     const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
