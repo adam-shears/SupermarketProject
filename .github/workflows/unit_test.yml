@@ -1,4 +1,4 @@
-name: Linter
+name: Unit Tests
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: Lint code going to main with ESLint
+  test:
+    name: Run unit tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
