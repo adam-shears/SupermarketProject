@@ -15,6 +15,21 @@ export default [
         ],
     },
     {
+        files: ["**/test/**/*.js"],
+        languageOptions: {
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+                ...globals.mocha,
+            },
+        },
+        rules: {
+            "no-unused-vars": "off",
+            "no-console": "off",
+            "no-undef": "error",
+        },
+    },
+    {
         files: ["**/*.js"],
         languageOptions: {
             globals: {
