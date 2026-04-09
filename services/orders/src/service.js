@@ -17,6 +17,18 @@ This file should not be responsible for:
 import bcrypt from "bcrypt";
 import { deleteShoppingListItem, insertNewCustomer, insertShoppingListItem, selectCustomerByEmail, selectShoppingListByCustomerID, selectStaffByEmail, updateShoppingList } from "./db.js";
 
+export const ordersDeps = {
+  deleteShoppingListItem,
+  insertNewCustomer,
+  insertShoppingListItem,
+  selectCustomerByEmail,
+  selectShoppingListByCustomerID,
+  selectStaffByEmail,
+  updateShoppingList,
+  hashPassword: bcrypt.hash,
+  comparePassword: bcrypt.compare,
+};
+
 export class OrdersError extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -26,7 +38,7 @@ export class OrdersError extends Error {
 }
 
 export async function getShoppingList(customerId) {
-  return selectShoppingListByCustomerID(customerId);
+  return ordersDeps.selectShoppingListByCustomerID(customerId);
 }
 
 export async function addShoppingListItem(customerId, input) {
@@ -38,7 +50,7 @@ export async function addShoppingListItem(customerId, input) {
     throw new OrdersError("quantity must be a positive integer", 400);
   }
 
-  return insertShoppingListItem(customerId, productId, quantity);
+  return ordersDeps.insertShoppingListItem(customerId, productId, quantity);
 }
 
 export async function updateShoppingListItem(customerId, productId, input) {
@@ -49,7 +61,7 @@ export async function updateShoppingListItem(customerId, productId, input) {
   //  throw new OrdersError("quantity must be a positive integer", 400);
   //}
 
-  const result = await updateShoppingList(customerId, productId, {quantity, checked});
+  const result = await ordersDeps.updateShoppingList(customerId, productId, {quantity, checked});
 
   if (!result) {
     // if there's no result then that item doesn't exist in the shopping list so we can't update
@@ -60,7 +72,7 @@ export async function updateShoppingListItem(customerId, productId, input) {
 }
 
 export async function removeShoppingListItem(customerId, productId) {
-  await deleteShoppingListItem(customerId, productId);
+  await ordersDeps.deleteShoppingListItem(customerId, productId);
 }
 
 export async function registerNewUser(input) {
@@ -101,15 +113,15 @@ export async function registerNewUser(input) {
   }
 
   // check if email is already in use
-  const existing = await selectCustomerByEmail(email);
+  const existing = await ordersDeps.selectCustomerByEmail(email);
   if (existing) {
     throw new OrdersError("Email is already in use", 409);
   }
 
   // at this point, the user's input is valid so we can register
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await ordersDeps.hashPassword(password, 12);
 
-  return insertNewCustomer(email, passwordHash, firstName, lastName, phone);
+  return ordersDeps.insertNewCustomer(email, passwordHash, firstName, lastName, phone);
 }
 
 export async function logCustomerIn(input) {
@@ -123,17 +135,17 @@ export async function logCustomerIn(input) {
   let user;
   if (email.endsWith("@supermarket.com")) {
     // then user is a staff member and in a different table
-    user = await selectStaffByEmail(email);
+    user = await ordersDeps.selectStaffByEmail(email);
   }
   else {
-    user = await selectCustomerByEmail(email);
+    user = await ordersDeps.selectCustomerByEmail(email);
   }
 
   if (!user) {
     throw new OrdersError("Invalid email or password", 401);
   }
 
-  const passwordMatch = await bcrypt.compare(password, user.password_hash);
+  const passwordMatch = await ordersDeps.comparePassword(password, user.password_hash);
   if (!passwordMatch) {
     throw new OrdersError("Invalid email or password", 401);
   }
