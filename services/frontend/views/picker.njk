@@ -6,7 +6,10 @@
 
 {% block content %}
   <div class="picker-page">
-    <h1>Picker View</h1>
+    <div class="picker-header-row">
+      <h1>Picker View</h1>
+      <a class="inventory-link" href="/inventory">Inventory Management</a>
+    </div>
 
     {% if completed %}
       <p class="success-message">Item marked as completed.</p>
@@ -16,11 +19,23 @@
       <p class="success-message">Issue submitted successfully.</p>
     {% endif %}
 
+    {% if issueResolved %}
+      <p class="success-message">Issue resolved successfully.</p>
+    {% endif %}
+
+    {% if orders.length === 0 %}
+      <p>No picker orders available.</p>
+    {% endif %}
+
     {% for order in orders %}
       <section class="order-card">
         <div class="order-summary">
-          <div><strong>{{ order.customer_name }}</strong></div>
-          <div>{{ order.order_info }}</div>
+          <div class="order-summary-left">
+            <strong>{{ order.customer_name }}</strong>
+          </div>
+          <div class="order-summary-right">
+            {{ order.order_info }}
+          </div>
         </div>
 
         <div class="order-body">
@@ -31,28 +46,67 @@
             {% for item in order.items %}
               <div class="picker-item {% if item.picked %}picked-item{% endif %}">
                 <div class="item-row">
-                  <div class="item-name">
-                    {{ item.product_name }}
-                    {% if item.quantity %}
+                  <div class="item-main">
+                    <div class="item-name">
+                      {{ item.product_name }}
                       <span class="qty-badge">x{{ item.quantity }}</span>
+                      {% if item.picked %}
+                        <span class="picked-badge">Picked</span>
+                      {% endif %}
+                    </div>
+
+                    <div class="item-meta">
+                      <span class="meta-pill">{{ item.category_name }}</span>
+                      <span class="meta-pill">Stock: {{ item.stock_quantity }}</span>
+                      {% if item.substituted_product_name %}
+                        <span class="meta-pill substitute-pill">
+                          Substituted with: {{ item.substituted_product_name }}
+                        </span>
+                      {% endif %}
+                    </div>
+
+                    {% if item.description %}
+                      <p class="item-description">{{ item.description }}</p>
                     {% endif %}
-                    {% if item.picked %}
-                      <span class="picked-badge">Picked</span>
+
+                    {% if item.issue %}
+                      <div class="issue-status {% if item.issue.resolved %}resolved{% endif %}">
+                        <strong>Issue:</strong> {{ item.issue.reason }}
+                        {% if item.issue.resolved %}
+                          <span class="resolved-badge">Resolved</span>
+                        {% else %}
+                          <span class="open-badge">Open</span>
+                        {% endif %}
+                      </div>
                     {% endif %}
                   </div>
 
                   <div class="item-actions">
                     <form method="POST" action="/picker/orders/{{ order.id }}/items/{{ item.product_id }}/complete">
-                      <button type="submit" class="complete-button" {% if item.picked %}disabled{% endif %}>✓</button>
+                      <button
+                        type="submit"
+                        class="complete-button"
+                        aria-label="Mark item as completed"
+                        {% if item.picked %}disabled{% endif %}
+                      >
+                        ✓
+                      </button>
                     </form>
 
                     <button
                       type="button"
                       class="warning-button"
+                      aria-label="Report issue"
                       data-target="issue-form-{{ order.id }}-{{ item.product_id }}"
                     >
                       ⚠
                     </button>
+
+                    {% if item.issue and not item.issue.resolved %}
+                      <form method="POST" action="/picker/issues/{{ item.issue.id }}/resolve">
+                        <button type="submit" class="resolve-button">Resolve</button>
+                      </form>
+                    {% endif %}
 
                     <div class="location-code">
                       {{ item.location_code }}
@@ -63,7 +117,10 @@
                 <div class="issue-popup hidden" id="issue-form-{{ order.id }}-{{ item.product_id }}">
                   <form method="POST" action="/picker/orders/{{ order.id }}/items/{{ item.product_id }}/issue">
                     <label for="substitute-{{ order.id }}-{{ item.product_id }}">Substituted with</label>
-                    <select id="substitute-{{ order.id }}-{{ item.product_id }}" name="substituteProductId">
+                    <select
+                      id="substitute-{{ order.id }}-{{ item.product_id }}"
+                      name="substituteProductId"
+                    >
                       <option value="">Select substitute</option>
                       {% for substitute in item.substitutes %}
                         <option value="{{ substitute.id }}">{{ substitute.name }}</option>
@@ -71,7 +128,11 @@
                     </select>
 
                     <label for="reason-{{ order.id }}-{{ item.product_id }}">Reason</label>
-                    <select id="reason-{{ order.id }}-{{ item.product_id }}" name="reason" required>
+                    <select
+                      id="reason-{{ order.id }}-{{ item.product_id }}"
+                      name="reason"
+                      required
+                    >
                       <option value="">Select reason</option>
                       <option value="out_of_stock">Out of stock</option>
                       <option value="damaged">Damaged</option>

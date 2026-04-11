@@ -1,0 +1,53 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/picker.css" />
+{% endblock %}
+
+{% block content %}
+  <div class="picker-page">
+    <div class="picker-header-row">
+      <h1>Inventory Management</h1>
+      <a class="inventory-link" href="/picker">Back to Picker View</a>
+    </div>
+
+    {% if updated %}
+      <p class="success-message">Inventory updated successfully.</p>
+    {% endif %}
+
+    <div class="inventory-table-wrap">
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Location</th>
+            <th>Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in inventory %}
+            <tr>
+              <td>{{ item.id }}</td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.category_name }}</td>
+              <td>{{ item.description }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ item.location_code }}</td>
+              <td>
+                <form method="POST" action="/inventory/{{ item.id }}" class="inventory-form">
+                  <input type="number" name="quantity" min="0" value="{{ item.quantity }}" required />
+                  <input type="text" name="locationCode" value="{{ item.location_code }}" required />
+                  <button type="submit">Save</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

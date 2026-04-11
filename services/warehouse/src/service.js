@@ -26,14 +26,29 @@ export async function getPickerOrders() {
       });
     }
 
-    const substitutes = await db.getSubstituteProducts(row.product_id);
+    const substitutes = await db.getSubstituteProducts(row.product_id, row.category_name);
 
     ordersMap.get(row.order_id).items.push({
       product_id: row.product_id,
       product_name: row.product_name,
+      description: row.product_description,
+      category_name: row.category_name,
       quantity: row.quantity,
       location_code: row.location_code,
+      stock_quantity: row.stock_quantity,
       picked: row.picked,
+      picked_at: row.picked_at,
+      substituted_product_id: row.substituted_product_id,
+      substituted_product_name: row.substituted_product_name,
+      issue: row.issue_id
+        ? {
+            id: row.issue_id,
+            reason: row.issue_reason,
+            resolved: row.issue_resolved,
+            substitute_product_id: row.issue_substitute_product_id,
+            created_at: row.issue_created_at,
+          }
+        : null,
       substitutes,
     });
   }
@@ -51,10 +66,14 @@ export async function completePickerItem(orderId, productId) {
     throw new Error("Order item not found");
   }
 
-  const updated = await db.markItemAsPicked(orderId, productId);
-  if (!updated) {
-    throw new Error("Failed to mark item as picked");
+  if (item.picked) {
+    return {
+      message: "Item already marked as picked",
+      item,
+    };
   }
+
+  const updated = await db.markItemAsPicked(orderId, productId);
 
   return {
     message: "Picker item marked as completed",
@@ -83,8 +102,56 @@ export async function reportPickerIssue(orderId, productId, payload) {
     payload.reason
   );
 
+  if (payload.substituteProductId) {
+    await db.applySubstitution(orderId, productId, payload.substituteProductId);
+  }
+
   return {
     message: "Picker issue reported successfully",
     issue,
+  };
+}
+
+export async function resolvePickerIssue(issueId) {
+  if (!issueId) {
+    throw new Error("issueId is required");
+  }
+
+  const updated = await db.resolvePickerIssue(issueId);
+  if (!updated) {
+    throw new Error("Issue not found");
+  }
+
+  return {
+    message: "Issue resolved successfully",
+    issue: updated,
+  };
+}
+
+export async function getInventory() {
+  return db.getInventoryRows();
+}
+
+export async function updateInventory(productId, payload) {
+  if (!productId) {
+    throw new Error("productId is required");
+  }
+
+  const quantity = Number(payload.quantity);
+  const locationCode = (payload.locationCode || "").trim();
+
+  if (Number.isNaN(quantity) || quantity < 0) {
+    throw new Error("Quantity must be a non-negative number");
+  }
+
+  if (!locationCode) {
+    throw new Error("Location code is required");
+  }
+
+  const updated = await db.updateInventoryItem(productId, quantity, locationCode);
+
+  return {
+    message: "Inventory updated successfully",
+    item: updated,
   };
 }

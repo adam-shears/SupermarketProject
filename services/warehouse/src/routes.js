@@ -61,4 +61,36 @@ router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) =
   }
 });
 
+router.post("/picker/issues/:issueId/resolve", async (req, res) => {
+  try {
+    const { issueId } = req.params;
+    const result = await service.resolvePickerIssue(issueId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to resolve picker issue:", error);
+    res.status(500).json({ message: error.message || "Failed to resolve picker issue" });
+  }
+});
+
+router.get("/inventory", async (req, res) => {
+  try {
+    const inventory = await service.getInventory();
+    res.json(inventory);
+  } catch (error) {
+    console.error("Failed to load inventory:", error);
+    res.status(500).json({ message: error.message || "Failed to load inventory" });
+  }
+});
+
+router.patch("/inventory/:productId", async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const result = await service.updateInventory(productId, req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to update inventory:", error);
+    res.status(500).json({ message: error.message || "Failed to update inventory" });
+  }
+});
+
 export default router;

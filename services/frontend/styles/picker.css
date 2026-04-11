@@ -1,11 +1,29 @@
 .picker-page {
-  max-width: 900px;
+  max-width: 980px;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
 
-.picker-page h1 {
-  margin-bottom: 1.5rem;
+.picker-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.inventory-link {
+  text-decoration: none;
+  color: #1f7a3d;
+  font-weight: 600;
+}
+
+.success-message {
+  background: #eaf7ea;
+  color: #1f7a3d;
+  border: 1px solid #b9e0b9;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
 }
 
 .order-card {
@@ -49,28 +67,109 @@
   background: #fcfcfc;
 }
 
+.picked-item {
+  opacity: 0.75;
+  background: #f3f3f3;
+}
+
 .item-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   gap: 1rem;
 }
 
+.item-main {
+  flex: 1;
+}
+
 .item-name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.item-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.45rem;
+}
+
+.meta-pill,
+.qty-badge,
+.picked-badge,
+.resolved-badge,
+.open-badge,
+.substitute-pill {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.meta-pill {
+  background: #eef2f7;
+}
+
+.qty-badge {
+  background: #f0f0f0;
+  margin-left: 0.45rem;
+}
+
+.picked-badge {
+  background: #dff0df;
+  color: #1f7a3d;
+  margin-left: 0.45rem;
+}
+
+.resolved-badge {
+  background: #dff0df;
+  color: #1f7a3d;
+  margin-left: 0.45rem;
+}
+
+.open-badge {
+  background: #fff2d9;
+  color: #9a6700;
+  margin-left: 0.45rem;
+}
+
+.substitute-pill {
+  background: #ede7ff;
+  color: #5b3db5;
+}
+
+.item-description {
+  margin: 0.4rem 0 0;
+  color: #555;
+  font-size: 0.92rem;
+}
+
+.issue-status {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: #fff5e6;
+  color: #8a5a00;
+}
+
+.issue-status.resolved {
+  background: #ebf7eb;
+  color: #1f7a3d;
 }
 
 .item-actions {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.6rem;
 }
 
 .complete-button,
 .warning-button,
+.resolve-button,
 .submit-issue-button,
-.cancel-issue-button {
+.cancel-issue-button,
+.inventory-form button {
   border: 1px solid #bfbfbf;
   border-radius: 8px;
   background: #fff;
@@ -81,9 +180,16 @@
 
 .complete-button:hover,
 .warning-button:hover,
+.resolve-button:hover,
 .submit-issue-button:hover,
-.cancel-issue-button:hover {
+.cancel-issue-button:hover,
+.inventory-form button:hover {
   background: #f5f5f5;
+}
+
+.complete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .location-code {
@@ -130,4 +236,36 @@
 
 .hidden {
   display: none;
+}
+
+.inventory-table-wrap {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inventory-table th,
+.inventory-table td {
+  padding: 0.9rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  vertical-align: top;
+}
+
+.inventory-form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.inventory-form input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }

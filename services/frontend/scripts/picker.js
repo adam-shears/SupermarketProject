@@ -1,6 +1,5 @@
 function closeAllIssuePopups() {
-  const popups = document.querySelectorAll(".issue-popup");
-  popups.forEach((popup) => {
+  document.querySelectorAll(".issue-popup").forEach((popup) => {
     popup.classList.add("hidden");
   });
 }
@@ -13,14 +12,12 @@ document.addEventListener("DOMContentLoaded", () => {
     button.addEventListener("click", () => {
       const targetId = button.dataset.target;
       const popup = document.getElementById(targetId);
-
       if (!popup) return;
 
-      const isHidden = popup.classList.contains("hidden");
-
+      const shouldOpen = popup.classList.contains("hidden");
       closeAllIssuePopups();
 
-      if (isHidden) {
+      if (shouldOpen) {
         popup.classList.remove("hidden");
       }
     });
@@ -34,4 +31,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  setInterval(() => {
+    if (window.location.pathname === "/picker") {
+      window.location.reload();
+    }
+  }, 15000);
 });
