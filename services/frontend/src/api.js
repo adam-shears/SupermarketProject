@@ -168,4 +168,21 @@ export const api = {
     const params = new URLSearchParams({ scale, search }).toString();
     return `/management/export.csv?${params}`;
   },
-};
+
+  // Picker view API
+
+  getPickerOrders: () => getJson(`${WAREHOUSE_URL}/picker/orders`),
+
+  completePickerItem: (orderId, productId) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/complete`, {}),
+
+  reportPickerIssue: (orderId, productId, payload) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/issue`, payload),
+
+  resolvePickerIssue: (issueId) =>
+    postJson(`${WAREHOUSE_URL}/picker/issues/${issueId}/resolve`, {}),
+
+  getInventory: () => getJson(`${WAREHOUSE_URL}/inventory`),
+
+  updateInventoryItem: (productId, payload) =>
+    patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),};

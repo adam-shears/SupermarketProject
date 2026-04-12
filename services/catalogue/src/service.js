@@ -21,6 +21,16 @@ import {
   selectProductsBySearchTerm,
 } from "./db.js";
 
+export const catalogueDeps = {
+  selectActiveDealRows,
+  selectListedProductByIdWithDiscountRows,
+  selectListedProductsWithDiscountRows,
+  selectProductsBySearchTerm,
+  toDiscount,
+  mergeProductRows,
+  parseProductId,
+};
+
 export class CatalogueError extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -56,7 +66,7 @@ function mergeProductRows(rows) {
       });
     }
 
-    const discount = toDiscount(row);
+    const discount = catalogueDeps.toDiscount(row);
     if (discount !== null) {
       const product = productMap.get(row.id);
       const exists = product.discounts.some((item) => item.id === discount.id);
@@ -80,14 +90,14 @@ function parseProductId(rawId) {
 }
 
 export async function getProductsWithDiscounts() {
-  const rows = await selectListedProductsWithDiscountRows();
-  return mergeProductRows(rows);
+  const rows = await catalogueDeps.selectListedProductsWithDiscountRows();
+  return catalogueDeps.mergeProductRows(rows);
 }
 
 export async function getProductById(id) {
-  const productId = parseProductId(id);
-  const rows = await selectListedProductByIdWithDiscountRows(productId);
-  const products = mergeProductRows(rows);
+  const productId = catalogueDeps.parseProductId(id);
+  const rows = await catalogueDeps.selectListedProductByIdWithDiscountRows(productId);
+  const products = catalogueDeps.mergeProductRows(rows);
 
   if (products.length === 0) {
     throw new CatalogueError("product not found", 404);
@@ -97,7 +107,7 @@ export async function getProductById(id) {
 }
 
 export async function getActiveDeals() {
-  const rows = await selectActiveDealRows();
+  const rows = await catalogueDeps.selectActiveDealRows();
   const deals = new Map();
 
   for (const row of rows) {
@@ -128,6 +138,6 @@ export async function searchProducts(searchTerm) {
     return [];
   }
 
-  const rows = await selectProductsBySearchTerm(term);
-  return mergeProductRows(rows);
+  const rows = await catalogueDeps.selectProductsBySearchTerm(term);
+  return catalogueDeps.mergeProductRows(rows);
 }
