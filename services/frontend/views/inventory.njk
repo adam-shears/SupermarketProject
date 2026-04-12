@@ -15,6 +15,39 @@
       <p class="success-message">Inventory updated successfully.</p>
     {% endif %}
 
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+
+    <section class="management-issues-panel">
+      <h2>Management Issue Portal</h2>
+
+      {% if managementIssues.length === 0 %}
+        <p>No stock issues currently reported.</p>
+      {% else %}
+        <div class="issue-list">
+          {% for issue in managementIssues %}
+            <div class="management-issue-card {% if issue.resolved %}resolved{% endif %}">
+              <div><strong>Order:</strong> {{ issue.order_id }}</div>
+              <div><strong>Customer:</strong> {{ issue.customer_name }}</div>
+              <div><strong>Product:</strong> {{ issue.product_name }}</div>
+              <div><strong>Location:</strong> {{ issue.location_code }}</div>
+              <div><strong>Reason:</strong> {{ issue.reason }}</div>
+              <div><strong>Alert:</strong> {{ issue.alert_message }}</div>
+              <div>
+                <strong>Status:</strong>
+                {% if issue.resolved %}
+                  Resolved
+                {% else %}
+                  Open
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+
     <div class="inventory-table-wrap">
       <table class="inventory-table">
         <thead>
@@ -39,7 +72,7 @@
               <td>{{ item.location_code }}</td>
               <td>
                 <form method="POST" action="/inventory/{{ item.id }}" class="inventory-form">
-                  <input type="number" name="quantity" min="0" value="{{ item.quantity }}" required />
+                  <input type="number" name="quantity" value="{{ item.quantity }}" min="0" required />
                   <input type="text" name="locationCode" value="{{ item.location_code }}" required />
                   <button type="submit">Save</button>
                 </form>

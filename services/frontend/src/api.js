@@ -45,6 +45,7 @@ async function patchJson(url, body) {
   if (res.status === 204) {
     return null;
   }
+
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
   return data;
@@ -52,8 +53,9 @@ async function patchJson(url, body) {
 
 async function deleteRequest(url) {
   const res = await fetch(url, {
-    method: "DELETE"
+    method: "DELETE",
   });
+
   if (res.status !== 204 && !res.ok) {
     const data = await res.json();
     throw new Error(data.message || `Request failed ${res.status}: ${url}`);
@@ -63,7 +65,8 @@ async function deleteRequest(url) {
 export const api = {
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
-  searchProducts: (term) => getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
+  searchProducts: (term) =>
+    getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
 
   getBasket: () => getJson(`${ORDERS_URL}/basket`),
   addToBasket: (productId, quantity) =>
@@ -72,11 +75,15 @@ export const api = {
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 
-  getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  getShoppingList: (customerId) =>
+    getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+
   addShoppingListItem: (customerId, payload) =>
     postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
+
   updateShoppingListItem: (customerId, productId, payload) =>
     patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
+
   deleteShoppingListItem: (customerId, productId) =>
     deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
 
@@ -160,8 +167,6 @@ export const api = {
     return `/management/export.csv?${params}`;
   },
 
-  // Picker view API
-
   getPickerOrders: () => getJson(`${WAREHOUSE_URL}/picker/orders`),
 
   completePickerItem: (orderId, productId) =>
@@ -173,7 +178,13 @@ export const api = {
   resolvePickerIssue: (issueId) =>
     postJson(`${WAREHOUSE_URL}/picker/issues/${issueId}/resolve`, {}),
 
+  finalisePickerOrder: (orderId) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/finalise`, {}),
+  getManagementIssues: () => getJson(`${WAREHOUSE_URL}/management/issues`),
   getInventory: () => getJson(`${WAREHOUSE_URL}/inventory`),
 
-  updateInventoryItem: (productId, payload) =>
-    patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),};
+  updateInventory: (productId, payload) =>
+    patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),
+
+
+};

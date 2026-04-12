@@ -72,6 +72,17 @@ router.post("/picker/issues/:issueId/resolve", async (req, res) => {
   }
 });
 
+router.post("/picker/orders/:orderId/finalise", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const result = await service.finaliseOrder(orderId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to finalise order:", error);
+    res.status(500).json({ message: error.message || "Failed to finalise order" });
+  }
+});
+
 router.get("/inventory", async (req, res) => {
   try {
     const inventory = await service.getInventory();
@@ -90,6 +101,16 @@ router.patch("/inventory/:productId", async (req, res) => {
   } catch (error) {
     console.error("Failed to update inventory:", error);
     res.status(500).json({ message: error.message || "Failed to update inventory" });
+  }
+});
+
+router.get("/management/issues", async (req, res) => {
+  try {
+    const issues = await service.getManagementIssues();
+    res.status(200).json(issues);
+  } catch (error) {
+    console.error("Failed to load management issues:", error);
+    res.status(500).json({ message: error.message || "Failed to load management issues" });
   }
 });
 

@@ -1,10 +1,4 @@
-function closeAllIssuePopups() {
-  document.querySelectorAll(".issue-popup").forEach((popup) => {
-    popup.classList.add("hidden");
-  });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
+function setupIssuePopups() {
   const warningButtons = document.querySelectorAll(".warning-button");
   const cancelButtons = document.querySelectorAll(".cancel-issue-button");
 
@@ -12,12 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     button.addEventListener("click", () => {
       const targetId = button.dataset.target;
       const popup = document.getElementById(targetId);
-      if (!popup) return;
-
-      const shouldOpen = popup.classList.contains("hidden");
-      closeAllIssuePopups();
-
-      if (shouldOpen) {
+      if (popup) {
         popup.classList.remove("hidden");
       }
     });
@@ -31,10 +20,39 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+}
 
-  setInterval(() => {
-    if (window.location.pathname === "/picker") {
-      window.location.reload();
+async function fetchPickerState() {
+  const res = await fetch("/api/picker/orders");
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+function isPopupOpen() {
+  return [...document.querySelectorAll(".issue-popup")].some(
+    (popup) => !popup.classList.contains("hidden")
+  );
+}
+
+async function setupAutoSync() {
+  if (window.location.pathname !== "/picker") return;
+
+  let lastState = await fetchPickerState();
+
+  setInterval(async () => {
+    if (isPopupOpen()) return;
+
+    const nextState = await fetchPickerState();
+    if (!nextState || !lastState) {
+      lastState = nextState || lastState;
+      return;
     }
-  }, 15000);
-});
+
+    if (JSON.stringify(nextState) !== JSON.stringify(lastState)) {
+      window.location.reload();
+      return;
+    }
+
+    lastState = nextState;
+  }, 50000);
+}
