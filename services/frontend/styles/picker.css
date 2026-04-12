@@ -208,7 +208,7 @@
   border: 1px solid #d8d8d8;
   border-radius: 12px;
   background: #fff;
-  max-width: 360px;
+  max-width: 420px;
 }
 
 .issue-popup form {
@@ -226,6 +226,8 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   background: #fff;
+  width: 100%;
+  max-width: 100%;
 }
 
 .issue-popup-actions {

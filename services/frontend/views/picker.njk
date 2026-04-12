@@ -123,7 +123,9 @@
                     >
                       <option value="">Select substitute</option>
                       {% for substitute in item.substitutes %}
-                        <option value="{{ substitute.id }}">{{ substitute.name }}</option>
+                        <option value="{{ substitute.id }}">
+                          {{ substitute.name }} ({{ substitute.location_code }})
+                        </option>
                       {% endfor %}
                     </select>
 

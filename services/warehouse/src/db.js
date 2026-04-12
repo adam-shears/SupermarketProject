@@ -57,14 +57,16 @@ export async function getPickerOrdersRows() {
 export async function getSubstituteProducts(productId, categoryName) {
   const result = await pool.query(
     `
-      SELECT p.id, p.name
+      SELECT
+        p.id,
+        p.name,
+        COALESCE(p.location_code, 'Unknown') AS location_code
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       WHERE p.id <> $1
         AND p.listed = TRUE
         AND ($2::text IS NULL OR c.name = $2)
       ORDER BY p.id
-      LIMIT 5
     `,
     [productId, categoryName || null]
   );
@@ -120,11 +122,11 @@ export async function markItemAsPicked(orderId, productId) {
     await client.query(
       `
         UPDATE stock
-        SET quantity_on_hand = GREATEST(quantity_on_hand - $3, 0),
+        SET quantity_on_hand = GREATEST(quantity_on_hand - $2, 0),
             updated_at = NOW()
-        WHERE product_id = $2
+        WHERE product_id = $1
       `,
-      [orderId, productId, item.quantity]
+      [productId, item.quantity]
     );
 
     await client.query("COMMIT");
@@ -136,7 +138,6 @@ export async function markItemAsPicked(orderId, productId) {
     client.release();
   }
 }
-
 export async function insertPickerIssue(orderId, productId, substituteProductId, reason) {
   const result = await pool.query(
     `
