@@ -12,8 +12,20 @@ Responsibilities:
 
 import * as db from "./db.js";
 
+export const warehouseDeps = {
+  getPickerOrdersRows: db.getPickerOrdersRows,
+  getSubstituteProducts: db.getSubstituteProducts,
+  getOrderItem: db.getOrderItem,
+  markItemAsPicked: db.markItemAsPicked,
+  insertPickerIssue: db.insertPickerIssue,
+  resolvePickerIssue: db.resolvePickerIssue,
+  applySubstitution: db.applySubstitution,
+  getInventoryRows: db.getInventoryRows,
+  updateInventoryItem: db.updateInventoryItem,
+};
+
 export async function getPickerOrders() {
-  const rows = await db.getPickerOrdersRows();
+  const rows = await warehouseDeps.getPickerOrdersRows();
   const ordersMap = new Map();
 
   for (const row of rows) {
@@ -26,7 +38,10 @@ export async function getPickerOrders() {
       });
     }
 
-    const substitutes = await db.getSubstituteProducts(row.product_id, row.category_name);
+    const substitutes = await warehouseDeps.getSubstituteProducts(
+      row.product_id,
+      row.category_name
+    );
 
     ordersMap.get(row.order_id).items.push({
       product_id: row.product_id,
@@ -61,7 +76,7 @@ export async function completePickerItem(orderId, productId) {
     throw new Error("orderId and productId are required");
   }
 
-  const item = await db.getOrderItem(orderId, productId);
+  const item = await warehouseDeps.getOrderItem(orderId, productId);
   if (!item) {
     throw new Error("Order item not found");
   }
@@ -73,7 +88,7 @@ export async function completePickerItem(orderId, productId) {
     };
   }
 
-  const updated = await db.markItemAsPicked(orderId, productId);
+  const updated = await warehouseDeps.markItemAsPicked(orderId, productId);
 
   return {
     message: "Picker item marked as completed",
@@ -90,12 +105,12 @@ export async function reportPickerIssue(orderId, productId, payload) {
     throw new Error("Reason is required");
   }
 
-  const item = await db.getOrderItem(orderId, productId);
+  const item = await warehouseDeps.getOrderItem(orderId, productId);
   if (!item) {
     throw new Error("Order item not found");
   }
 
-  const issue = await db.insertPickerIssue(
+  const issue = await warehouseDeps.insertPickerIssue(
     orderId,
     productId,
     payload.substituteProductId || null,
@@ -103,7 +118,7 @@ export async function reportPickerIssue(orderId, productId, payload) {
   );
 
   if (payload.substituteProductId) {
-    await db.applySubstitution(orderId, productId, payload.substituteProductId);
+    await warehouseDeps.applySubstitution(orderId, productId, payload.substituteProductId);
   }
 
   return {
@@ -117,7 +132,7 @@ export async function resolvePickerIssue(issueId) {
     throw new Error("issueId is required");
   }
 
-  const updated = await db.resolvePickerIssue(issueId);
+  const updated = await warehouseDeps.resolvePickerIssue(issueId);
   if (!updated) {
     throw new Error("Issue not found");
   }
@@ -129,7 +144,7 @@ export async function resolvePickerIssue(issueId) {
 }
 
 export async function getInventory() {
-  return db.getInventoryRows();
+  return warehouseDeps.getInventoryRows();
 }
 
 export async function updateInventory(productId, payload) {
@@ -148,7 +163,7 @@ export async function updateInventory(productId, payload) {
     throw new Error("Location code is required");
   }
 
-  const updated = await db.updateInventoryItem(productId, quantity, locationCode);
+  const updated = await warehouseDeps.updateInventoryItem(productId, quantity, locationCode);
 
   return {
     message: "Inventory updated successfully",
