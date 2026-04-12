@@ -343,6 +343,98 @@ router.delete("/api/shopping-list/items/:productId", requireAuth, async (req, re
   }
 });
 
+
+router.get("/picker", async (req, res) => {
+  try {
+    const orders = await api.getPickerOrders();
+
+    res.render("picker.njk", {
+      title: "Picker View",
+      orders,
+      completed: req.query.completed === "1",
+      issueSubmitted: req.query.issueSubmitted === "1",
+      issueResolved: req.query.issueResolved === "1",
+    });
+  } catch (error) {
+    console.error("Failed to load picker view:", error);
+    res.status(500).send(`Failed to load picker view: ${error.message}`);
+  }
+});
+
+router.post("/picker/orders/:orderId/items/:productId/complete", async (req, res) => {
+  try {
+    const { orderId, productId } = req.params;
+
+    await api.completePickerItem(orderId, productId);
+
+    res.redirect("/picker?completed=1");
+  } catch (error) {
+    console.error("Failed to complete picker item:", error);
+    res.status(500).send(`Failed to complete picker item: ${error.message}`);
+  }
+});
+
+router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) => {
+  try {
+    const { orderId, productId } = req.params;
+    const { substituteProductId, reason } = req.body;
+
+    await api.reportPickerIssue(orderId, productId, {
+      substituteProductId,
+      reason,
+    });
+
+    res.redirect("/picker?issueSubmitted=1");
+  } catch (error) {
+    console.error("Failed to report picker issue:", error);
+    res.status(500).send(`Failed to report picker issue: ${error.message}`);
+  }
+});
+
+router.post("/picker/issues/:issueId/resolve", async (req, res) => {
+  try {
+    const { issueId } = req.params;
+
+    await api.resolvePickerIssue(issueId);
+
+    res.redirect("/picker?issueResolved=1");
+  } catch (error) {
+    console.error("Failed to resolve picker issue:", error);
+    res.status(500).send(`Failed to resolve picker issue: ${error.message}`);
+  }
+});
+
+router.get("/inventory", async (req, res) => {
+  try {
+    const inventory = await api.getInventory();
+
+    res.render("inventory.njk", {
+      title: "Inventory Management",
+      inventory,
+      updated: req.query.updated === "1",
+    });
+  } catch (error) {
+    console.error("Failed to load inventory view:", error);
+    res.status(500).send(`Failed to load inventory view: ${error.message}`);
+  }
+});
+
+router.post("/inventory/:productId", async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { quantity, locationCode } = req.body;
+
+    await api.updateInventoryItem(productId, {
+      quantity,
+      locationCode,
+    });
+
+    res.redirect("/inventory?updated=1");
+  } catch (error) {
+    console.error("Failed to update inventory:", error);
+    res.status(500).send(`Failed to update inventory: ${error.message}`);
+  }
+});
 // Health check
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "frontend service is healthy." });

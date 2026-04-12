@@ -73,10 +73,13 @@ export const api = {
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 
   getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
-  addShoppingListItem: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
-  updateShoppingListItem: (customerId, productId, payload) => patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
-  deleteShoppingListItem: (customerId, productId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
-  
+  addShoppingListItem: (customerId, payload) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
+  updateShoppingListItem: (customerId, productId, payload) =>
+    patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
+  deleteShoppingListItem: (customerId, productId) =>
+    deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
+
   getManagementView: async (scale = "week", search = "") => {
     const mockData = {
       day: {
@@ -156,4 +159,21 @@ export const api = {
     const params = new URLSearchParams({ scale, search }).toString();
     return `/management/export.csv?${params}`;
   },
-};
+
+  // Picker view API
+
+  getPickerOrders: () => getJson(`${WAREHOUSE_URL}/picker/orders`),
+
+  completePickerItem: (orderId, productId) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/complete`, {}),
+
+  reportPickerIssue: (orderId, productId, payload) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/issue`, payload),
+
+  resolvePickerIssue: (issueId) =>
+    postJson(`${WAREHOUSE_URL}/picker/issues/${issueId}/resolve`, {}),
+
+  getInventory: () => getJson(`${WAREHOUSE_URL}/inventory`),
+
+  updateInventoryItem: (productId, payload) =>
+    patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),};

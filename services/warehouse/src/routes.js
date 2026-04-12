@@ -9,7 +9,9 @@ and sending the response.
 Actual validation should be done in service.js.
 */
 
+
 import { Router } from "express";
+import * as service from "./service.js";
 
 const router = Router();
 
@@ -19,6 +21,76 @@ router.get("/", async (req, res) => {
 
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "warehouse service is healthy." });
+});
+
+router.get("/picker/orders", async (req, res) => {
+  try {
+    const orders = await service.getPickerOrders();
+    res.json(orders);
+  } catch (error) {
+    console.error("Failed to load picker orders:", error);
+    res.status(500).json({ message: error.message || "Failed to load picker orders" });
+  }
+});
+
+router.post("/picker/orders/:orderId/items/:productId/complete", async (req, res) => {
+  try {
+    const { orderId, productId } = req.params;
+    const result = await service.completePickerItem(orderId, productId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to complete picker item:", error);
+    res.status(500).json({ message: error.message || "Failed to complete picker item" });
+  }
+});
+
+router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) => {
+  try {
+    const { orderId, productId } = req.params;
+    const { substituteProductId, reason } = req.body;
+
+    const result = await service.reportPickerIssue(orderId, productId, {
+      substituteProductId,
+      reason,
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to report picker issue:", error);
+    res.status(500).json({ message: error.message || "Failed to report picker issue" });
+  }
+});
+
+router.post("/picker/issues/:issueId/resolve", async (req, res) => {
+  try {
+    const { issueId } = req.params;
+    const result = await service.resolvePickerIssue(issueId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to resolve picker issue:", error);
+    res.status(500).json({ message: error.message || "Failed to resolve picker issue" });
+  }
+});
+
+router.get("/inventory", async (req, res) => {
+  try {
+    const inventory = await service.getInventory();
+    res.json(inventory);
+  } catch (error) {
+    console.error("Failed to load inventory:", error);
+    res.status(500).json({ message: error.message || "Failed to load inventory" });
+  }
+});
+
+router.patch("/inventory/:productId", async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const result = await service.updateInventory(productId, req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to update inventory:", error);
+    res.status(500).json({ message: error.message || "Failed to update inventory" });
+  }
 });
 
 export default router;
