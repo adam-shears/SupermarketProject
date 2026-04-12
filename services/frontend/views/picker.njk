@@ -16,11 +16,19 @@
     {% endif %}
 
     {% if issueSubmitted %}
-      <p class="success-message">Issue submitted successfully.</p>
+      <p class="success-message">Issue submitted successfully and management has been alerted.</p>
     {% endif %}
 
     {% if issueResolved %}
       <p class="success-message">Issue resolved successfully.</p>
+    {% endif %}
+
+    {% if orderFinalised %}
+      <p class="success-message">Order finalised successfully.</p>
+    {% endif %}
+
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
     {% endif %}
 
     {% if orders.length === 0 %}
@@ -34,9 +42,15 @@
             <strong>{{ order.customer_name }}</strong>
           </div>
           <div class="order-summary-right">
-            {{ order.order_info }}
+            {{ order.order_info }} · Status: {{ order.status }}
           </div>
         </div>
+
+        {% if order.hasUnresolvedIssues %}
+          <div class="order-warning">
+            This order has unresolved stock issues and cannot be finalised yet.
+          </div>
+        {% endif %}
 
         <div class="order-body">
           <h2>Order {{ order.id }}</h2>
@@ -151,6 +165,16 @@
               </div>
             {% endfor %}
           </div>
+
+          <form method="POST" action="/picker/orders/{{ order.id }}/finalise" class="finalise-order-form">
+            <button
+              type="submit"
+              class="finalise-order-button"
+              {% if order.hasUnresolvedIssues or order.hasUnpickedItems %}disabled{% endif %}
+            >
+              Finalise Order
+            </button>
+          </form>
         </div>
       </section>
     {% endfor %}

@@ -271,3 +271,66 @@
   border: 1px solid #ccc;
   border-radius: 8px;
 }
+.error-message {
+  background: #fdeaea;
+  color: #a12626;
+  border: 1px solid #efb2b2;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.order-warning {
+  background: #fff4da;
+  color: #9a6700;
+  border: 1px solid #f2d28b;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.finalise-order-form {
+  margin-top: 1rem;
+}
+
+.finalise-order-button {
+  border: 1px solid #1f7a3d;
+  border-radius: 8px;
+  background: #1f7a3d;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.55rem 1rem;
+  font-size: 0.95rem;
+}
+
+.finalise-order-button:disabled {
+  background: #cdd8cf;
+  border-color: #cdd8cf;
+  cursor: not-allowed;
+}
+
+.management-issues-panel {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.management-issue-card {
+  border: 1px solid #f0c36d;
+  background: #fff9ef;
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+
+.management-issue-card.resolved {
+  border-color: #b9e0b9;
+  background: #f3fbf3;
+}
