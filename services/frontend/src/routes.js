@@ -19,11 +19,11 @@ const router = Router();
 // function to check if user is logged in for accessing certain endpoints
 function requireAuth(requiredAdminLevel) {
   return (req, res, next) => {
-    if (!req.session.user) {
-      return res.status(401).json({ message: "You must be logged in to access this resource" });
+    if(!req.session.user) {
+      return res.status(401).render("4xx.njk", { title: "Unauthorized", status: "401 - Unauthorized", message: "You must be logged in to access this resource" });
     }
     if ((req.session.user.admin_level || 0) < requiredAdminLevel) {
-      return res.status(403).json({ message: "You do not have permission to access this resource" });
+      return res.status(403).render("4xx.njk", { title: "Forbidden", status: "403 - Forbidden", message: "You do not have permission to access this resource" });
     }
     next();
   };
@@ -39,7 +39,7 @@ router.get("/", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to load products");
+    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load products" });
   }
 });
 
@@ -81,7 +81,10 @@ router.get("/products/:id", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to load product");
+    if(error.status === 404) {
+      return res.status(404).render("4xx.njk", { title: "Product Not Found", status: "404 - Not Found", message: "The product you are looking for does not exist." });
+    }
+    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load product" });
   }
 });
 
@@ -116,7 +119,7 @@ router.get("/products", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to load product list");
+    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load product list" });
   }
 });
 
@@ -167,7 +170,7 @@ router.get("/basket", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to load basket");
+    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load basket" });
   }
 });
 

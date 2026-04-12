@@ -36,23 +36,25 @@
         </div>
     </div>
 
-    <div id="shopping-list-widget" class="shopping-list-widget">
-      <button id="shopping-list-toggle" class="shopping-list-toggle" type="button">Shopping List</button>
+    {% if not user or (user.admin_level | default(0)) < 1 %}
+      <div id="shopping-list-widget" class="shopping-list-widget">
+        <button id="shopping-list-toggle" class="shopping-list-toggle" type="button">Shopping List</button>
 
-      <div id="shopping-list-panel" class="shopping-list-panel hidden">
-        <div class="shopping-list-header">
-          <h3>Your Shopping List</h3>
-          <button id="shopping-list-close" type="button">x</button>
+        <div id="shopping-list-panel" class="shopping-list-panel hidden">
+          <div class="shopping-list-header">
+            <h3>Your Shopping List</h3>
+            <button id="shopping-list-close" type="button">x</button>
+          </div>
+
+          <div class="shopping-list-search">
+            <input id="shopping-list-input" type="text" placeholder="Type a product name..." autocomplete="off" />
+            <div id="shopping-list-suggestions" class="shopping-list-suggestions"></div>
+          </div>
+
+          <div id="shopping-list-items" class="shopping-list-items"></div>
         </div>
-
-        <div class="shopping-list-search">
-          <input id="shopping-list-input" type="text" placeholder="Type a product name..." autocomplete="off" />
-          <div id="shopping-list-suggestions" class="shopping-list-suggestions"></div>
-        </div>
-
-        <div id="shopping-list-items" class="shopping-list-items"></div>
       </div>
-    </div>
+    {% endif %}
 
     {% block content %} {% endblock %}
     <script type="module" src="/shoppingList.js"></script>

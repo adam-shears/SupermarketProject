@@ -20,7 +20,11 @@ const ANALYTICS_URL = process.env.ANALYTICS_URL || "http://analytics:3000";
 async function getJson(url) {
   const res = await fetch(url);
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  if (!res.ok) {
+    const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
+    error.status = res.status;
+    throw error;
+  }
   return data;
 }
 
@@ -33,7 +37,11 @@ async function postJson(url, body) {
 
   const data = await res.json();
 
-  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  if (!res.ok) {
+    const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
+    error.status = res.status;
+    throw error;
+  }
   return data;
 }
 
@@ -49,7 +57,11 @@ async function patchJson(url, body) {
   }
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  if (!res.ok) {
+    const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
+    error.status = res.status;
+    throw error;
+  }
   return data;
 }
 
@@ -77,17 +89,10 @@ export const api = {
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 
-  getShoppingList: (customerId) =>
-    getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
-
-  addShoppingListItem: (customerId, payload) =>
-    postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
-
-  updateShoppingListItem: (customerId, productId, payload) =>
-    patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
-
-  deleteShoppingListItem: (customerId, productId) =>
-    deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
+  getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  addShoppingListItem: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
+  updateShoppingListItem: (customerId, productId, payload) => patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
+  deleteShoppingListItem: (customerId, productId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
 
   getManagementView: async (scale = "week", search = "") => {
     const mockData = {
