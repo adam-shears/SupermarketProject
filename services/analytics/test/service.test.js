@@ -24,4 +24,4 @@ describe("Analytics Service", () => {
             expect(stubTrendingItems.calledWith('week')).to.be.true;
         });
     });
-})
+});
