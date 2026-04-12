@@ -22,6 +22,12 @@ export const warehouseDeps = {
   applySubstitution: db.applySubstitution,
   getInventoryRows: db.getInventoryRows,
   updateInventoryItem: db.updateInventoryItem,
+  insertManagementAlert: db.insertManagementAlert,
+  resolveManagementAlertsForIssue: db.resolveManagementAlertsForIssue,
+  getManagementIssueRows: db.getManagementIssueRows,
+  countUnresolvedIssuesForOrder: db.countUnresolvedIssuesForOrder,
+  countUnpickedItemsForOrder: db.countUnpickedItemsForOrder,
+  finalisePickerOrder: db.finalisePickerOrder,
 };
 
 export async function getPickerOrders() {
@@ -32,6 +38,7 @@ export async function getPickerOrders() {
     if (!ordersMap.has(row.order_id)) {
       ordersMap.set(row.order_id, {
         id: row.order_id,
+        status: row.order_status,
         customer_name: row.customer_name,
         order_info: `${row.item_count} ${row.item_count === 1 ? "item" : "items"} in order`,
         items: [],
@@ -68,7 +75,11 @@ export async function getPickerOrders() {
     });
   }
 
-  return Array.from(ordersMap.values());
+  return Array.from(ordersMap.values()).map((order) => ({
+    ...order,
+    hasUnresolvedIssues: order.items.some((item) => item.issue && !item.issue.resolved),
+    hasUnpickedItems: order.items.some((item) => !item.picked),
+  }));
 }
 
 export async function completePickerItem(orderId, productId) {
@@ -121,6 +132,13 @@ export async function reportPickerIssue(orderId, productId, payload) {
     await warehouseDeps.applySubstitution(orderId, productId, payload.substituteProductId);
   }
 
+  await warehouseDeps.insertManagementAlert(
+    issue.id,
+    orderId,
+    productId,
+    `Stock issue reported for order ${orderId}, product ${productId}: ${payload.reason}`
+  );
+
   return {
     message: "Picker issue reported successfully",
     issue,
@@ -136,6 +154,8 @@ export async function resolvePickerIssue(issueId) {
   if (!updated) {
     throw new Error("Issue not found");
   }
+
+  await warehouseDeps.resolveManagementAlertsForIssue(issueId);
 
   return {
     message: "Issue resolved successfully",
@@ -168,5 +188,35 @@ export async function updateInventory(productId, payload) {
   return {
     message: "Inventory updated successfully",
     item: updated,
+  };
+}
+
+export async function getManagementIssues() {
+  return warehouseDeps.getManagementIssueRows();
+}
+
+export async function finaliseOrder(orderId) {
+  if (!orderId) {
+    throw new Error("orderId is required");
+  }
+
+  const openIssues = await warehouseDeps.countUnresolvedIssuesForOrder(orderId);
+  if (openIssues > 0) {
+    throw new Error("Order cannot be finalised while unresolved stock issues exist");
+  }
+
+  const unpickedItems = await warehouseDeps.countUnpickedItemsForOrder(orderId);
+  if (unpickedItems > 0) {
+    throw new Error("Order cannot be finalised until all items are picked");
+  }
+
+  const updatedOrder = await warehouseDeps.finalisePickerOrder(orderId);
+  if (!updatedOrder) {
+    throw new Error("Order not found");
+  }
+
+  return {
+    message: "Order finalised successfully",
+    order: updatedOrder,
   };
 }

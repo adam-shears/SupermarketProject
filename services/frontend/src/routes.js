@@ -29,7 +29,7 @@ function requireAuth(requiredAdminLevel) {
   };
 }
 
-// Home page (optional, can list featured products)
+// Home page
 router.get("/", async (req, res) => {
   try {
     const products = await api.listProducts();
@@ -88,27 +88,31 @@ router.get("/products/:id", async (req, res) => {
   }
 });
 
-// ** Product List Page**
+// Product list page
 router.get("/products", async (req, res) => {
   try {
     const category = req.query.category || "";
     const searchTerm = req.query.q ? req.query.q.trim() : "";
-    let products, title;
+    let products;
+    let title;
 
-    if(searchTerm) {
+    if (searchTerm) {
       products = await api.searchProducts(searchTerm);
       title = `Results for "${searchTerm}"`;
     } else {
-      products = await api.listProducts(); // fetch all products if no search term provided
+      products = await api.listProducts();
       title = "All Products";
     }
 
-    if(category) { // filter products by category if it was provided
-      products = products.filter((product) => product.category_name.toLowerCase() === category.toLowerCase());
+    if (category) {
+      products = products.filter(
+        (product) => product.category_name.toLowerCase() === category.toLowerCase()
+      );
       title += ` in "${category}"`;
     }
+
     res.render("product-list.njk", {
-      title: title,
+      title,
       category,
       products,
       searchTerm,
@@ -123,10 +127,8 @@ router.get("/products", async (req, res) => {
 router.post("/basket/items", async (req, res) => {
   try {
     const { productId, quantity } = req.body;
-    /*await api.addToBasket(productId, quantity);*/ /* uncomment this when backend orders service is ready */
-    console.log(
-      `Adding product ${productId} with quantity ${quantity} to basket`
-    ); /* temporary log to view post request is working */
+    // await api.addToBasket(productId, quantity);
+    console.log(`Adding product ${productId} with quantity ${quantity} to basket`);
     res.status(200).json({ message: "Item added to basket" });
   } catch (error) {
     console.error(error);
@@ -137,9 +139,8 @@ router.post("/basket/items", async (req, res) => {
 // Basket GET endpoint (temporary hardcoded)
 router.get("/basket", async (req, res) => {
   try {
-    /*const basket = await api.getBasket();*/ /* uncomment this when backend orders service is ready */
+    // const basket = await api.getBasket();
 
-    /* temporary hardcoded basket to view basket page*/
     const basket = {
       items: [
         {
@@ -179,12 +180,18 @@ router.get("/login", (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const user = await api.login({ email: req.body.email, password: req.body.password });
+    const user = await api.login({
+      email: req.body.email,
+      password: req.body.password,
+    });
 
     req.session.user = user;
     res.redirect("/");
   } catch (error) {
-    res.status(401).render("login.njk", { title: "Login", error: "Invalid email or password" });
+    res.status(401).render("login.njk", {
+      title: "Login",
+      error: "Invalid email or password",
+    });
   }
 });
 
@@ -206,9 +213,10 @@ router.post("/register", async (req, res) => {
     req.session.user = user;
     res.redirect("/");
   } catch (error) {
-    res
-      .status(400)
-      .render("register.njk", { title: "Register", error: error.message || "Failed to register" });
+    res.status(400).render("register.njk", {
+      title: "Register",
+      error: error.message || "Failed to register",
+    });
   }
 });
 
@@ -217,7 +225,8 @@ router.post("/logout", (req, res) => {
     res.redirect("/");
   });
 });
-//management view
+
+// Management view
 router.get("/management", requireAuth(2), async (req, res) => {
   try {
     const allowedScales = ["day", "week", "month"];
@@ -234,13 +243,17 @@ router.get("/management", requireAuth(2), async (req, res) => {
     });
   } catch (error) {
     console.error("Management view error:", error);
-    // Show a friendly error message instead of technical details
     res.render("management.njk", {
       title: "Management View",
-      management: { bestSellers: [], salesPerCategory: [], trendingItems: [], totalSalesPence: 0 },
+      management: {
+        bestSellers: [],
+        salesPerCategory: [],
+        trendingItems: [],
+        totalSalesPence: 0,
+      },
       scale: "week",
       search: "",
-      error: "Management data is temporarily unavailable. Please try again later."
+      error: "Management data is temporarily unavailable. Please try again later.",
     });
   }
 });
@@ -286,7 +299,6 @@ router.get("/management/export.csv", requireAuth(2), async (req, res) => {
   }
 });
 
-
 router.get("/api/products/search", async (req, res) => {
   try {
     const products = await api.searchProducts(req.query.q || "");
@@ -302,8 +314,7 @@ Shopping list endpoints
 All of these endpoints require user to be logged in to their account
 */
 
-// GET shopping list items for a logged in user
-router.get("/api/shopping-list", requireAuth, async (req, res) => {
+router.get("/api/shopping-list", requireAuth(0), async (req, res) => {
   try {
     const items = await api.getShoppingList(req.session.user.id);
     res.json(items);
@@ -313,8 +324,7 @@ router.get("/api/shopping-list", requireAuth, async (req, res) => {
   }
 });
 
-// Add an item to the shopping list
-router.post("/api/shopping-list/items", requireAuth, async (req, res) => {
+router.post("/api/shopping-list/items", requireAuth(0), async (req, res) => {
   try {
     const item = await api.addShoppingListItem(req.session.user.id, req.body);
     res.status(201).json(item);
@@ -324,10 +334,13 @@ router.post("/api/shopping-list/items", requireAuth, async (req, res) => {
   }
 });
 
-// Update an item in the shopping list
-router.patch("/api/shopping-list/items/:productId", requireAuth, async (req, res) => {
+router.patch("/api/shopping-list/items/:productId", requireAuth(0), async (req, res) => {
   try {
-    const item = await api.updateShoppingListItem(req.session.user.id, req.params.productId, req.body);
+    const item = await api.updateShoppingListItem(
+      req.session.user.id,
+      req.params.productId,
+      req.body
+    );
     res.json(item);
   } catch (error) {
     console.error(error);
@@ -335,17 +348,30 @@ router.patch("/api/shopping-list/items/:productId", requireAuth, async (req, res
   }
 });
 
-// Delete an item from the shopping list
-router.delete("/api/shopping-list/items/:productId", requireAuth, async (req, res) => {
+router.delete("/api/shopping-list/items/:productId", requireAuth(0), async (req, res) => {
   try {
     await api.deleteShoppingListItem(req.session.user.id, req.params.productId);
     res.status(204).send();
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Failed to remove item from shopping list"});
+    res.status(500).json({ message: "Failed to remove item from shopping list" });
   }
 });
 
+/*
+Picker + stock/location synchronisation routes
+*/
+
+// API proxy for picker polling / sync
+router.get("/api/picker/orders", async (req, res) => {
+  try {
+    const orders = await api.getPickerOrders();
+    res.json(orders);
+  } catch (error) {
+    console.error("Failed to proxy picker orders:", error);
+    res.status(500).json({ message: "Failed to load picker orders" });
+  }
+});
 
 router.get("/picker", async (req, res) => {
   try {
@@ -357,6 +383,8 @@ router.get("/picker", async (req, res) => {
       completed: req.query.completed === "1",
       issueSubmitted: req.query.issueSubmitted === "1",
       issueResolved: req.query.issueResolved === "1",
+      orderFinalised: req.query.orderFinalised === "1",
+      error: req.query.error || null,
     });
   } catch (error) {
     console.error("Failed to load picker view:", error);
@@ -367,13 +395,11 @@ router.get("/picker", async (req, res) => {
 router.post("/picker/orders/:orderId/items/:productId/complete", async (req, res) => {
   try {
     const { orderId, productId } = req.params;
-
     await api.completePickerItem(orderId, productId);
-
     res.redirect("/picker?completed=1");
   } catch (error) {
     console.error("Failed to complete picker item:", error);
-    res.status(500).send(`Failed to complete picker item: ${error.message}`);
+    res.redirect(`/picker?error=${encodeURIComponent(error.message)}`);
   }
 });
 
@@ -383,38 +409,52 @@ router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) =
     const { substituteProductId, reason } = req.body;
 
     await api.reportPickerIssue(orderId, productId, {
-      substituteProductId,
+      substituteProductId: substituteProductId || null,
       reason,
     });
 
     res.redirect("/picker?issueSubmitted=1");
   } catch (error) {
     console.error("Failed to report picker issue:", error);
-    res.status(500).send(`Failed to report picker issue: ${error.message}`);
+    res.redirect(`/picker?error=${encodeURIComponent(error.message)}`);
   }
 });
 
 router.post("/picker/issues/:issueId/resolve", async (req, res) => {
   try {
     const { issueId } = req.params;
-
     await api.resolvePickerIssue(issueId);
-
     res.redirect("/picker?issueResolved=1");
   } catch (error) {
     console.error("Failed to resolve picker issue:", error);
-    res.status(500).send(`Failed to resolve picker issue: ${error.message}`);
+    res.redirect(`/picker?error=${encodeURIComponent(error.message)}`);
+  }
+});
+
+router.post("/picker/orders/:orderId/finalise", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    await api.finalisePickerOrder(orderId);
+    res.redirect("/picker?orderFinalised=1");
+  } catch (error) {
+    console.error("Failed to finalise order:", error);
+    res.redirect(`/picker?error=${encodeURIComponent(error.message)}`);
   }
 });
 
 router.get("/inventory", async (req, res) => {
   try {
-    const inventory = await api.getInventory();
+    const [inventory, managementIssues] = await Promise.all([
+      api.getInventory(),
+      api.getManagementIssues(),
+    ]);
 
     res.render("inventory.njk", {
       title: "Inventory Management",
       inventory,
+      managementIssues,
       updated: req.query.updated === "1",
+      error: req.query.error || null,
     });
   } catch (error) {
     console.error("Failed to load inventory view:", error);
@@ -427,7 +467,7 @@ router.post("/inventory/:productId", async (req, res) => {
     const { productId } = req.params;
     const { quantity, locationCode } = req.body;
 
-    await api.updateInventoryItem(productId, {
+    await api.updateInventory(productId, {
       quantity,
       locationCode,
     });
@@ -435,7 +475,7 @@ router.post("/inventory/:productId", async (req, res) => {
     res.redirect("/inventory?updated=1");
   } catch (error) {
     console.error("Failed to update inventory:", error);
-    res.status(500).send(`Failed to update inventory: ${error.message}`);
+    res.redirect(`/inventory?error=${encodeURIComponent(error.message)}`);
   }
 });
 // Health check

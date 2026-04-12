@@ -5,7 +5,6 @@ results to service.js for further computation.
 It should not contain any logic that is not directly related to making SQL
 queries in order to preserve maintainability and separation of concerns.
 */
-
 import pg from "pg";
 
 const { Pool } = pg;
@@ -16,6 +15,7 @@ export async function getPickerOrdersRows() {
   const result = await pool.query(`
     SELECT
       o.id AS order_id,
+      o.status AS order_status,
       oi.product_id,
       oi.quantity,
       oi.picked,
@@ -24,7 +24,7 @@ export async function getPickerOrdersRows() {
       p.name AS product_name,
       p.description AS product_description,
       c2.name AS category_name,
-      COALESCE(p.location_code, 'Unknown') AS location_code,
+      COALESCE(s.location_code, 'Unknown') AS location_code,
       COALESCE(s.quantity_on_hand - s.quantity_reserved, 0) AS stock_quantity,
       COALESCE(c.first_name || ' ' || c.last_name, o.guest_name, 'Guest Customer') AS customer_name,
       COUNT(*) OVER (PARTITION BY o.id) AS item_count,
@@ -48,6 +48,7 @@ export async function getPickerOrdersRows() {
       ORDER BY created_at DESC
       LIMIT 1
     ) pi ON TRUE
+    WHERE o.status IN ('pending', 'picking')
     ORDER BY o.id, oi.product_id
   `);
 
@@ -55,23 +56,48 @@ export async function getPickerOrdersRows() {
 }
 
 export async function getSubstituteProducts(productId, categoryName) {
-  const result = await pool.query(
+  const sameCategoryResult = await pool.query(
     `
       SELECT
         p.id,
         p.name,
-        COALESCE(p.location_code, 'Unknown') AS location_code
+        COALESCE(s.location_code, 'Unknown') AS location_code
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
+      LEFT JOIN stock s ON s.product_id = p.id
       WHERE p.id <> $1
         AND p.listed = TRUE
         AND ($2::text IS NULL OR c.name = $2)
       ORDER BY p.id
+      LIMIT 15
     `,
     [productId, categoryName || null]
   );
 
-  return result.rows;
+  if (sameCategoryResult.rows.length >= 8) {
+    return sameCategoryResult.rows;
+  }
+
+  const existingIds = sameCategoryResult.rows.map((row) => row.id);
+
+  const fallbackResult = await pool.query(
+    `
+      SELECT
+        p.id,
+        p.name,
+        COALESCE(s.location_code, 'Unknown') AS location_code
+      FROM products p
+      LEFT JOIN stock s ON s.product_id = p.id
+      WHERE p.id <> $1
+        AND p.listed = TRUE
+        AND NOT (p.id = ANY($2::int[]))
+      ORDER BY p.id
+      LIMIT $3
+    `,
+    [productId, existingIds.length ? existingIds : [0], 15 - sameCategoryResult.rows.length]
+  );
+
+  return [...sameCategoryResult.rows, ...fallbackResult.rows];
 }
 
 export async function getOrderItem(orderId, productId) {
@@ -129,6 +155,16 @@ export async function markItemAsPicked(orderId, productId) {
       [productId, item.quantity]
     );
 
+    await client.query(
+      `
+        UPDATE orders
+        SET status = 'picking',
+            last_updated = NOW()
+        WHERE id = $1 AND status = 'pending'
+      `,
+      [orderId]
+    );
+
     await client.query("COMMIT");
     return updatedItemResult.rows[0];
   } catch (error) {
@@ -138,6 +174,7 @@ export async function markItemAsPicked(orderId, productId) {
     client.release();
   }
 }
+
 export async function insertPickerIssue(orderId, productId, substituteProductId, reason) {
   const result = await pool.query(
     `
@@ -187,7 +224,7 @@ export async function getInventoryRows() {
       p.name,
       p.description,
       COALESCE(c.name, 'Unknown') AS category_name,
-      COALESCE(p.location_code, 'Unknown') AS location_code,
+      COALESCE(s.location_code, 'Unknown') AS location_code,
       COALESCE(s.quantity_on_hand - s.quantity_reserved, 0) AS quantity
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
@@ -206,21 +243,15 @@ export async function updateInventoryItem(productId, quantity, locationCode) {
 
     await client.query(
       `
-        UPDATE products
-        SET location_code = $2
-        WHERE id = $1
-      `,
-      [productId, locationCode]
-    );
-
-    await client.query(
-      `
-        INSERT INTO stock (product_id, quantity_on_hand, quantity_reserved, updated_at)
-        VALUES ($1, $2, 0, NOW())
+        INSERT INTO stock (product_id, quantity_on_hand, quantity_reserved, location_code, updated_at)
+        VALUES ($1, $2, 0, $3, NOW())
         ON CONFLICT (product_id)
-        DO UPDATE SET quantity_on_hand = EXCLUDED.quantity_on_hand, updated_at = NOW()
+        DO UPDATE SET
+          quantity_on_hand = EXCLUDED.quantity_on_hand,
+          location_code = EXCLUDED.location_code,
+          updated_at = NOW()
       `,
-      [productId, quantity]
+      [productId, quantity, locationCode]
     );
 
     await client.query("COMMIT");
@@ -231,4 +262,101 @@ export async function updateInventoryItem(productId, quantity, locationCode) {
   } finally {
     client.release();
   }
+}
+
+export async function insertManagementAlert(issueId, orderId, productId, message) {
+  const result = await pool.query(
+    `
+      INSERT INTO management_alerts (issue_id, order_id, product_id, message)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `,
+    [issueId, orderId, productId, message]
+  );
+
+  return result.rows[0];
+}
+
+export async function resolveManagementAlertsForIssue(issueId) {
+  const result = await pool.query(
+    `
+      UPDATE management_alerts
+      SET resolved = TRUE,
+          resolved_at = NOW()
+      WHERE issue_id = $1
+      RETURNING *
+    `,
+    [issueId]
+  );
+
+  return result.rows;
+}
+
+export async function getManagementIssueRows() {
+  const result = await pool.query(`
+    SELECT
+      pi.id AS issue_id,
+      pi.order_id,
+      pi.product_id,
+      pi.reason,
+      pi.resolved,
+      pi.created_at,
+      p.name AS product_name,
+      COALESCE(s.location_code, 'Unknown') AS location_code,
+      COALESCE(c.first_name || ' ' || c.last_name, o.guest_name, 'Guest Customer') AS customer_name,
+      ma.id AS alert_id,
+      ma.message AS alert_message,
+      ma.created_at AS alert_created_at,
+      ma.resolved AS alert_resolved
+    FROM picker_issues pi
+    JOIN orders o ON o.id = pi.order_id
+    JOIN products p ON p.id = pi.product_id
+    LEFT JOIN stock s ON s.product_id = p.id
+    LEFT JOIN customers c ON c.id = o.customer_id
+    LEFT JOIN management_alerts ma ON ma.issue_id = pi.id
+    ORDER BY pi.resolved ASC, pi.created_at DESC
+  `);
+
+  return result.rows;
+}
+
+export async function countUnresolvedIssuesForOrder(orderId) {
+  const result = await pool.query(
+    `
+      SELECT COUNT(*)::int AS total
+      FROM picker_issues
+      WHERE order_id = $1 AND resolved = FALSE
+    `,
+    [orderId]
+  );
+
+  return result.rows[0].total;
+}
+
+export async function countUnpickedItemsForOrder(orderId) {
+  const result = await pool.query(
+    `
+      SELECT COUNT(*)::int AS total
+      FROM order_items
+      WHERE order_id = $1 AND picked = FALSE
+    `,
+    [orderId]
+  );
+
+  return result.rows[0].total;
+}
+
+export async function finalisePickerOrder(orderId) {
+  const result = await pool.query(
+    `
+      UPDATE orders
+      SET status = 'picked',
+          last_updated = NOW()
+      WHERE id = $1
+      RETURNING *
+    `,
+    [orderId]
+  );
+
+  return result.rows[0] || null;
 }

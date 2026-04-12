@@ -18,6 +18,7 @@ describe("Warehouse Service", () => {
       sinon.stub(service.warehouseDeps, "getPickerOrdersRows").resolves([
         {
           order_id: 101,
+          order_status: "pending",
           product_id: 1,
           quantity: 1,
           picked: false,
@@ -39,6 +40,7 @@ describe("Warehouse Service", () => {
         },
         {
           order_id: 101,
+          order_status: "pending",
           product_id: 2,
           quantity: 2,
           picked: true,
@@ -68,6 +70,7 @@ describe("Warehouse Service", () => {
 
       expect(result).to.have.lengthOf(1);
       expect(result[0].id).to.equal(101);
+      expect(result[0].status).to.equal("pending");
       expect(result[0].items).to.have.lengthOf(2);
       expect(result[0].items[0].substitutes).to.deep.equal([
         { id: 7, name: "Alt Item", location_code: "Z-99" },
@@ -79,22 +82,30 @@ describe("Warehouse Service", () => {
         substitute_product_id: null,
         created_at: "2026-01-01T11:00:00.000Z",
       });
+      expect(result[0].hasUnresolvedIssues).to.equal(true);
+      expect(result[0].hasUnpickedItems).to.equal(true);
     });
   });
 
   describe("completePickerItem", () => {
     it("should throw if orderId or productId is missing", async () => {
-      await expect(service.completePickerItem(null, 1)).to.be.rejectedWith(
-        "orderId and productId are required"
-      );
+      try {
+        await service.completePickerItem(null, 1);
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("orderId and productId are required");
+      }
     });
 
     it("should throw if the order item does not exist", async () => {
       sinon.stub(service.warehouseDeps, "getOrderItem").resolves(null);
 
-      await expect(service.completePickerItem(101, 1)).to.be.rejectedWith(
-        "Order item not found"
-      );
+      try {
+        await service.completePickerItem(101, 1);
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("Order item not found");
+      }
     });
 
     it("should return already picked if item is already picked", async () => {
@@ -143,105 +154,193 @@ describe("Warehouse Service", () => {
 
   describe("reportPickerIssue", () => {
     it("should throw if orderId or productId is missing", async () => {
-      await expect(
-        service.reportPickerIssue(null, 1, { reason: "damaged" })
-      ).to.be.rejectedWith("orderId and productId are required");
+      try {
+        await service.reportPickerIssue(null, 1, { reason: "damaged" });
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("orderId and productId are required");
+      }
     });
 
     it("should throw if reason is missing", async () => {
-      await expect(
-        service.reportPickerIssue(101, 1, {})
-      ).to.be.rejectedWith("Reason is required");
+      try {
+        await service.reportPickerIssue(101, 1, {});
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("Reason is required");
+      }
     });
 
     it("should throw if order item does not exist", async () => {
       sinon.stub(service.warehouseDeps, "getOrderItem").resolves(null);
 
-      await expect(
-        service.reportPickerIssue(101, 1, { reason: "damaged" })
-      ).to.be.rejectedWith("Order item not found");
+      try {
+        await service.reportPickerIssue(101, 1, { reason: "damaged" });
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("Order item not found");
+      }
     });
 
     it("should create an issue without substitution", async () => {
       sinon.stub(service.warehouseDeps, "getOrderItem").resolves({
         order_id: 101,
         product_id: 1,
+        quantity: 2,
+        picked: false,
       });
 
       sinon.stub(service.warehouseDeps, "insertPickerIssue").resolves({
-        id: 5,
+        id: 501,
         order_id: 101,
         product_id: 1,
         substitute_product_id: null,
         reason: "damaged",
         resolved: false,
+        created_at: "2026-04-12T10:00:00Z",
       });
 
-      const result = await service.reportPickerIssue(101, 1, { reason: "damaged" });
+      sinon.stub(service.warehouseDeps, "insertManagementAlert").resolves({
+        id: 1,
+        issue_id: 501,
+        order_id: 101,
+        product_id: 1,
+        message: "Stock issue reported",
+        resolved: false,
+      });
 
-      expect(result.message).to.equal("Picker issue reported successfully");
-      expect(result.issue.reason).to.equal("damaged");
+      const result = await service.reportPickerIssue(101, 1, {
+        reason: "damaged",
+      });
+
+      expect(result).to.deep.equal({
+        message: "Picker issue reported successfully",
+        issue: {
+          id: 501,
+          order_id: 101,
+          product_id: 1,
+          substitute_product_id: null,
+          reason: "damaged",
+          resolved: false,
+          created_at: "2026-04-12T10:00:00Z",
+        },
+      });
+
+      expect(service.warehouseDeps.insertManagementAlert.calledOnce).to.equal(true);
     });
 
     it("should create an issue and apply substitution if substituteProductId is given", async () => {
       sinon.stub(service.warehouseDeps, "getOrderItem").resolves({
         order_id: 101,
         product_id: 1,
+        quantity: 2,
+        picked: false,
       });
 
       sinon.stub(service.warehouseDeps, "insertPickerIssue").resolves({
-        id: 6,
+        id: 502,
         order_id: 101,
         product_id: 1,
-        substitute_product_id: 3,
+        substitute_product_id: 99,
         reason: "out_of_stock",
+        resolved: false,
+        created_at: "2026-04-12T10:05:00Z",
+      });
+
+      sinon.stub(service.warehouseDeps, "applySubstitution").resolves({
+        order_id: 101,
+        product_id: 1,
+        substituted_product_id: 99,
+      });
+
+      sinon.stub(service.warehouseDeps, "insertManagementAlert").resolves({
+        id: 2,
+        issue_id: 502,
+        order_id: 101,
+        product_id: 1,
+        message: "Stock issue reported",
         resolved: false,
       });
 
-      const applyStub = sinon
-        .stub(service.warehouseDeps, "applySubstitution")
-        .resolves({
-          order_id: 101,
-          product_id: 1,
-          substituted_product_id: 3,
-        });
-
       const result = await service.reportPickerIssue(101, 1, {
+        substituteProductId: 99,
         reason: "out_of_stock",
-        substituteProductId: 3,
       });
 
-      expect(result.message).to.equal("Picker issue reported successfully");
-      expect(applyStub.calledOnceWith(101, 1, 3)).to.equal(true);
+      expect(result).to.deep.equal({
+        message: "Picker issue reported successfully",
+        issue: {
+          id: 502,
+          order_id: 101,
+          product_id: 1,
+          substitute_product_id: 99,
+          reason: "out_of_stock",
+          resolved: false,
+          created_at: "2026-04-12T10:05:00Z",
+        },
+      });
+
+      expect(service.warehouseDeps.applySubstitution.calledOnce).to.equal(true);
+      expect(service.warehouseDeps.insertManagementAlert.calledOnce).to.equal(true);
     });
   });
 
   describe("resolvePickerIssue", () => {
     it("should throw if issueId is missing", async () => {
-      await expect(service.resolvePickerIssue()).to.be.rejectedWith("issueId is required");
+      try {
+        await service.resolvePickerIssue();
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("issueId is required");
+      }
     });
 
     it("should throw if the issue does not exist", async () => {
       sinon.stub(service.warehouseDeps, "resolvePickerIssue").resolves(null);
 
-      await expect(service.resolvePickerIssue(5)).to.be.rejectedWith("Issue not found");
+      try {
+        await service.resolvePickerIssue(5);
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("Issue not found");
+      }
     });
 
     it("should resolve the issue successfully", async () => {
       sinon.stub(service.warehouseDeps, "resolvePickerIssue").resolves({
-        id: 5,
+        id: 601,
+        order_id: 101,
+        product_id: 1,
+        substitute_product_id: null,
+        reason: "missing",
         resolved: true,
+        resolved_at: "2026-04-12T10:15:00Z",
       });
 
-      const result = await service.resolvePickerIssue(5);
+      sinon.stub(service.warehouseDeps, "resolveManagementAlertsForIssue").resolves([
+        {
+          id: 1,
+          issue_id: 601,
+          resolved: true,
+        },
+      ]);
+
+      const result = await service.resolvePickerIssue(601);
 
       expect(result).to.deep.equal({
         message: "Issue resolved successfully",
         issue: {
-          id: 5,
+          id: 601,
+          order_id: 101,
+          product_id: 1,
+          substitute_product_id: null,
+          reason: "missing",
           resolved: true,
+          resolved_at: "2026-04-12T10:15:00Z",
         },
       });
+
+      expect(service.warehouseDeps.resolveManagementAlertsForIssue.calledOnce).to.equal(true);
     });
   });
 
@@ -261,27 +360,39 @@ describe("Warehouse Service", () => {
 
   describe("updateInventory", () => {
     it("should throw if productId is missing", async () => {
-      await expect(
-        service.updateInventory(null, { quantity: 2, locationCode: "A-12" })
-      ).to.be.rejectedWith("productId is required");
+      try {
+        await service.updateInventory(null, { quantity: 2, locationCode: "A-12" });
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("productId is required");
+      }
     });
 
     it("should throw if quantity is invalid", async () => {
-      await expect(
-        service.updateInventory(1, { quantity: "abc", locationCode: "A-12" })
-      ).to.be.rejectedWith("Quantity must be a non-negative number");
+      try {
+        await service.updateInventory(1, { quantity: "abc", locationCode: "A-12" });
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("Quantity must be a non-negative number");
+      }
     });
 
     it("should throw if quantity is negative", async () => {
-      await expect(
-        service.updateInventory(1, { quantity: -1, locationCode: "A-12" })
-      ).to.be.rejectedWith("Quantity must be a non-negative number");
+      try {
+        await service.updateInventory(1, { quantity: -1, locationCode: "A-12" });
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("Quantity must be a non-negative number");
+      }
     });
 
     it("should throw if location code is missing", async () => {
-      await expect(
-        service.updateInventory(1, { quantity: 2, locationCode: "" })
-      ).to.be.rejectedWith("Location code is required");
+      try {
+        await service.updateInventory(1, { quantity: 2, locationCode: "" });
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("Location code is required");
+      }
     });
 
     it("should update inventory successfully", async () => {
@@ -302,6 +413,76 @@ describe("Warehouse Service", () => {
           productId: 1,
           quantity: 9,
           locationCode: "B-04",
+        },
+      });
+    });
+  });
+
+  describe("finaliseOrder", () => {
+    it("should throw if orderId is missing", async () => {
+      try {
+        await service.finaliseOrder();
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("orderId is required");
+      }
+    });
+
+    it("should throw if unresolved stock issues exist", async () => {
+      sinon.stub(service.warehouseDeps, "countUnresolvedIssuesForOrder").resolves(1);
+
+      try {
+        await service.finaliseOrder(101);
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal(
+          "Order cannot be finalised while unresolved stock issues exist"
+        );
+      }
+    });
+
+    it("should throw if there are still unpicked items", async () => {
+      sinon.stub(service.warehouseDeps, "countUnresolvedIssuesForOrder").resolves(0);
+      sinon.stub(service.warehouseDeps, "countUnpickedItemsForOrder").resolves(2);
+
+      try {
+        await service.finaliseOrder(101);
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal(
+          "Order cannot be finalised until all items are picked"
+        );
+      }
+    });
+
+    it("should throw if order is not found", async () => {
+      sinon.stub(service.warehouseDeps, "countUnresolvedIssuesForOrder").resolves(0);
+      sinon.stub(service.warehouseDeps, "countUnpickedItemsForOrder").resolves(0);
+      sinon.stub(service.warehouseDeps, "finalisePickerOrder").resolves(null);
+
+      try {
+        await service.finaliseOrder(101);
+        throw new Error("Expected method to throw.");
+      } catch (error) {
+        expect(error.message).to.equal("Order not found");
+      }
+    });
+
+    it("should finalise order successfully", async () => {
+      sinon.stub(service.warehouseDeps, "countUnresolvedIssuesForOrder").resolves(0);
+      sinon.stub(service.warehouseDeps, "countUnpickedItemsForOrder").resolves(0);
+      sinon.stub(service.warehouseDeps, "finalisePickerOrder").resolves({
+        id: 101,
+        status: "picked",
+      });
+
+      const result = await service.finaliseOrder(101);
+
+      expect(result).to.deep.equal({
+        message: "Order finalised successfully",
+        order: {
+          id: 101,
+          status: "picked",
         },
       });
     });
