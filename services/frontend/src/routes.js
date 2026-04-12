@@ -81,7 +81,10 @@ router.get("/products/:id", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to load product");
+    if(error.status === 404) {
+      return res.status(404).render("4xx.njk", { title: "Product Not Found", status: "404 - Not Found", message: "The product you are looking for does not exist." });
+    }
+    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load product" });
   }
 });
 
@@ -112,7 +115,7 @@ router.get("/products", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to load product list");
+    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load product list" });
   }
 });
 
@@ -166,7 +169,7 @@ router.get("/basket", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to load basket");
+    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load basket" });
   }
 });
 

@@ -1,0 +1,34 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/error.css" />
+{% endblock %}
+
+{% block content %}
+  <div class="error-page">
+    <div class="error-card">
+      <p class="error-eyebrow">Something went wrong</p>
+      <h1>{{ status }}</h1>
+      <p class="error-lead">You seem to have wandered off the right path.</p>
+      <p class="error-message">{{ message }}</p>
+
+      <div class="error-links">
+        <p class="error-links-title">Helpful places to go next</p>
+        <div class="error-link-list">
+          <a class="error-link" href="/">
+            <span class="error-link-label">Home</span>
+            <span class="error-link-copy">Return to the main page</span>
+          </a>
+          <a class="error-link" href="/products">
+            <span class="error-link-label">All Products</span>
+            <span class="error-link-copy">Browse the full catalogue</span>
+          </a>
+          <a class="error-link" href="/basket">
+            <span class="error-link-label">Your Basket</span>
+            <span class="error-link-copy">Review the items you have saved</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
