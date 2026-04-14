@@ -22,29 +22,37 @@ function setupIssuePopups() {
   });
 }
 
-async function fetchPickerState() {
-  const res = await fetch("/api/picker/orders");
-  if (!res.ok) return null;
-  return await res.json();
-}
-
 function isPopupOpen() {
   return [...document.querySelectorAll(".issue-popup")].some(
     (popup) => !popup.classList.contains("hidden")
   );
 }
 
+async function fetchPickerState() {
+  const res = await fetch("/api/picker/orders", { cache: "no-store" });
+  if (!res.ok) {
+    return null;
+  }
+  return await res.json();
+}
+
 async function setupAutoSync() {
-  if (window.location.pathname !== "/picker") return;
+  if (window.location.pathname !== "/picker") {
+    return;
+  }
 
   let lastState = await fetchPickerState();
+  if (!lastState) {
+    return;
+  }
 
   setInterval(async () => {
-    if (isPopupOpen()) return;
+    if (isPopupOpen()) {
+      return;
+    }
 
     const nextState = await fetchPickerState();
-    if (!nextState || !lastState) {
-      lastState = nextState || lastState;
+    if (!nextState) {
       return;
     }
 
@@ -54,7 +62,7 @@ async function setupAutoSync() {
     }
 
     lastState = nextState;
-  }, 50000);
+  }, 10000);
 }
 
 setupIssuePopups();
