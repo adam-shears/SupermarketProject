@@ -487,4 +487,124 @@ describe("Warehouse Service", () => {
       });
     });
   });
+
+  describe("real-time update state changes", () => {
+    it("should return updated location and stock in picker data after inventory changes", async () => {
+      sinon.stub(service.warehouseDeps, "getPickerOrdersRows").resolves([
+        {
+          order_id: 101,
+          order_status: "picking",
+          product_id: 1,
+          quantity: 1,
+          picked: false,
+          picked_at: null,
+          substituted_product_id: null,
+          product_name: "Milk",
+          product_description: "Fresh milk",
+          category_name: "Fresh Food",
+          location_code: "C-08",
+          stock_quantity: 14,
+          customer_name: "Alice Smith",
+          item_count: 1,
+          substituted_product_name: null,
+          issue_id: null,
+          issue_reason: null,
+          issue_resolved: null,
+          issue_substitute_product_id: null,
+          issue_created_at: null,
+        },
+      ]);
+
+      sinon.stub(service.warehouseDeps, "getSubstituteProducts").resolves([]);
+
+      const result = await service.getPickerOrders();
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].items).to.have.lengthOf(1);
+      expect(result[0].items[0].location_code).to.equal("C-08");
+      expect(result[0].items[0].stock_quantity).to.equal(14);
+    });
+
+    it("should include an open issue in picker data after a stock issue is reported", async () => {
+      sinon.stub(service.warehouseDeps, "getPickerOrdersRows").resolves([
+        {
+          order_id: 101,
+          order_status: "picking",
+          product_id: 1,
+          quantity: 1,
+          picked: false,
+          picked_at: null,
+          substituted_product_id: null,
+          product_name: "Milk",
+          product_description: "Fresh milk",
+          category_name: "Fresh Food",
+          location_code: "F-12",
+          stock_quantity: 19,
+          customer_name: "Alice Smith",
+          item_count: 1,
+          substituted_product_name: null,
+          issue_id: 88,
+          issue_reason: "out_of_stock",
+          issue_resolved: false,
+          issue_substitute_product_id: null,
+          issue_created_at: "2026-04-14T10:00:00Z",
+        },
+      ]);
+
+      sinon.stub(service.warehouseDeps, "getSubstituteProducts").resolves([]);
+
+      const result = await service.getPickerOrders();
+
+      expect(result[0].items[0].issue).to.deep.equal({
+        id: 88,
+        reason: "out_of_stock",
+        resolved: false,
+        substitute_product_id: null,
+        created_at: "2026-04-14T10:00:00Z",
+      });
+
+      expect(result[0].hasUnresolvedIssues).to.equal(true);
+    });
+
+    it("should include a resolved issue in picker data after the issue is resolved", async () => {
+      sinon.stub(service.warehouseDeps, "getPickerOrdersRows").resolves([
+        {
+          order_id: 101,
+          order_status: "picking",
+          product_id: 1,
+          quantity: 1,
+          picked: false,
+          picked_at: null,
+          substituted_product_id: null,
+          product_name: "Milk",
+          product_description: "Fresh milk",
+          category_name: "Fresh Food",
+          location_code: "F-12",
+          stock_quantity: 19,
+          customer_name: "Alice Smith",
+          item_count: 1,
+          substituted_product_name: null,
+          issue_id: 88,
+          issue_reason: "out_of_stock",
+          issue_resolved: true,
+          issue_substitute_product_id: null,
+          issue_created_at: "2026-04-14T10:00:00Z",
+        },
+      ]);
+
+      sinon.stub(service.warehouseDeps, "getSubstituteProducts").resolves([]);
+
+      const result = await service.getPickerOrders();
+
+      expect(result[0].items[0].issue).to.deep.equal({
+        id: 88,
+        reason: "out_of_stock",
+        resolved: true,
+        substitute_product_id: null,
+        created_at: "2026-04-14T10:00:00Z",
+      });
+
+      expect(result[0].hasUnresolvedIssues).to.equal(false);
+    });
+  });
 });
