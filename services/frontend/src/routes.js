@@ -124,7 +124,20 @@ router.post("/register", async (req, res) => {
 
 router.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.redirect("/");
+    // Render a page that clears client-side data before redirecting
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>Logging Out...</title></head>
+      <body>
+        <script type="module">
+          import * as service from '/service.js';
+          service.handleUserLogout();
+          window.location.href = '/';
+        </script>
+      </body>
+      </html>
+    `);
   });
 });
 

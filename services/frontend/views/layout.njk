@@ -29,5 +29,29 @@
     </div>
 
     {% block content %} {% endblock %}
+
+    {% block scripts %}
+    {% if user %}
+    <script>
+      window.user = {{ user | dump | safe }};
+    </script>
+    <script type="module">
+      import * as service from '/service.js';
+      import * as api from '/api.js';
+
+      (async () => {
+        // Step 1: On first login in this session, merge guest items into DB
+        if (!sessionStorage.getItem('synced')) {
+          await service.syncBasketWithServer(api, window.user.id);
+          sessionStorage.setItem('synced', 'true');
+        }
+
+        // Step 2: Always load the current DB basket into localStorage
+        // This ensures fresh data on every page load or new tab
+        await service.loadBasketFromServer(api, window.user.id);
+      })();
+    </script>
+    {% endif %}
+    {% endblock %}
 </body>
 </html>
