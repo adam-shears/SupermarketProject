@@ -44,13 +44,14 @@
 </div>
 
 <script type="module">
-  import * as service from '/service.js'; 
+  import * as service from '/service.js';
+  import * as api from '/api.js';
 
   const form = document.getElementById("add-to-basket-form");
   const feedbackMsg = document.getElementById("add-feedback");
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault(); 
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
     // Extract data
     const productId = Number(document.getElementById("product-id").value);
@@ -59,8 +60,8 @@
     const image_url = document.getElementById("product-image").value;
     const quantity = Number(document.getElementById("quantity").value);
 
-    // Call the validated service function
-    const result = service.addToBasket(productId, quantity, name, price_pence, image_url);
+    // Call the validated service function (now async)
+    const result = await service.addToBasket(productId, quantity, name, price_pence, image_url, window.user, api);
 
     // Update UI based on validation success or failure
     if (result.success) {

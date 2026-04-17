@@ -33,10 +33,11 @@
 
 <script type="module">
   import * as service from '/service.js';
+  import * as api from '/api.js';
 
   function attachEventListeners() {
     document.querySelectorAll('.add-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const productId = Number(btn.dataset.id);
         const name = btn.dataset.name;
         const price = Number(btn.dataset.price);
@@ -44,7 +45,7 @@
         const quantityInput = btn.parentElement.querySelector('.quantity-input');
         const quantity = parseInt(quantityInput.value);
 
-        const result = service.addToBasket(productId, quantity, name, price, image);
+        const result = await service.addToBasket(productId, quantity, name, price, image, window.user, api);
 
         if (result.success) {
           alert(`Added ${quantity} x ${name} to basket!`);
