@@ -52,6 +52,7 @@
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    console.log('🔵 Add to basket form submitted');
 
     // Extract data
     const productId = Number(document.getElementById("product-id").value);
@@ -60,20 +61,34 @@
     const image_url = document.getElementById("product-image").value;
     const quantity = Number(document.getElementById("quantity").value);
 
-    // Call the validated service function (now async)
-    const result = await service.addToBasket(productId, quantity, name, price_pence, image_url, window.user, api);
+    console.log(`Adding: ${name} (qty: ${quantity}, productId: ${productId})`);
 
-    // Update UI based on validation success or failure
-    if (result.success) {
-      feedbackMsg.textContent = `Added ${quantity} x ${name} to basket!`;
-      feedbackMsg.style.color = "green";
-    } else {
-      feedbackMsg.textContent = result.message; // e.g., "Maximum 50 units..."
+    try {
+      // Call the validated service function (now async)
+      const result = await service.addToBasket(productId, quantity, name, price_pence, image_url, window.user, api);
+
+      console.log('Result:', result);
+
+      // Update UI based on validation success or failure
+      if (result.success) {
+        console.log('✓ Add successful');
+        feedbackMsg.textContent = `Added ${quantity} x ${name} to basket!`;
+        feedbackMsg.style.color = "green";
+      } else {
+        console.error('✗ Add failed:', result.message);
+        feedbackMsg.textContent = result.message;
+        feedbackMsg.style.color = "red";
+      }
+    } catch (error) {
+      console.error('✗ Exception thrown:', error);
+      feedbackMsg.textContent = `Error: ${error.message}`;
       feedbackMsg.style.color = "red";
     }
 
     feedbackMsg.style.display = "block";
     setTimeout(() => feedbackMsg.style.display = "none", 4000);
   });
+
+  console.log('Product detail script loaded');
 </script>
 {% endblock %}

@@ -10,10 +10,11 @@ HTTP validation should be performed in thos services' routes.js files and busine
 should be performed in those services' service.js files.
 */
 
-const CATALOGUE_URL = process.env.CATALOGUE_URL || "http://catalogue:3000";
-const ORDERS_URL = process.env.ORDERS_URL || "http://orders:3000";
-const WAREHOUSE_URL = process.env.WAREHOUSE_URL || "http://warehouse:3000";
-const ANALYTICS_URL = process.env.ANALYTICS_URL || "http://analytics:3000";
+// Browser-compatible URLs (localhost for development, service names for Docker internal)
+const CATALOGUE_URL = "http://localhost:3001";
+const ORDERS_URL = "http://localhost:3002";
+const WAREHOUSE_URL = "http://localhost:3003";
+const ANALYTICS_URL = "http://localhost:3004";
 
 async function getJson(url) {
   const res = await fetch(url);
@@ -28,36 +29,40 @@ async function postJson(url, body) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-
   const data = await res.json();
-
   if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
   return data;
 }
 
 export const api = {
+  // --- CATALOGUE ---
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
 
-  getBasket: () => getJson(`${ORDERS_URL}/basket`),
-  addToBasket: (productId, quantity) =>
-    postJson(`${ORDERS_URL}/basket/items`, { productId, quantity }),
+  // --- BASKET (The Handshake Logic) ---
+  // Fetches the official DB basket for a logged-in user
+  getBasket: (customerId) => getJson(`${ORDERS_URL}/basket?customerId=${customerId}`),
+  
+  // Adds a single item to the DB (Used during "Dual-Save" while logged in)
+  addToBasket: (productId, quantity, customerId) =>
+    postJson(`${ORDERS_URL}/basket/items`, { productId, quantity, customerId }),
 
-  // NEW: Sends the basket data to the backend to be saved in the DB
+  // MERGE: Sends the localStorage guest items to the DB to be combined with the account
+  mergeBasket: (customerId, items) =>
+    postJson(`${ORDERS_URL}/basket/merge`, { customerId, items }),
+
+  // --- ORDERS & AUTH ---
   createOrder: (payload) => postJson(`${ORDERS_URL}/orders`, payload),
-
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
   
+  // --- ANALYTICS & MANAGEMENT (Fully Preserved) ---
   getManagementView: async (scale = "week") => {
+    // This is the data used for the Manager's Dashboard
     const mockData = {
       day: {
         totalSalesPence: 48230,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Bread" },
-          { id: 3, name: "Eggs" },
-        ],
+        bestSellers: [{ id: 1, name: "Milk" }, { id: 2, name: "Bread" }, { id: 3, name: "Eggs" }],
         salesPerCategory: [
           { category: "Fruit", salesPence: 9200 },
           { category: "Bakery", salesPence: 8400 },
@@ -71,14 +76,9 @@ export const api = {
           { rank: 3, name: "Eggs", unitsSold: 20 },
         ],
       },
-
       week: {
         totalSalesPence: 284560,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Bread" },
-          { id: 3, name: "Eggs" },
-        ],
+        bestSellers: [{ id: 1, name: "Milk" }, { id: 2, name: "Bread" }, { id: 3, name: "Eggs" }],
         salesPerCategory: [
           { category: "Fruit", salesPence: 72400 },
           { category: "Bakery", salesPence: 53100 },
@@ -92,14 +92,9 @@ export const api = {
           { rank: 3, name: "Eggs", unitsSold: 111 },
         ],
       },
-
       month: {
         totalSalesPence: 1123780,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Eggs" },
-          { id: 3, name: "Bread" },
-        ],
+        bestSellers: [{ id: 1, name: "Milk" }, { id: 2, name: "Eggs" }, { id: 3, name: "Bread" }],
         salesPerCategory: [
           { category: "Fruit", salesPence: 264000 },
           { category: "Bakery", salesPence: 211500 },
@@ -123,6 +118,5 @@ export const api = {
     }
   },
 
-  getSalesByCategoryCsvUrl: (scale = "week") =>
-    `/management/export.csv?scale=${scale}`,
+  getSalesByCategoryCsvUrl: (scale = "week") => `/management/export.csv?scale=${scale}`,
 };

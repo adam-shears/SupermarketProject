@@ -38,6 +38,8 @@
   function attachEventListeners() {
     document.querySelectorAll('.add-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
+        console.log('🔵 Add to basket clicked');
+
         const productId = Number(btn.dataset.id);
         const name = btn.dataset.name;
         const price = Number(btn.dataset.price);
@@ -45,18 +47,30 @@
         const quantityInput = btn.parentElement.querySelector('.quantity-input');
         const quantity = parseInt(quantityInput.value);
 
-        const result = await service.addToBasket(productId, quantity, name, price, image, window.user, api);
+        console.log(`Adding: ${name} (qty: ${quantity}, productId: ${productId})`);
 
-        if (result.success) {
-          alert(`Added ${quantity} x ${name} to basket!`);
-        } else {
-          alert(`Error: ${result.message}`);
-          quantityInput.value = 1; // Reset on error
+        try {
+          const result = await service.addToBasket(productId, quantity, name, price, image, window.user, api);
+
+          console.log('Result:', result);
+
+          if (result.success) {
+            console.log('✓ Add successful');
+            alert(`Added ${quantity} x ${name} to basket!`);
+          } else {
+            console.error('✗ Add failed:', result.message);
+            alert(`Error: ${result.message}`);
+            quantityInput.value = 1;
+          }
+        } catch (error) {
+          console.error('✗ Exception thrown:', error);
+          alert(`Error: ${error.message}`);
         }
       });
     });
   }
 
+  console.log('Product list script loaded');
   attachEventListeners();
 </script>
 {% endblock %}
