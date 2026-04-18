@@ -7,10 +7,10 @@ queries in order to preserve maintainability and separation of concerns.
 */
 
 import pg from "pg";
-
 const { Pool } = pg;
-
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+// --- AUTH QUERIES (Preserved) ---
 
 export async function selectCustomerByEmail(email) {
   const result = await pool.query(
@@ -22,142 +22,88 @@ export async function selectCustomerByEmail(email) {
 
 export async function insertNewCustomer(email, passwordHash, firstName, lastName, phone) {
   const result = await pool.query(
-    `
-        INSERT INTO customers (email, password_hash, first_name, last_name, phone, created_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
-        RETURNING id, email, first_name, last_name, phone, created_at
-    `,
+    `INSERT INTO customers (email, password_hash, first_name, last_name, phone, created_at)
+     VALUES ($1, $2, $3, $4, $5, NOW())
+     RETURNING id, email, first_name, last_name, phone, created_at`,
     [email, passwordHash, firstName, lastName, phone]
   );
   return result.rows[0];
 }
 
-export async function insertOrder(
-  customerId,
-  guestEmail,
-  guestName,
-  guestPhone,
-  status,
-  subtotalPence,
-  discountPence,
-  totalPence
-) {
-  const result = await pool.query(
-    `
-      INSERT INTO orders (
-        customer_id, guest_email, guest_name, guest_phone, status,
-        subtotal_pence, discount_pence, total_pence, created_at, last_updated
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-      RETURNING id, customer_id, guest_email, guest_name, guest_phone, status,
-                subtotal_pence, discount_pence, total_pence, created_at, last_updated
-    `,
-    [
-      customerId,
-      guestEmail,
-      guestName,
-      guestPhone,
-      status,
-      subtotalPence,
-      discountPence,
-      totalPence,
-    ]
-  );
-  return result.rows[0];
-}
+// --- BASKET QUERIES (The Fix) ---
 
-export async function insertOrderItem(
-  orderId,
-  productId,
-  quantity,
-  pricePencePerUnit,
-  lineSubtotalPence,
-  lineDiscountPence,
-  appliedDiscountId,
-  lineTotalPence
-) {
+/**
+ * Ensures a basket exists for the customer.
+ */
+export async function getOrCreateBasket(customerId) {
+  const existing = await pool.query(`SELECT id FROM baskets WHERE customer_id = $1 LIMIT 1`, [customerId]);
+  if (existing.rows.length > 0) return existing.rows[0];
+
   const result = await pool.query(
-    `
-      INSERT INTO order_items (
-        order_id, product_id, quantity, price_pence_per_unit,
-        line_subtotal_pence, line_discount_pence, applied_discount_id, line_total_pence
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *
-    `,
-    [
-      orderId,
-      productId,
-      quantity,
-      pricePencePerUnit,
-      lineSubtotalPence,
-      lineDiscountPence,
-      appliedDiscountId,
-      lineTotalPence,
-    ]
+    `INSERT INTO baskets (customer_id, saved, created_at, updated_at) 
+     VALUES ($1, true, NOW(), NOW()) RETURNING id`, [customerId]
   );
   return result.rows[0];
 }
 
 /**
- * Inserts a full order and its items using a Transaction.
- * This ensures data integrity—the order and items are saved together or not at all.
+ * FETCHES BASKET WITH METADATA: 
+ * Joins with products and prices to ensure the frontend gets 'name' and 'price_pence'.
  */
-export async function insertFullOrder(orderData, items) {
-  const client = await pool.connect();
+export async function getBasketItemsWithDetails(basketId) {
+  const result = await pool.query(
+    `SELECT 
+        bi.product_id AS "productId", 
+        bi.quantity, 
+        p.name, 
+        pr.price_pence
+     FROM basket_items bi
+     JOIN products p ON bi.product_id = p.id
+     JOIN prices pr ON pr.product_id = p.id
+     WHERE bi.basket_id = $1 
+     AND pr.starts_at <= NOW()
+     AND (pr.ends_at IS NULL OR pr.ends_at > NOW())
+     ORDER BY pr.starts_at DESC`,
+    [basketId]
+  );
 
-  try {
-    await client.query("BEGIN");
+  // Return only the most recent price per product to prevent UI duplication
+  const itemsMap = new Map();
+  result.rows.forEach(row => {
+    if (!itemsMap.has(row.productId)) itemsMap.set(row.productId, row);
+  });
+  return Array.from(itemsMap.values());
+}
 
-    // 1. Insert the main Order record
-    const orderResult = await client.query(
-      `
-      INSERT INTO orders (
-        customer_id, guest_email, status, 
-        subtotal_pence, total_pence, 
-        created_at, last_updated
-      )
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-      RETURNING id
-      `,
-      [
-        orderData.customer_id,
-        orderData.guest_email,
-        orderData.status || "CONFIRMED",
-        orderData.subtotal_pence,
-        orderData.total_pence,
-      ]
-    );
+/**
+ * UPSERT: Adds item or increases quantity if it already exists.
+ */
+export async function upsertBasketItem(basketId, productId, quantity) {
+  return pool.query(
+    `INSERT INTO basket_items (basket_id, product_id, quantity)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (basket_id, product_id)
+     DO UPDATE SET quantity = basket_items.quantity + EXCLUDED.quantity`,
+    [basketId, productId, quantity]
+  );
+}
 
-    const orderId = orderResult.rows[0].id;
+// --- ORDER QUERIES (Preserved Original Logic) ---
 
-    // 2. Insert each item into order_items
-    const itemPromises = items.map((item) => {
-      return client.query(
-        `
-        INSERT INTO order_items (
-          order_id, product_id, quantity, 
-          price_pence_per_unit, line_subtotal_pence, line_total_pence
-        )
-        VALUES ($1, $2, $3, $4, $5, $6)
-        `,
-        [
-          orderId,
-          item.productId,
-          item.quantity,
-          item.price_pence,
-          item.price_pence * item.quantity,
-          item.price_pence * item.quantity,
-        ]
-      );
-    });
+export async function insertOrder(customerId, guestEmail, guestName, guestPhone, status, subtotal, discount, total) {
+  const result = await pool.query(
+    `INSERT INTO orders (customer_id, guest_email, guest_name, guest_phone, status, subtotal_pence, discount_pence, total_pence, created_at, last_updated)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+     RETURNING *`,
+    [customerId, guestEmail, guestName, guestPhone, status, subtotal, discount, total]
+  );
+  return result.rows[0];
+}
 
-    await Promise.all(itemPromises);
-
-    await client.query("COMMIT");
-    return orderId;
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+export async function insertOrderItem(orderId, productId, qty, price, sub, disc, discId, total) {
+  return pool.query(
+    `INSERT INTO order_items (order_id, product_id, quantity, price_pence_per_unit, line_subtotal_pence, line_discount_pence, applied_discount_id, line_total_pence)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    [orderId, productId, qty, price, sub, disc, discId, total]
+  );
 }

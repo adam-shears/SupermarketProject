@@ -15,7 +15,7 @@ This file should not be responsible for:
 */
 
 import bcrypt from "bcrypt";
-import { insertNewCustomer, selectCustomerByEmail, insertOrder, insertOrderItem } from "./db.js";
+import * as db from "./db.js"; // Importing all db functions from db.js
 
 export class OrdersError extends Error {
   constructor(message, statusCode) {
@@ -25,9 +25,73 @@ export class OrdersError extends Error {
   }
 }
 
+// --- NEW BASKET BUSINESS LOGIC ---
+
 /**
- * Handles the business logic for creating a new order.
- * Validates basket contents and calculates totals on the server-side to prevent tampering.
+ * MERGE GUEST BASKET:
+ * Takes the guest items from the frontend (localStorage) and saves them
+ * to the customer's permanent database basket upon login.
+ */
+export async function mergeGuestBasket(customerId, guestItems) {
+  if (!customerId) {
+    throw new OrdersError("Customer ID is required to merge a basket.", 400);
+  }
+
+  // 1. Get the user's permanent basket ID (or create one if it's their first time)
+  const basket = await db.getOrCreateBasket(customerId);
+
+  // 2. Loop through every item they had in their browser as a guest
+  if (Array.isArray(guestItems)) {
+    for (const item of guestItems) {
+      // 3. Upsert them (insert or add to quantity) into the DB
+      await db.upsertBasketItem(basket.id, item.productId, item.quantity);
+    }
+  }
+
+  // 4. Return the full, official list with names/prices from the DB
+  return await db.getBasketItemsWithDetails(basket.id);
+}
+
+/**
+ * GET BASKET: Fetches the user's basket from the database.
+ */
+export async function getUserBasket(customerId) {
+  if (!customerId) {
+    throw new OrdersError("Customer ID is required to fetch basket.", 400);
+  }
+
+  const basket = await db.getOrCreateBasket(customerId);
+  return await db.getBasketItemsWithDetails(basket.id);
+}
+
+/**
+ * ADD TO BASKET: Adds or updates an item in the user's basket.
+ */
+export async function addItemToBasket(customerId, productId, quantity) {
+  if (!customerId) {
+    throw new OrdersError("Customer ID is required to add to basket.", 400);
+  }
+  if (!productId || isNaN(productId)) {
+    throw new OrdersError("Valid product ID is required.", 400);
+  }
+  const qty = Number(quantity);
+  if (isNaN(qty) || qty < 1) {
+    throw new OrdersError("Quantity must be at least 1.", 400);
+  }
+  if (qty > 50) {
+    throw new OrdersError("Maximum 50 units per item allowed.", 400);
+  }
+
+  const basket = await db.getOrCreateBasket(customerId);
+  await db.upsertBasketItem(basket.id, productId, qty);
+  return await db.getBasketItemsWithDetails(basket.id);
+}
+
+// --- AUTHENTICATION LOGIC ---
+
+/**
+ * Registers a new user.
+ * Fully preserves your original password validation and email checks.
  */
 export async function registerNewUser(input) {
   const email = input.email.trim().toLowerCase();
@@ -42,6 +106,7 @@ export async function registerNewUser(input) {
     throw new OrdersError("Email is required", 400);
   }
 
+  // Your original password strength requirements
   if (password.length >= 8) {
     let arrayTest =
       /[A-Z]/.test(password) &&
@@ -67,7 +132,7 @@ export async function registerNewUser(input) {
   }
 
   // check if email is already in use
-  const existing = await selectCustomerByEmail(email);
+  const existing = await db.selectCustomerByEmail(email);
   if (existing) {
     throw new OrdersError("Email is already in use", 409);
   }
@@ -75,9 +140,13 @@ export async function registerNewUser(input) {
   // at this point, the user's input is valid so we can register
   const passwordHash = await bcrypt.hash(password, 12);
 
-  return insertNewCustomer(email, passwordHash, firstName, lastName, phone);
+  return db.insertNewCustomer(email, passwordHash, firstName, lastName, phone);
 }
 
+/**
+ * Log customer in.
+ * Validates credentials and returns user profile without sensitive data.
+ */
 export async function logCustomerIn(input) {
   const email = input.email.trim().toLowerCase();
   const password = input.password;
@@ -86,7 +155,7 @@ export async function logCustomerIn(input) {
     throw new OrdersError("Email and password are required", 400);
   }
 
-  const customer = await selectCustomerByEmail(email);
+  const customer = await db.selectCustomerByEmail(email);
   if (!customer) {
     throw new OrdersError("Invalid email or password", 401);
   }
@@ -107,6 +176,12 @@ export async function logCustomerIn(input) {
   };
 }
 
+// --- ORDER CREATION LOGIC ---
+
+/**
+ * Handles the business logic for creating a new order.
+ * Fully preserves your server-side calculation to prevent tampering.
+ */
 export async function createOrder(input) {
   const items = Array.isArray(input.items) ? input.items : [];
   if (!items.length) {
@@ -125,6 +200,7 @@ export async function createOrder(input) {
   let subtotalPence = 0;
   let discountPence = 0;
 
+  // Validate every item and calculate totals on the server
   const validatedItems = items.map((item) => {
     if (!item.productId || isNaN(Number(item.productId))) {
       throw new OrdersError("Invalid product id", 400);
@@ -165,8 +241,8 @@ export async function createOrder(input) {
     throw new OrdersError("Total cannot be negative", 400);
   }
 
-  // create the order record
-  const orderRecord = await insertOrder(
+  // 1. create the order record
+  const orderRecord = await db.insertOrder(
     customerId,
     guestEmail,
     guestName,
@@ -177,9 +253,9 @@ export async function createOrder(input) {
     totalPence
   );
 
-  // create each item in order_items
+  // 2. create each item in order_items using a loop
   for (const item of validatedItems) {
-    await insertOrderItem(
+    await db.insertOrderItem(
       orderRecord.id,
       item.productId,
       item.quantity,
@@ -191,6 +267,7 @@ export async function createOrder(input) {
     );
   }
 
+  // 3. Return the full order summary
   return {
     id: orderRecord.id,
     customerId: orderRecord.customer_id,

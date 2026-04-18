@@ -37,18 +37,35 @@
     </script>
     <script type="module">
       import * as service from '/service.js';
-      import * as api from '/api.js';
+      import { api } from '/api.js';
 
       (async () => {
-        // Step 1: On first login in this session, merge guest items into DB
-        if (!sessionStorage.getItem('synced')) {
-          await service.syncBasketWithServer(api, window.user.id);
-          sessionStorage.setItem('synced', 'true');
-        }
+        try {
+          console.log('🔵 Layout sync started for user:', window.user.id);
 
-        // Step 2: Always load the current DB basket into localStorage
-        // This ensures fresh data on every page load or new tab
-        await service.loadBasketFromServer(api, window.user.id);
+          const localItems = service.getBasket();
+          console.log('  Local basket items:', localItems.length);
+
+          // Step 1: If there are guest items in localStorage, merge them first
+          if (localItems.length > 0) {
+            console.log('  → Found', localItems.length, 'guest items, merging...');
+            await service.syncBasketWithServer(api, window.user.id);
+            console.log('  ✓ Guest items merged');
+          } else {
+            console.log('  → No guest items to merge');
+          }
+
+          // Step 2: Always load the current DB basket into localStorage
+          // This ensures we have the authoritative state from the server
+          console.log('  → Loading DB basket into localStorage...');
+          await service.loadBasketFromServer(api, window.user.id);
+          console.log('  ✓ DB basket loaded');
+
+          const currentBasket = service.getBasket();
+          console.log('  Final basket:', currentBasket.length, 'items');
+        } catch (error) {
+          console.error('✗ Sync error:', error);
+        }
       })();
     </script>
     {% endif %}

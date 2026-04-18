@@ -48,10 +48,16 @@ export function isBasketEmpty() {
  * This is the source of truth on page load for logged-in users.
  */
 export async function loadBasketFromServer(api, customerId) {
-  if (!customerId) return;
+  if (!customerId) {
+    console.warn('loadBasketFromServer: No customerId provided');
+    return;
+  }
   try {
+    console.log(`  [loadBasketFromServer] Fetching basket for user ${customerId}...`);
     const basketFromDb = await api.getBasket(customerId);
+    console.log(`  [loadBasketFromServer] Received ${basketFromDb.length} items from DB`);
     saveBasket(basketFromDb);
+    console.log(`  [loadBasketFromServer] Saved to localStorage`);
   } catch (err) {
     console.error("Failed to load basket from server:", err);
   }
@@ -63,11 +69,13 @@ export async function loadBasketFromServer(api, customerId) {
  */
 export async function syncBasketWithServer(api, customerId) {
   const localItems = getBasket();
+  console.log(`  [syncBasketWithServer] Merging ${localItems.length} guest items for user ${customerId}`);
   try {
     // Merges guest items into DB and gets the "Official" list back
     const mergedBasket = await api.mergeBasket(customerId, localItems);
+    console.log(`  [syncBasketWithServer] Received ${mergedBasket.length} items after merge`);
     saveBasket(mergedBasket);
-    sessionStorage.setItem('synced', 'true');
+    sessionStorage.setItem("synced", "true");
   } catch (err) {
     console.error("Basket sync failed:", err);
   }
@@ -78,11 +86,19 @@ export async function syncBasketWithServer(api, customerId) {
 /**
  * Adds item to local storage and syncs with DB if user is logged in.
  */
-export async function addToBasket(productId, quantity, name, price_pence, image_url = null, user = null, api = null) {
+export async function addToBasket(
+  productId,
+  quantity,
+  name,
+  price_pence,
+  image_url = null,
+  user = null,
+  api = null
+) {
   try {
     const validatedQty = validateEntry(productId, quantity);
     const basket = getBasket();
-    const existing = basket.find(i => i.productId === productId);
+    const existing = basket.find((i) => i.productId === productId);
 
     if (existing) {
       existing.quantity += validatedQty;
@@ -109,7 +125,7 @@ export function updateQuantity(productId, quantity) {
   try {
     const validatedQty = validateEntry(productId, quantity);
     const basket = getBasket();
-    const item = basket.find(i => i.productId === productId);
+    const item = basket.find((i) => i.productId === productId);
 
     if (item) {
       item.quantity = validatedQty;
@@ -126,7 +142,7 @@ export function updateQuantity(productId, quantity) {
  */
 export function removeFromBasket(productId) {
   let basket = getBasket();
-  basket = basket.filter(i => i.productId !== productId);
+  basket = basket.filter((i) => i.productId !== productId);
   saveBasket(basket);
 }
 
@@ -136,7 +152,7 @@ export function removeFromBasket(productId) {
 export function calculateTotals() {
   const basket = getBasket();
   const subtotal = basket.reduce((sum, i) => sum + i.price_pence * i.quantity, 0);
-  const discounts = 0; 
+  const discounts = 0;
   const total = subtotal - discounts;
   return { subtotal, discounts, total };
 }
@@ -147,8 +163,8 @@ export function calculateTotals() {
  */
 export function handleUserLogout() {
   clearBasket();
-  sessionStorage.removeItem('synced');
-  localStorage.removeItem('synced'); // Also clear if stored in localStorage for safety
+  sessionStorage.removeItem("synced");
+  localStorage.removeItem("synced"); // Also clear if stored in localStorage for safety
 }
 
 // --- PRODUCT CACHING ---
