@@ -14,9 +14,9 @@ should be performed in those services' service.js files.
 const isServer = typeof window === 'undefined';
 
 // Server-side: Use Docker internal network (service names)
-// Browser-side: Use localhost with exposed ports
+// Browser-side: Use relative URLs to proxy through frontend Express server
 const CATALOGUE_URL = isServer ? "http://catalogue:3000" : "http://localhost:3001";
-const ORDERS_URL = isServer ? "http://orders:3000" : "http://localhost:3002";
+const ORDERS_URL = isServer ? "http://orders:3000" : "/api";
 const WAREHOUSE_URL = isServer ? "http://warehouse:3000" : "http://localhost:3003";
 const ANALYTICS_URL = isServer ? "http://analytics:3000" : "http://localhost:3004";
 

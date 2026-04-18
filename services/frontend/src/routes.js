@@ -78,7 +78,7 @@ router.get("/basket", async (req, res) => {
   try {
     res.render("basket.njk", {
       title: "Your Basket",
-      user: req.session.user
+      user: req.session.user,
     });
   } catch (error) {
     console.error(error);
@@ -118,21 +118,33 @@ router.post("/register", async (req, res) => {
     req.session.user = user;
     res.redirect("/");
   } catch (error) {
-    res.status(400).render("register.njk", { title: "Register", error: error.message || "Failed to register" });
+    res
+      .status(400)
+      .render("register.njk", { title: "Register", error: error.message || "Failed to register" });
   }
 });
 
 router.post("/logout", (req, res) => {
   req.session.destroy(() => {
     // Render a page that clears client-side data before redirecting
+    // Use inline script (not module) to ensure it runs synchronously
     res.send(`
       <!DOCTYPE html>
       <html>
       <head><title>Logging Out...</title></head>
       <body>
-        <script type="module">
-          import * as service from '/service.js';
-          service.handleUserLogout();
+        <script>
+          // Clear localStorage basket
+          localStorage.removeItem('basket');
+          localStorage.removeItem('products');
+          localStorage.removeItem('synced');
+
+          // Clear sessionStorage sync flag
+          sessionStorage.removeItem('synced');
+
+          console.log('✓ Client-side storage cleared');
+
+          // Redirect to home
           window.location.href = '/';
         </script>
       </body>
@@ -203,7 +215,7 @@ router.get("/checkout", async (req, res) => {
   try {
     res.render("checkout.njk", {
       title: "Checkout - Review Order",
-      user: req.session.user || null
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
@@ -226,18 +238,76 @@ router.post("/checkout/confirm", async (req, res) => {
     const orderResponse = await api.createOrder({
       items: items,
       customerId: req.session.user ? req.session.user.id : null,
-      guestEmail: guestEmail
+      guestEmail: guestEmail,
     });
 
     // 3. Render success with the REAL ID returned from the database
-    res.render("order-success.njk", { 
+    res.render("order-success.njk", {
       title: "Success!",
-      orderId: orderResponse.id, 
-      user: req.session.user || null
+      orderId: orderResponse.id,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error("Confirmation error:", error);
     res.status(500).send("Order failed to save to database. Please try again.");
+  }
+});
+
+// --- API PROXY ROUTES (for browser JavaScript) ---
+// The browser JavaScript imports api.js and calls functions, but needs express to proxy
+
+// GET /api/basket?customerId=X
+router.get("/api/basket", async (req, res) => {
+  try {
+    const customerId = req.query.customerId;
+    if (!customerId) return res.status(400).json({ message: "customerId required" });
+    const basket = await api.getBasket(customerId);
+    res.json(basket);
+  } catch (error) {
+    console.error("GET /api/basket error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/basket/items
+router.post("/api/basket/items", async (req, res) => {
+  try {
+    console.log('🔵 [/api/basket/items] Received request:', JSON.stringify(req.body));
+    const { customerId, productId, quantity } = req.body;
+    console.log('  Extracted customerId:', customerId, 'productId:', productId, 'quantity:', quantity);
+
+    if (!customerId) {
+      console.error('  ✗ customerId is missing!');
+      return res.status(400).json({ message: "customerId required in request body" });
+    }
+
+    const result = await api.addToBasket(productId, quantity, customerId);
+    console.log('  ✓ Add successful');
+    res.json(result);
+  } catch (error) {
+    console.error("POST /api/basket/items error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST /api/basket/merge
+router.post("/api/basket/merge", async (req, res) => {
+  try {
+    console.log('🔵 [/api/basket/merge] Received request:', JSON.stringify(req.body));
+    const { customerId, items } = req.body;
+    console.log('  Extracted customerId:', customerId, 'items count:', items?.length);
+
+    if (!customerId) {
+      console.error('  ✗ customerId is missing!');
+      return res.status(400).json({ message: "customerId required in request body" });
+    }
+
+    const result = await api.mergeBasket(customerId, items);
+    console.log('  ✓ Merge successful, returned', result?.length, 'items');
+    res.json(result);
+  } catch (error) {
+    console.error("POST /api/basket/merge error:", error);
+    res.status(500).json({ message: error.message });
   }
 });
 
