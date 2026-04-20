@@ -1,0 +1,42 @@
+# Only runs on PRs that make changes to important setup files as a sanity check against cross-platform regressions
+name: Build Test (Windows)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docker-compose.yml"
+      - "Dockerfile*"
+      - ".env*"
+      - ".devcontainer/*"
+
+jobs:
+  build-and-test:
+    name: Build project and check endpoints are healthy on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env
+        shell: bash
+        run: |
+          cp .env.example .env
+          sed -i '' 's/username/${{ secrets.DATABASE_USERNAME }}/g' .env
+          sed -i '' 's/password/${{ secrets.DATABASE_PASSWORD }}/g' .env
+
+      - name: Build containers
+        run: docker compose build
+
+      - name: Start containers
+        run: docker compose up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          for port in 3000 3001 3002 3003 3004; do
+            timeout 30 bash -c "until curl -fsS http://localhost:$port/health > /dev/null; do sleep 1; done"
+          done
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v
