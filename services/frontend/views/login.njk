@@ -1,91 +1,23 @@
 {% extends "layout.njk" %}
 
-
 {% block styles %}
-<style>
-  .login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 70vh;
-  }
-  .login-card {
-    background: white;
-    padding: 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    width: 100%;
-    max-width: 400px;
-    border: 1px solid #e5e7eb;
-  }
-  .login-card h1 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    font-size: 2rem;
-    color: #1a1a1a;
-  }
-  .form-group {
-    margin-bottom: 1.2rem;
-  }
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #444;
-  }
-  .form-group input {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-    box-sizing: border-box;
-  }
-  .form-group input:focus {
-    outline: 2px solid #1f7a3d;
-    border-color: transparent;
-  }
-  .login-button {
-    width: 100%;
-    padding: 0.8rem;
-    background-color: #e5e5e5;
-    color: #1a1a1a;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    margin-top: 10px;
-    transition: background 0.2s;
-  }
-  .login-button:hover {
-    background-color: #d4d4d4;
-  }
-  .error-message {
-    background: #fdeaea;
-    color: #a12626;
-    padding: 0.75rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    border: 1px solid #efb2b2;
-    text-align: center;
-  }
-</style>
+  <link rel="stylesheet" href="/auth.css" />
 {% endblock %}
 
 {% block content %}
-<main id="main-content" class="login-container">
-  <div class="login-card">
+<main id="main-content" class="auth-page">
+  <div class="auth-card">
     <h1>Login</h1>
 
     {% if error %}
-      <div class="error-message" role="alert">
+      <div class="auth-error" role="alert">
         {{ error }}
       </div>
     {% endif %}
 
-    <form action="/login" method="POST">
-      <div class="form-group">
-        <label for="email">Email</label>
+    <form action="/login" method="POST" class="auth-form">
+      <div>
+        <label for="email" style="display: block; margin-bottom: 6px;">Email</label>
         <input
           type="email"
           id="email"
@@ -96,8 +28,8 @@
         >
       </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
+      <div>
+        <label for="password" style="display: block; margin-bottom: 6px;">Password</label>
         <input
           type="password"
           id="password"
@@ -108,7 +40,7 @@
         >
       </div>
 
-      <button type="submit" class="login-button">Login</button>
+      <button type="submit">Login</button>
     </form>
   </div>
 </main>
