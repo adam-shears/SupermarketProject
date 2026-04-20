@@ -232,6 +232,24 @@ npm run reset:cs
 npm run logs:cs
 ```
 
+### Docker Elevated Account Issues During Install
+On some versions of Windows, installing Docker Desktop will fail with an error:  
+> For security reasons C:\ProgramData\DockerDesktop must be owned by an elevated account
+
+First, ensure that the account you're logged in on has Administrator privileges. If it does, try running the installer as an Administrator or refer to Docker's own troubleshooting guidance first.  
+Only if nothing on Docker's website works, should you try the following:
+1. Attempt to install Docker Desktop and wait for it to fail
+2. Press the windows key
+3. Search for cmd
+4. Open cmd as Administrator
+5. Execute the following commands
+```cmd
+icacls "C:\ProgramData\DockerDesktop" /setowner "NT AUTHORITY\SYSTEM" /t /c
+icacls "C:\ProgramData\DockerDesktop" /grant SYSTEM:F /t /c
+icacls "C:\ProgramData\DockerDesktop" /grant Administrators:F /t
+```
+6. Attempt the install again
+
 ## Notes
 
 Keep things simple and clean. If you're ever unsure where something belongs,
