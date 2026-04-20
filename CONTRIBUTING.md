@@ -213,18 +213,11 @@ Stories and issues are considered **done** when **all** of the following are tru
 > If you encounter a setup issue or some other problem with the repo that you fix, add it here so that other teammates can benefit from it.
 
 ### SELinux DB Issues
-On Fedora and other SELinux distros, you may encounter permission issues while binding the database. To fix this, create a docker override:
+On Fedora and other SELinux distros, it is known that **older** versions of the project may encounter permission issues while binding the database. To fix this, use the dedicated `override` script:
 ```bash
-cp docker-compose.yml docker-compose.override.yml
+scripts/override.sh
 ```
-In the `db:` section, add `:Z` to the bind mount:
-```yaml
-db:
-  ...
-  volumes:
-    - pgdata:/var/lib/postgresql/data
-    - ./db/migrations:/docker-entrypoint-initdb.d:ro,Z
-```
+This is **NOT NECESSARY NOR RECOMMENDED** if the version of the project you're running has a `Dockerfile` in `db/`.
 
 ### Docker Client Version Too New (Codespaces)
 In Codespaces, the Docker client is too new for the Docker daemon and `docker compose up --build` fails. If you receive an error like:
