@@ -56,7 +56,7 @@ Below, you can find the links to Docker's installation guidelines. Please head t
 
 > https://docs.docker.com/engine/install/
 
-After download and installing Docker, you should verify your installation in the command line. Run these two commands separately:
+After downloading and installing Docker, you should verify your installation in the command line. Run these two commands separately:
 
 ```bash
 docker --version
