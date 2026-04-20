@@ -33,7 +33,8 @@ The [Project Brief](https://github.com/adam-shears/SupermarketProject/Project_Br
 ## Building the Project
 
 > [!IMPORTANT]
-> Ensure you have the necessary prerequisites before continuing, these steps should not be skipped
+> This section outlines the steps to install our prerequisites, clone the repository, and build the project. Please read to the end and ensure you don't skip any steps.  
+> If you encounter difficulties, please refer to the [Troubleshooting](https://github.com/adam-shears/SupermarketProject/tree/main?tab=contributing-ov-file#troubleshooting) section of the contributing guidelines.
 
 > [!NOTE]
 > During our testing, we found that the project is not compatible with the Bragg Linux machines as they don't have Docker installed and the version of Podman running on them didn't seem to be compatible with using network file storage. The project **can** run on these machines but you will have to use Codespaces. When using Codespaces, please use the npm wrapper commands with `:cs` appended to them (i.e. `npm run up:cs`) otherwise you will encounter Docker versioning issues. For more information, see [Troubleshooting](https://github.com/adam-shears/SupermarketProject/blob/main/CONTRIBUTING.md#docker-client-version-too-new-codespaces)
@@ -41,8 +42,9 @@ The [Project Brief](https://github.com/adam-shears/SupermarketProject/Project_Br
 ### Prerequesites
 
 #### Docker
+Below, you can find the links to Docker's installation guidelines. Please head to the link corresponding to your current operating system and follow the instructions there - we cannot guarantee a working environment if the Docker install steps aren't followed.
 
-**Windows**:
+**Windows**  
 
 > https://docs.docker.com/desktop/setup/install/windows-install/
 
@@ -62,7 +64,7 @@ docker compose version
 ```
 
 #### VS Code
-
+Installation link:  
 > https://code.visualstudio.com/download
 
 > [!TIP]
