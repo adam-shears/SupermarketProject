@@ -92,9 +92,19 @@ cd SupermarketProject
 > If you aren't given a prompt, you don't need to reopen the repository. Simply press `ctrl` + `shift` + `p` and look/search for `Dev Containers: Rebuild and Reopen in Container`
 
 > [!NOTE]
-> This will take a while to run
+> This will take a while to run. A new VS Code window with the repository should open.  
+> If you encounter errors at this stage, you should refer to [Microsoft's guidelines for Dev Containers in VS Code](https://code.visualstudio.com/docs/devcontainers/containers)
 
-Once in the container, you will have access to a Debian-based environment with common tools for all team members.
+Once in the container, you will have access to a Debian-based environment with common tools for all team members.  
+You may need to create a new terminal (`ctrl` + `shift` + `'` by default) to be able to use commands.
+
+### Configuring Environment Variables
+The build scripts rely on having a `.env` file configured in your workspace. We provide `.env.example` to facilitate this.
+
+Copy `.env.example` and rename it to `.env`:
+```bash
+cp .env.example .env
+```
 
 ### Running the Project
 
@@ -130,6 +140,12 @@ docker compose down -v
 > npm run down = docker compose down
 > npm run reset = docker compose down -v
 > ```
+
+After starting the services, wait for the logs to finish in the terminal. The last line should be:
+```bash
+db-1    | ... [1] LOG: database system is ready to accept connections
+```
+At this point, head to https://localhost:3000 in the browser to access the site.
 
 ## Notes
 
