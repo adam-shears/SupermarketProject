@@ -20,12 +20,9 @@ const router = Router();
 function requireAuth(requiredAdminLevel = 1) {
   return (req, res, next) => {
     if (!req.session.user) {
-      return res.status(401).render("4xx.njk", {
-        title: "Unauthorized",
-        status: "401 - Unauthorized",
-        message: "You must be logged in to access this resource",
-      });
+      return res.redirect("/login");
     }
+
     if ((req.session.user.admin_level || 0) < requiredAdminLevel) {
       return res.status(403).render("4xx.njk", {
         title: "Forbidden",
@@ -33,6 +30,7 @@ function requireAuth(requiredAdminLevel = 1) {
         message: "You do not have permission to access this resource",
       });
     }
+
     next();
   };
 }
