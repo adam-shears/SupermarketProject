@@ -35,6 +35,9 @@ The [Project Brief](https://github.com/adam-shears/SupermarketProject/Project_Br
 > [!IMPORTANT]
 > Ensure you have the necessary prerequisites before continuing, these steps should not be skipped
 
+> [!NOTE]
+> During our testing, we found that the project is not compatible with the Bragg Linux machines as they don't have Docker installed and the version of Podman running on them didn't seem to be compatible with using network file storage. The project **can** run on these machines but you will have to use Codespaces. When using Codespaces, please use the npm wrapper commands with `:cs` appended to them (i.e. `npm run up:cs`) otherwise you will encounter Docker versioning issues. For more information, see [Troubleshooting](https://github.com/adam-shears/SupermarketProject/blob/main/CONTRIBUTING.md#docker-client-version-too-new-codespaces)
+
 ### Prerequesites
 
 #### Docker
