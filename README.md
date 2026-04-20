@@ -110,12 +110,15 @@ Once in the container, you will have access to a Debian-based environment with c
 You may need to create a new terminal (`ctrl` + `shift` + `'` by default) to be able to use commands, if you don't see one when the container finishes loading.
 
 ### Configuring Environment Variables
-The build scripts rely on having a `.env` file configured in your workspace. We provide `.env.example` to facilitate this.
+> [!IMPORTANT]
+> The build scripts rely on having a `.env` file configured in your workspace. The project will not function without a `.env`.  
+> We provide `.env.example` to facilitate this.
 
-Copy `.env.example` and rename it to `.env`:
+In the VS Code terminal, execute the following command:
 ```bash
 cp .env.example .env
 ```
+You should see a new file called `.env` appear in your file explorer.
 
 ### Running the Project
 
