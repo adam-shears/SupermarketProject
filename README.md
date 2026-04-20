@@ -39,6 +39,16 @@ The [Project Brief](https://github.com/adam-shears/SupermarketProject/Project_Br
 > [!NOTE]
 > During our testing, we found that the project is not compatible with the Bragg Linux machines as they don't have Docker installed and the version of Podman running on them didn't seem to be compatible with using network file storage. The project **can** run on these machines but you will have to use Codespaces. When using Codespaces, please use the npm wrapper commands with `:cs` appended to them (i.e. `npm run up:cs`) otherwise you will encounter Docker versioning issues. For more information, see [Troubleshooting](https://github.com/adam-shears/SupermarketProject/blob/main/CONTRIBUTING.md#docker-client-version-too-new-codespaces)
 
+### Quick Start Steps
+If you already have Docker installed and prefer to work locally, the project can be built and run simply by executing the following commands:
+```bash
+git clone https://github.com/adam-shears/SupermarketProject.git
+cd SupermarketProject
+cp .env.example .env
+docker compose up --build
+```
+This is recommended for some users, but be aware that we can't make guarantees for every unique system and environment. If you encounter issues with your local setup, or don't know whether you have Docker, please follow the installation steps below (in order).
+
 ### Prerequesites
 
 #### Docker
@@ -56,7 +66,7 @@ Below, you can find the links to Docker's installation guidelines. Please head t
 
 > https://docs.docker.com/engine/install/
 
-After downloading and installing Docker, you should verify your installation in the command line. Run these two commands separately:
+After downloading and installing Docker, you should verify your installation in the command line. Open a terminal and run these two commands separately:
 
 ```bash
 docker --version
@@ -118,18 +128,21 @@ In the VS Code terminal, execute the following command:
 ```bash
 cp .env.example .env
 ```
-You should see a new file called `.env` appear in your file explorer.
+You should now see a new file called `.env` appear in your file explorer.
 
 ### Running the Project
 
-To build the services for the first time, you can run:
+To build the services for the first time, you can run the following command in the VS Code terminal:
 ```bash
 docker compose up --build
 ```
-After running this command, wait for the following line to appear in the terminal:
+After running this command, wait until you see the following line in the terminal:
 ```bash
 db-1    | ... [1] LOG: database system is ready to accept connections
 ```
+This means that the database has built successfully.  
+If you don't see this or see errors instead, please ensure the command was executed from the repo root and that you created a `.env` file.
+
 At this point, head to http://localhost:3000 in your regular browser to access the site.
 
 --- 
@@ -158,14 +171,6 @@ docker compose down -v
 > npm run reset = docker compose down -v
 > ```
 
-### Quick Start Steps
-If you already have Docker installed and prefer to work locally, the project can be built and run simply by executing the following commands:
-```bash
-git clone https://github.com/adam-shears/SupermarketProject.git
-cd SupermarketProject
-cp .env.example .env
-docker compose up --build
-```
 
 ## Notes
 
