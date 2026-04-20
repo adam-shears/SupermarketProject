@@ -67,7 +67,7 @@ docker compose version
 ```
 You should see version numbers printed in the terminal. If you don't, or if you see errors, then Docker is not installed correctly and you should follow Docker's Troubleshooting Guidelines ([Windows/macOS](https://docs.docker.com/desktop/troubleshoot-and-support/troubleshoot/) | [Linux](https://docs.docker.com/engine/daemon/troubleshoot/))
 
-#### VS Code
+#### Visual Studio Code
 Installation link:  
 > https://code.visualstudio.com/download
 
@@ -75,11 +75,15 @@ Installation link:
 > When installing VS Code, it's useful to add the code extension to your PATH so that it can be executed from the command line
 
 ### Cloning the Repository
-
+After installing VS Code, you can now clone the repository. Open a terminal and run the following command:
 ```bash
 git clone https://github.com/adam-shears/SupermarketProject.git
+```
+After clone has finished running, you should change your working directory to the repository by running the following command:
+```
 cd SupermarketProject
 ```
+If your terminal prompt shows you in `SupermarketProject`, please continue.
 
 ### Dev Environment
 
