@@ -93,10 +93,11 @@ If your terminal prompt shows you in `SupermarketProject`, please continue.
 #### Initial Setup
 
 1. Open VS Code
-2. Install the "Dev Containers" extension
+2. Navigate to the Extensions Marketplace (`ctrl` + `shift` + `X` by default)
+3. Install the "Dev Containers" extension
    ![The Dev Containers extension as seen in VS Code extensions marketplace](https://i.ibb.co/5gbRpMvN/image.png)
-3. Open this repository in VS Code
-4. When prompted (usually bottom right), click "Reopen in container"
+4. Open this repository in VS Code (File -> Open Folder -> select `SupermarketProject`)
+5. When prompted (usually bottom right), click "Reopen in container"
 
 > [!TIP]
 > If you aren't given a prompt, you don't need to reopen the repository. Simply press `ctrl` + `shift` + `p` and look/search for `Dev Containers: Rebuild and Reopen in Container`
@@ -106,7 +107,7 @@ If your terminal prompt shows you in `SupermarketProject`, please continue.
 > If you encounter errors at this stage, you should refer to [Microsoft's guidelines for Dev Containers in VS Code](https://code.visualstudio.com/docs/devcontainers/containers)
 
 Once in the container, you will have access to a Debian-based environment with common tools for all team members.  
-You may need to create a new terminal (`ctrl` + `shift` + `'` by default) to be able to use commands.
+You may need to create a new terminal (`ctrl` + `shift` + `'` by default) to be able to use commands, if you don't see one when the container finishes loading.
 
 ### Configuring Environment Variables
 The build scripts rely on having a `.env` file configured in your workspace. We provide `.env.example` to facilitate this.
