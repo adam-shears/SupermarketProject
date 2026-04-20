@@ -126,7 +126,7 @@ To build the services for the first time, you can run:
 ```bash
 docker compose up --build
 ```
-After running this command, wait for the following line:
+After running this command, wait for the following line to appear in the terminal:
 ```bash
 db-1    | ... [1] LOG: database system is ready to accept connections
 ```
