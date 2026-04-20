@@ -2,8 +2,13 @@
     background-color: #2e7d32;
     width: min(90%, 700px);
     min-height: 300px;
+    background-color: #4caf50;
+    width: 60%; /* Increased from 40% so it's not too skinny on tablets */
+    min-height: 250px; /* Use min-height, not height */
+    padding: 20px; /* Gives text breathing room */
     border-radius: 10px;
     display: flex;
+    flex-direction: column; /* Better for stacking text vertically */
     align-items: center;
     justify-content: center;
     color: white;
@@ -35,6 +40,7 @@
 
 .button-row {
     display: flex;
+    flex-wrap: wrap; /* Allows cards to drop to a new line */
     gap: 15px;
     margin-bottom: 40px;
     flex-wrap: wrap;
@@ -43,6 +49,7 @@
 .action-card {
     flex: 1;
     min-width: 180px;
+    flex: 1 1 200px; /* Grow, Shrink, but try to stay around 200px */
     background: #f9f9f9;
     border: 1px solid #ddd;
     padding: 20px;
@@ -70,7 +77,8 @@
 
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    /* This is the magic line for scaling */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
 }
 
@@ -111,6 +119,16 @@
 
 .category-title-bar h2 {
     font-size: 24px;
+    width: 90%; /* Changed from 80% to give more room on small screens */
+    max-width: 1200px; /* Prevents it from getting too wide on huge monitors */
+    margin: 0 auto;
+}
+
+.category-title-bar a {
+    text-decoration: none;
+    color: #333;
+    /* Scales between 18px and 32px based on window width */
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
     font-weight: bold;
     color: #222;
 }
