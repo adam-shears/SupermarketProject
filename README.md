@@ -158,6 +158,15 @@ docker compose down -v
 > npm run reset = docker compose down -v
 > ```
 
+### Quick Start Steps
+If you already have Docker installed and prefer to work locally, the project can be built and run simply by executing the following commands:
+```bash
+git clone https://github.com/adam-shears/SupermarketProject.git
+cd SupermarketProject
+cp .env.example .env
+docker compose up --build
+```
+
 ## Notes
 
 > [!WARNING]
