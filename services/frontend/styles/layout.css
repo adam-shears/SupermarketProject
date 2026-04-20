@@ -1,3 +1,13 @@
+:root {
+  --header-height: 80px;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --header-height: 160px; /* Adjust this to match your mobile header height */
+  }
+}
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
