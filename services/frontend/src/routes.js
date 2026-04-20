@@ -17,7 +17,7 @@ import { api } from "./api.js";
 const router = Router();
 
 // function to check if user is logged in for accessing certain endpoints
-function requireAuth(requiredAdminLevel) {
+function requireAuth(requiredAdminLevel = 1) {
   return (req, res, next) => {
     if (!req.session.user) {
       return res.status(401).render("4xx.njk", {
@@ -148,7 +148,6 @@ router.get("/products", async (req, res) => {
 router.post("/basket/items", async (req, res) => {
   try {
     const { productId, quantity } = req.body;
-    // await api.addToBasket(productId, quantity);
     console.log(`Adding product ${productId} with quantity ${quantity} to basket`);
     res.status(200).json({ message: "Item added to basket" });
   } catch (error) {
@@ -160,8 +159,6 @@ router.post("/basket/items", async (req, res) => {
 // Basket GET endpoint (temporary hardcoded)
 router.get("/basket", async (req, res) => {
   try {
-    // const basket = await api.getBasket();
-
     const basket = {
       items: [
         {
@@ -385,7 +382,7 @@ Picker + stock/location synchronisation routes
 */
 
 // API proxy for picker polling / sync
-router.get("/api/picker/orders", async (req, res) => {
+router.get("/api/picker/orders", requireAuth(2), async (req, res) => {
   try {
     const orders = await api.getPickerOrders();
     res.json(orders);
@@ -395,7 +392,7 @@ router.get("/api/picker/orders", async (req, res) => {
   }
 });
 
-router.get("/picker", async (req, res) => {
+router.get("/picker", requireAuth(2), async (req, res) => {
   try {
     const orders = await api.getPickerOrders();
 
@@ -414,7 +411,7 @@ router.get("/picker", async (req, res) => {
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/complete", async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(2), async (req, res) => {
   try {
     const { orderId, productId } = req.params;
     await api.completePickerItem(orderId, productId);
@@ -425,7 +422,7 @@ router.post("/picker/orders/:orderId/items/:productId/complete", async (req, res
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(2), async (req, res) => {
   try {
     const { orderId, productId } = req.params;
     const { substituteProductId, reason } = req.body;
@@ -442,7 +439,7 @@ router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) =
   }
 });
 
-router.post("/picker/issues/:issueId/resolve", async (req, res) => {
+router.post("/picker/issues/:issueId/resolve", requireAuth(2), async (req, res) => {
   try {
     const { issueId } = req.params;
     await api.resolvePickerIssue(issueId);
@@ -453,7 +450,7 @@ router.post("/picker/issues/:issueId/resolve", async (req, res) => {
   }
 });
 
-router.post("/picker/orders/:orderId/finalise", async (req, res) => {
+router.post("/picker/orders/:orderId/finalise", requireAuth(2), async (req, res) => {
   try {
     const { orderId } = req.params;
     await api.finalisePickerOrder(orderId);
@@ -464,7 +461,7 @@ router.post("/picker/orders/:orderId/finalise", async (req, res) => {
   }
 });
 
-router.get("/inventory", async (req, res) => {
+router.get("/inventory", requireAuth(2), async (req, res) => {
   try {
     const [inventory, managementIssues] = await Promise.all([
       api.getInventory(),
@@ -484,7 +481,7 @@ router.get("/inventory", async (req, res) => {
   }
 });
 
-router.post("/inventory/:productId", async (req, res) => {
+router.post("/inventory/:productId", requireAuth(2), async (req, res) => {
   try {
     const { productId } = req.params;
     const { quantity, locationCode } = req.body;
@@ -500,6 +497,7 @@ router.post("/inventory/:productId", async (req, res) => {
     res.redirect(`/inventory?error=${encodeURIComponent(error.message)}`);
   }
 });
+
 // Health check
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "frontend service is healthy." });
