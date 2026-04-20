@@ -38,9 +38,23 @@ body {
     border: none;
 }
 
-.user-actions a:hover, .logout-button:hover {
+.login-link:hover, .register-link:hover, .basket-link-text:hover, .logout-button:hover {
   text-decoration: underline;
   color: #007BFF;
+}
+
+#basket-count {
+  text-decoration: none;
+  background-color: #bbbbbb;
+  color: #666;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 20px;
+  min-width: 1.2rem;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
 }
 
 .search {

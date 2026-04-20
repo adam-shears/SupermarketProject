@@ -23,7 +23,30 @@ export function addToBasket(productId, quantity, name, price_pence, image_url) {
   }
   saveBasket(basket);
   autoCheck(productId);
+
+  updateHeaderCount();
 }
+
+export function updateHeaderCount() {
+  const countElement = document.getElementById('basket-count');
+  if (countElement) {
+    const basket = getBasket();
+    const total = basket.reduce((sum, item) => sum + item.quantity, 0);
+    countElement.textContent = total;
+    
+    if (total === 0) {
+      countElement.style.backgroundColor = '#bbbbbb';
+      countElement.style.color = '#666';
+    } else {
+      countElement.style.backgroundColor = '#e63946';
+      countElement.style.color = 'white';
+    }
+
+    // setting screen reader to read correct number
+    countElement.setAttribute('aria-label', `${total} items in basket`);
+  }
+}
+document.addEventListener('DOMContentLoaded', updateHeaderCount);
 
 // Update quantity
 export function updateQuantity(productId, quantity) {
@@ -40,6 +63,7 @@ export function removeFromBasket(productId) {
   let basket = getBasket();
   basket = basket.filter(i => i.productId !== productId);
   saveBasket(basket);
+  updateHeaderCount();
 }
 
 // Calculate totals

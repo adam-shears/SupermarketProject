@@ -29,10 +29,12 @@
               <button type="submit" class = "logout-button">Logout</button>
             </form>
           {% else %}
-            <a href = "/login">Login</a>
-            <a href = "/register">Register</a>
+            <a href = "/login" class="login-link">Login</a>
+            <a href = "/register" class="register-link">Register</a>
           {% endif %}
-            <a href = "/basket">Basket</a>
+            <a href="/basket" class="basket-link">
+            <span class="basket-link-text">Basket</span>
+            <span id="basket-count">0</span></a>
         </div>
     </div>
 
