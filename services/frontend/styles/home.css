@@ -1,37 +1,63 @@
 .banner-box {
-    background-color: #4caf50;
-    width: 40%;
-    height: 300px;
+    background-color: #2e7d32;
+    width: min(90%, 700px);
+    min-height: 300px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    margin: 30px auto 30px auto;
+    margin: 30px auto;
+    padding: 24px;
+    box-sizing: border-box;
 }
 
 .banner-text {
     text-align: center;
 }
 
+.banner-text h1,
+.banner-text p {
+    color: #ffffff;
+}
+
+.shop-link {
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.shop-link:hover,
+.shop-link:focus-visible {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
 .button-row {
     display: flex;
     gap: 15px;
     margin-bottom: 40px;
+    flex-wrap: wrap;
 }
 
 .action-card {
     flex: 1;
+    min-width: 180px;
     background: #f9f9f9;
     border: 1px solid #ddd;
     padding: 20px;
     text-align: center;
     border-radius: 10px;
-    cursor: pointer;
+    text-decoration: none;
+    color: #222;
+    display: block;
 }
 
-.action-card:hover {
+.action-card:hover,
+.action-card:focus-visible {
     background: #f0f0f0;
+    outline: 3px solid #005fcc;
+    outline-offset: 2px;
 }
 
 .placeholder-icon {
@@ -50,12 +76,18 @@
 
 .cat-item {
     text-decoration: none;
-    color: black;
+    color: #111;
     text-align: center;
     border: 1px solid #eee;
     border-radius: 8px;
     padding-bottom: 10px;
     overflow: hidden;
+    display: block;
+}
+
+.cat-item:focus-visible {
+    outline: 3px solid #005fcc;
+    outline-offset: 2px;
 }
 
 .image-square {
@@ -73,18 +105,41 @@
 }
 
 .content-area {
-    width: 80%;
+    width: min(90%, 1200px);
     margin: 0 auto;
 }
 
-.category-title-bar a {
-    text-decoration: none;
-    color: #333;
+.category-title-bar h2 {
     font-size: 24px;
     font-weight: bold;
+    color: #222;
 }
 
-.category-title-bar a:hover {
+.category-title-bar a {
     text-decoration: underline;
-    color: #007BFF;
+    color: #222;
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+.category-title-bar a:hover,
+.category-title-bar a:focus-visible {
+    color: #0056b3;
+}
+
+@media (max-width: 900px) {
+    .grid-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+
+    .banner-box {
+        width: 100%;
+        min-height: 220px;
+    }
 }

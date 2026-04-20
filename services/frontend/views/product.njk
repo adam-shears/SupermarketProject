@@ -6,8 +6,7 @@
 
 {% block content %}
 
-<div class = "main-content">
-
+<div class="main-content">
   <div class="left-column">
     <div class="back">
       <a href="{{ backlink }}">&larr; {{ backtext }}</a>
@@ -15,92 +14,188 @@
 
     <div class="product-container">
       <div class="product-image">
-        <img src="https://via.placeholder.com/400" alt="{{ product.name }}" />
+        <img
+          src="{{ product.image_url | default('https://via.placeholder.com/400') }}"
+          alt="{{ product.name }}"
+        />
       </div>
 
       <div class="product-info">
         <h1 class="product-name">{{ product.name }}</h1>
         <p class="product-description">{{ product.description }}</p>
 
-        <p class="price">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
+        <p class="price">
+          <span class="price-label">Price:</span>
+          <span class="price-value">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</span>
+        </p>
 
-        <!-- Updated form to use JS service -->
-        <form id="add-to-basket-form">
-          <input type="hidden" id="product-id" value="{{ product.id }}">
-          <input type="hidden" id="product-name" value="{{ product.name }}">
-          <input type="hidden" id="product-price" value="{{ product.price_pence }}">
-          <input type="hidden" id="product-image" value="https://via.placeholder.com/400">
-
+        <form
+          class="basket-form main-basket-form"
+          data-id="{{ product.id }}"
+          data-name="{{ product.name }}"
+          data-price="{{ product.price_pence }}"
+          data-image="{{ product.image_url | default('https://via.placeholder.com/400') }}"
+        >
           <div class="quantity">
-            <button type="button" class="quantity-minus" onclick="this.parentNode.querySelector('.quantity-input').stepDown()">-</button>
-            <input type="number" id="quantity" value="1" min="1" class="quantity-input" readonly/>
-            <button type="button" class="quantity-plus" onclick="this.parentNode.querySelector('.quantity-input').stepUp()">+</button>
+            <button
+              type="button"
+              class="quantity-minus"
+              aria-label="Decrease quantity for {{ product.name }}"
+            >
+              -
+            </button>
+
+            <label for="quantity-main" class="visually-hidden">
+              Quantity for {{ product.name }}
+            </label>
+            <input
+              type="number"
+              id="quantity-main"
+              name="quantity"
+              value="1"
+              min="1"
+              class="quantity-input"
+              readonly
+            />
+
+            <button
+              type="button"
+              class="quantity-plus"
+              aria-label="Increase quantity for {{ product.name }}"
+            >
+              +
+            </button>
           </div>
 
           <button type="submit" class="add-btn">Add to Basket</button>
         </form>
-        <p id="add-success" style="display:none;color:green;">Added to basket!</p>
+
+        <p class="add-success" role="status" aria-live="polite" hidden>
+          Added to basket!
+        </p>
 
         {% if product.discounts and product.discounts.length > 0 %}
-        <div class="offer">Offer Available</div>
+          <div class="offer">Offer Available</div>
         {% endif %}
       </div>
     </div>
   </div>
 
-  <div class="recommend-section">
-    <h2>You might also like</h2>
+  {% if recommendations and recommendations.length > 0 %}
+    <aside class="recommend-section" aria-labelledby="recommendations-title">
+      <h2 id="recommendations-title">You might also like</h2>
 
-    <div class="recommend-list">
-      {% for item in recommendations %}
-      <div class="recommend-item">
-        <a class="product-link" href="/products/{{ item.id }}?from={{ product.id }}">
-          <h3 class="product-name">{{ item.name }}</h3>
-        </a>
-        <p class="price">&pound;{{ (item.price_pence / 100) | toFixed(2) }}</p>
-        <form id="add-to-basket-form" class="recommend-buttons">
-          <input type="hidden" id="product-id" value="{{ product.id }}">
-          <input type="hidden" id="product-name" value="{{ product.name }}">
-          <input type="hidden" id="product-price" value="{{ product.price_pence }}">
-          <input type="hidden" id="product-image" value="https://via.placeholder.com/400">
+      <div class="recommend-list">
+        {% for item in recommendations %}
+          <article class="recommend-item">
+            <a class="product-link" href="/products/{{ item.id }}?from={{ product.id }}">
+              <h3 class="recommend-name">{{ item.name }}</h3>
+            </a>
 
-          <div class="quantity">
-            <button type="button" class="quantity-minus" onclick="this.parentNode.querySelector('.quantity-input').stepDown()">-</button>
-            <input type="number" id="quantity" value="1" min="1" class="quantity-input" readonly/>
-            <button type="button" class="quantity-plus" onclick="this.parentNode.querySelector('.quantity-input').stepUp()">+</button>
-          </div>
+            <p class="price">
+              <span class="price-label">Price:</span>
+              <span class="price-value">&pound;{{ (item.price_pence / 100) | toFixed(2) }}</span>
+            </p>
 
-          <button type="submit" class="add-btn">Add to Basket</button>
-        </form>
-        <p id="add-success" style="display:none;color:green;">Added to basket!</p>
+            <form
+              class="basket-form recommend-buttons"
+              data-id="{{ item.id }}"
+              data-name="{{ item.name }}"
+              data-price="{{ item.price_pence }}"
+              data-image="{{ item.image_url | default('https://via.placeholder.com/400') }}"
+            >
+              <div class="quantity">
+                <button
+                  type="button"
+                  class="quantity-minus"
+                  aria-label="Decrease quantity for {{ item.name }}"
+                >
+                  -
+                </button>
+
+                <label for="quantity-{{ item.id }}" class="visually-hidden">
+                  Quantity for {{ item.name }}
+                </label>
+                <input
+                  type="number"
+                  id="quantity-{{ item.id }}"
+                  name="quantity"
+                  value="1"
+                  min="1"
+                  class="quantity-input"
+                  readonly
+                />
+
+                <button
+                  type="button"
+                  class="quantity-plus"
+                  aria-label="Increase quantity for {{ item.name }}"
+                >
+                  +
+                </button>
+              </div>
+
+              <button type="submit" class="add-btn">Add to Basket</button>
+            </form>
+
+            <p class="add-success" role="status" aria-live="polite" hidden>
+              Added to basket!
+            </p>
+          </article>
+        {% endfor %}
       </div>
-      {% endfor %}
-    </div>
-  </div>
+    </aside>
+  {% endif %}
 </div>
 
-<!-- Frontend JS to handle basket -->
 <script type="module">
-  import * as service from '/service.js'; 
+  import * as service from "/service.js";
 
-  const form = document.getElementById("add-to-basket-form");
-  const successMsg = document.getElementById("add-success");
+  function normaliseQuantity(input) {
+    let value = parseInt(input.value, 10) || 1;
+    if (value < 1) value = 1;
+    input.value = value;
+    return value;
+  }
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault(); // prevent normal form submit
+  document.querySelectorAll(".quantity-minus").forEach((button) => {
+    button.addEventListener("click", () => {
+      const quantityInput = button.parentElement.querySelector(".quantity-input");
+      quantityInput.stepDown();
+      normaliseQuantity(quantityInput);
+    });
+  });
 
-    const productId = Number(document.getElementById("product-id").value);
-    const name = document.getElementById("product-name").value;
-    const price_pence = Number(document.getElementById("product-price").value);
-    const image_url = document.getElementById("product-image").value;
-    const quantity = Number(document.getElementById("quantity").value);
+  document.querySelectorAll(".quantity-plus").forEach((button) => {
+    button.addEventListener("click", () => {
+      const quantityInput = button.parentElement.querySelector(".quantity-input");
+      quantityInput.stepUp();
+      normaliseQuantity(quantityInput);
+    });
+  });
 
-    // Used service.js to add to basket
-    service.addToBasket(productId, quantity, name, price_pence, image_url);
+  document.querySelectorAll(".basket-form").forEach((form) => {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
 
-    // Show confirmation
-    successMsg.style.display = "block";
-    setTimeout(() => successMsg.style.display = "none", 2000);
+      const productId = Number(form.dataset.id);
+      const name = form.dataset.name;
+      const price_pence = Number(form.dataset.price);
+      const image_url = form.dataset.image || "https://via.placeholder.com/400";
+
+      const quantityInput = form.querySelector(".quantity-input");
+      const quantity = normaliseQuantity(quantityInput);
+
+      service.addToBasket(productId, quantity, name, price_pence, image_url);
+
+      const successMsg = form.nextElementSibling;
+      if (successMsg && successMsg.classList.contains("add-success")) {
+        successMsg.hidden = false;
+        setTimeout(() => {
+          successMsg.hidden = true;
+        }, 2000);
+      }
+    });
   });
 </script>
 
