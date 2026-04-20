@@ -65,7 +65,7 @@ and
 ```bash
 docker compose version
 ```
-You should see version numbers printed in the terminal. If you don't, or if you see errors, then Docker is not installed correctly and you should follow [Docker's troubleshooting guidelines](https://docs.docker.com/desktop/troubleshoot-and-support/troubleshoot/).
+You should see version numbers printed in the terminal. If you don't, or if you see errors, then Docker is not installed correctly and you should follow Docker's Troubleshooting Guidelines ([Windows/macOS](https://docs.docker.com/desktop/troubleshoot-and-support/troubleshoot/) | [Linux](https://docs.docker.com/engine/daemon/troubleshoot/))
 
 #### VS Code
 Installation link:  
