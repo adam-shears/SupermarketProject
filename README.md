@@ -56,12 +56,16 @@ Below, you can find the links to Docker's installation guidelines. Please head t
 
 > https://docs.docker.com/engine/install/
 
-Verify your install in the command line:
+You should now verify your installation in the command line. Run these two commands separately:
 
 ```bash
 docker --version
+```
+and
+```bash
 docker compose version
 ```
+You should see version numbers printed in the terminal. If you don't, or if you see errors, then Docker is not installed correctly and you should follow [Docker's troubleshooting guidelines](https://docs.docker.com/desktop/troubleshoot-and-support/troubleshoot/).
 
 #### VS Code
 Installation link:  
