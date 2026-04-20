@@ -123,25 +123,28 @@ You should see a new file called `.env` appear in your file explorer.
 ### Running the Project
 
 To build the services for the first time, you can run:
-
 ```bash
 docker compose up --build
 ```
+After running this command, wait for the following line:
+```bash
+db-1    | ... [1] LOG: database system is ready to accept connections
+```
+At this point, head to http://localhost:3000 in your regular browser to access the site.
+
+--- 
 
 To stop the services, you can run:
-
 ```bash
 docker compose down
 ```
 
 To restart the services, you can run:
-
 ```bash
 docker compose up
 ```
 
 If you need a hard reset (i.e. resetting the DB), you can run:
-
 ```bash
 docker compose down -v
 ```
@@ -154,12 +157,6 @@ docker compose down -v
 > npm run down = docker compose down
 > npm run reset = docker compose down -v
 > ```
-
-After starting the services, wait for the logs to finish in the terminal. The last line should be:
-```bash
-db-1    | ... [1] LOG: database system is ready to accept connections
-```
-At this point, head to https://localhost:3000 in the browser to access the site.
 
 ## Notes
 
