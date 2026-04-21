@@ -5,10 +5,8 @@ that the frontend needs to return to the user.
 Never put logic in this file beyond HTTP-specific concerns or very light normalisation.
 The only changes that should be made to this file are adding new functions in the api object
 that make requests to the other services.
- 
 
-
-HTTP validation should be performed in thos services' routes.js files and business logic
+HTTP validation should be performed in those services' routes.js files and business logic
 should be performed in those services' service.js files.
 */
 
@@ -94,80 +92,11 @@ export const api = {
   updateShoppingListItem: (customerId, productId, payload) => patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
   deleteShoppingListItem: (customerId, productId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
 
+
   getManagementView: async (scale = "week", search = "") => {
-    const mockData = {
-      day: {
-        totalSalesPence: 48230,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Bread" },
-          { id: 3, name: "Eggs" },
-        ],
-        salesPerCategory: [
-          { category: "Fruit", salesPence: 9200 },
-          { category: "Bakery", salesPence: 8400 },
-          { category: "Drinks", salesPence: 11300 },
-          { category: "Snacks", salesPence: 7600 },
-          { category: "Dairy", salesPence: 11730 },
-        ],
-        trendingItems: [
-          { rank: 1, name: "Milk", unitsSold: 28 },
-          { rank: 2, name: "Bread", unitsSold: 24 },
-          { rank: 3, name: "Eggs", unitsSold: 20 },
-        ],
-      },
-
-      week: {
-        totalSalesPence: 284560,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Bread" },
-          { id: 3, name: "Eggs" },
-        ],
-        salesPerCategory: [
-          { category: "Fruit", salesPence: 72400 },
-          { category: "Bakery", salesPence: 53100 },
-          { category: "Drinks", salesPence: 64800 },
-          { category: "Snacks", salesPence: 40300 },
-          { category: "Dairy", salesPence: 53960 },
-        ],
-        trendingItems: [
-          { rank: 1, name: "Milk", unitsSold: 142 },
-          { rank: 2, name: "Bread", unitsSold: 127 },
-          { rank: 3, name: "Eggs", unitsSold: 111 },
-        ],
-      },
-
-      month: {
-        totalSalesPence: 1123780,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Eggs" },
-          { id: 3, name: "Bread" },
-        ],
-        salesPerCategory: [
-          { category: "Fruit", salesPence: 264000 },
-          { category: "Bakery", salesPence: 211500 },
-          { category: "Drinks", salesPence: 248400 },
-          { category: "Snacks", salesPence: 178200 },
-          { category: "Dairy", salesPence: 221680 },
-        ],
-        trendingItems: [
-          { rank: 1, name: "Milk", unitsSold: 530 },
-          { rank: 2, name: "Eggs", unitsSold: 488 },
-          { rank: 3, name: "Bread", unitsSold: 455 },
-        ],
-      },
-    };
-
-    try {
-      const params = new URLSearchParams({ scale, search }).toString();
-      return await getJson(`${ANALYTICS_URL}/management?${params}`);
-    } catch (error) {
-      console.warn("Using mock management data:", error.message);
-      return mockData[scale] || mockData.week;
-    }
-  },
+  const params = new URLSearchParams({ scale, search }).toString();
+  return await getJson(`${ANALYTICS_URL}/management?${params}`);
+},
 
   getSalesByCategoryCsvUrl: (scale = "week", search = "") => {
     const params = new URLSearchParams({ scale, search }).toString();
@@ -187,11 +116,10 @@ export const api = {
 
   finalisePickerOrder: (orderId) =>
     postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/finalise`, {}),
+
   getManagementIssues: () => getJson(`${WAREHOUSE_URL}/management/issues`),
   getInventory: () => getJson(`${WAREHOUSE_URL}/inventory`),
 
   updateInventory: (productId, payload) =>
     patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),
-
-
 };

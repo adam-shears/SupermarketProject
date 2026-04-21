@@ -1,5 +1,5 @@
 .management-page {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 2rem auto;
   padding: 0 1rem 2rem;
 }
@@ -13,15 +13,28 @@
   flex-wrap: wrap;
 }
 
+.management-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .management-header h1 {
   margin: 0;
-  font-size: 2.5rem;
+  font-size: 2.8rem;
+  line-height: 1.1;
+}
+
+.management-page-subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
 }
 
 .error-message {
   background-color: #fef2f2;
   border: 1px solid #fca5a5;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 1rem;
   color: #dc2626;
   margin-bottom: 1rem;
@@ -68,9 +81,9 @@
 
 .filter-group select,
 .filter-group input {
-  padding: 0.55rem 0.75rem;
+  padding: 0.6rem 0.8rem;
   border: 1px solid #cfcfcf;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
   font-size: 0.95rem;
 }
@@ -80,9 +93,9 @@
 }
 
 .filter-button {
-  padding: 0.55rem 1.5rem;
+  padding: 0.62rem 1.4rem;
   border: 1px solid #cfcfcf;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
   color: #111;
   font-size: 0.95rem;
@@ -105,108 +118,177 @@
 
 .export-button {
   display: inline-block;
-  padding: 0.65rem 1rem;
+  padding: 0.7rem 1rem;
   border: 1px solid #cfcfcf;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
   color: #111;
   text-decoration: none;
   font-size: 0.95rem;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.export-button--disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.export-button:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
 }
 
 .management-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
+  align-items: start;
+}
+
+.management-section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .management-card {
   background-color: #fff;
   border: 1px solid #ddd;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 1.5rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  align-self: start;
 }
-
 .management-card h2 {
   margin: 0;
   font-size: 1.25rem;
 }
 
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  min-height: 60px;
+  margin-bottom: 0.5rem;
+}
+
+.card-chip {
+  display: inline-block;
+  min-width: 72px;
+  text-align: center;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  background: #fafafa;
+  color: #444;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
 .card-subtitle {
-  margin: 0.5rem 0 1rem;
+  margin: 0.35rem 0 0;
   color: #666;
   font-size: 0.95rem;
 }
 
 .total-sales-card {
-  min-height: 180px;
+  min-height: 240px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .total-sales-value {
-  margin: 0.75rem 0 0;
+  margin: 1rem 0 0.9rem;
   font-size: 3rem;
   font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  min-height: 3.2rem;
+  font-variant-numeric: tabular-nums;
+  word-break: normal;
 }
 
-.best-sellers-list {
+.sales-meta {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.sales-meta-item {
+  min-width: 150px;
+  padding: 0.85rem 1rem;
+  border: 1px solid #ececec;
+  border-radius: 14px;
+  background: #fafafa;
+}
+
+.sales-meta-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.3rem;
+}
+
+.sales-meta-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+  font-variant-numeric: tabular-nums;
+}
+
+.best-sellers-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
 }
 
 .best-seller-item {
-  width: 110px;
-  text-align: center;
+  border: 1px solid #e8e8e8;
+  border-radius: 14px;
+  padding: 0.95rem;
+  background: #fafafa;
+  min-height: 120px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
+  justify-content: flex-start;
 }
 
-.best-seller-placeholder {
-  width: 100%;
-  height: 80px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  background-color: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #555;
-  font-size: 0.95rem;
+.best-seller-rank {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #666;
 }
 
-.best-seller-item p {
-  margin: 0;
+.best-seller-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.35;
 }
 
 .data-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .data-row {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding-bottom: 0.6rem;
+  padding-bottom: 0.7rem;
   border-bottom: 1px solid #eee;
   font-size: 0.98rem;
 }
 
 .data-row span:last-child {
-  font-weight: 600;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .data-row:last-child {
@@ -222,11 +304,50 @@
   margin: 0;
 }
 
-@media (max-width: 768px) {
-  .management-grid {
+.management-table-wrapper {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.management-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.management-table th,
+.management-table td {
+  text-align: left;
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.95rem;
+  vertical-align: middle;
+}
+
+.management-table th {
+  font-weight: 700;
+  color: #333;
+  background-color: #fafafa;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #d6d6d6;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #f8f8f8;
+  color: #333;
+}
+
+@media (max-width: 900px) {
+  .management-grid,
+  .management-section-grid {
     grid-template-columns: 1fr;
   }
+}
 
+@media (max-width: 768px) {
   .management-header {
     flex-direction: column;
     align-items: stretch;
@@ -242,5 +363,23 @@
 
   .management-filter-form {
     justify-content: space-between;
+  }
+
+  .management-header h1 {
+    font-size: 2.2rem;
+  }
+
+  .total-sales-value {
+    font-size: 2.4rem;
+    white-space: normal;
+    min-height: auto;
+  }
+
+  .sales-meta {
+    margin-top: 0.5rem;
+  }
+
+  .sales-meta-item {
+    width: 100%;
   }
 }

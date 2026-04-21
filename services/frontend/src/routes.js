@@ -177,6 +177,7 @@ router.get("/products", async (req, res) => {
     });
   }
 });
+
 // Basket POST endpoint
 router.post("/basket/items", async (req, res) => {
   try {
@@ -318,6 +319,14 @@ router.get("/management", requireAuth(2), async (req, res) => {
         salesPerCategory: [],
         trendingItems: [],
         totalSalesPence: 0,
+        totalSalesDisplay: "0.00",
+        orderCount: 0,
+        averageOrderValuePence: 0,
+        averageOrderValueDisplay: "0.00",
+        staff: [],
+        ordersToAssign: [],
+        promoCodes: [],
+        discounts: [],
       },
       scale: "week",
       search: "",
@@ -340,6 +349,8 @@ router.get("/management/export.csv", requireAuth(2), async (req, res) => {
       `Time Scale,${scale}`,
       `Search Filter,${search || "none"}`,
       `Total Sales,${(management.totalSalesPence / 100).toFixed(2)}`,
+      `Order Count,${management.orderCount || 0}`,
+      `Average Order Value,${management.averageOrderValueDisplay || "0.00"}`,
       "",
       "Trending Item,Units Sold",
       ...management.trendingItems.map((item) => `${item.name},${item.unitsSold}`),

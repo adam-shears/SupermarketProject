@@ -5,16 +5,12 @@
 {% endblock %}
 
 {% block content %}
-
 <div class="management-page">
   <div class="management-header">
-    <h1>Management View</h1>
-
-    {% if error %}
-    <div class="error-message">
-      <p>{{ error }}</p>
+    <div class="management-title-block">
+      <h1>Management View</h1>
+      <p class="management-page-subtitle">Store performance, staffing, promotions, and operational overview.</p>
     </div>
-    {% endif %}
 
     <div class="management-controls">
       <form action="/management" method="get" class="management-filter-form">
@@ -30,7 +26,13 @@
 
           <div class="filter-group">
             <label for="search">Search</label>
-            <input type="text" name="search" id="search" placeholder="Search by name or category..." value="{{ search }}">
+            <input
+              type="text"
+              name="search"
+              id="search"
+              placeholder="Search by name or category..."
+              value="{{ search }}"
+            >
           </div>
 
           <button type="submit" class="filter-button">Search</button>
@@ -45,64 +47,252 @@
     </div>
   </div>
 
+  {% if error %}
+    <div class="error-message">
+      <p>{{ error }}</p>
+    </div>
+  {% endif %}
+
   <div class="management-grid">
     <div class="management-card total-sales-card">
-      <h2>Total Sales</h2>
-      <p class="card-subtitle">Filtered by {{ scale }}</p>
-      <p class="total-sales-value">&pound;{{ (management.totalSalesPence / 100).toFixed(2) }}</p>
-    </div>
-
-    <div class="management-card">
-      <h2>Best Sellers</h2>
-      <p class="card-subtitle">Top-selling products for this {{ scale }}</p>
-
-      <div class="best-sellers-list">
-        {% for item in management.bestSellers %}
-        <div class="best-seller-item">
-          <div class="best-seller-placeholder">{{ item.name }}</div>
-          <p>{{ item.name }}</p>
+      <div class="card-header-row">
+        <div>
+          <h2>Total Sales</h2>
+          <p class="card-subtitle">Filtered by {{ scale }}</p>
         </div>
-        {% endfor %}
-        {% if management.bestSellers.length == 0 %}
-        <p class="no-data">No results found</p>
-        {% endif %}
+        <span class="card-chip">{{ scale | upper }}</span>
+      </div>
+
+      <p class="total-sales-value">&pound;{{ management.totalSalesDisplay }}</p>
+
+      <div class="sales-meta">
+        <div class="sales-meta-item">
+          <span class="sales-meta-label">Orders</span>
+          <span class="sales-meta-value">{{ management.orderCount }}</span>
+        </div>
+        <div class="sales-meta-item">
+          <span class="sales-meta-label">Avg. order value</span>
+          <span class="sales-meta-value">&pound;{{ management.averageOrderValueDisplay }}</span>
+        </div>
       </div>
     </div>
 
     <div class="management-card">
-      <h2>Sales by Category</h2>
-      <p class="card-subtitle">Revenue grouped by category</p>
-
-      <div class="data-list">
-        {% for item in management.salesPerCategory %}
-        <div class="data-row">
-          <span>{{ item.category }}</span>
-          <span>&pound;{{ (item.salesPence / 100).toFixed(2) }}</span>
+      <div class="card-header-row">
+        <div>
+          <h2>Best Sellers</h2>
+          <p class="card-subtitle">Top-selling products for this {{ scale }}</p>
         </div>
-        {% endfor %}
-        {% if management.salesPerCategory.length == 0 %}
-        <p class="no-data">No results found</p>
-        {% endif %}
+        <span class="card-chip">Top {{ management.bestSellers.length }}</span>
       </div>
+
+      {% if management.bestSellers.length > 0 %}
+        <div class="best-sellers-list">
+          {% for item in management.bestSellers %}
+            <div class="best-seller-item">
+              <div class="best-seller-rank">#{{ loop.index }}</div>
+              <div class="best-seller-name">{{ item.name }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-data">No best seller data available.</p>
+      {% endif %}
     </div>
 
     <div class="management-card">
-      <h2>Trending Items</h2>
-      <p class="card-subtitle">Items with higher than usual sales for {{ scale }}</p>
-
-      <div class="data-list">
-        {% for item in management.trendingItems %}
-        <div class="data-row">
-          <span>#{{ item.rank }} {{ item.name }}</span>
-          <span>{{ item.unitsSold }} units</span>
+      <div class="card-header-row">
+        <div>
+          <h2>Sales by Category</h2>
+          <p class="card-subtitle">Revenue grouped by category</p>
         </div>
-        {% endfor %}
-        {% if management.trendingItems.length == 0 %}
-        <p class="no-data">No trending items found</p>
-        {% endif %}
       </div>
+
+      {% if management.salesPerCategory.length > 0 %}
+        <div class="data-list">
+          {% for item in management.salesPerCategory %}
+            <div class="data-row">
+              <span>{{ item.category }}</span>
+              <span>&pound;{{ (item.salesPence / 100).toFixed(2) }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-data">No category sales available.</p>
+      {% endif %}
+    </div>
+
+    <div class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Trending Items</h2>
+          <p class="card-subtitle">Items with stronger than usual performance this {{ scale }}</p>
+        </div>
+      </div>
+
+      {% if management.trendingItems.length > 0 %}
+        <div class="data-list">
+          {% for item in management.trendingItems %}
+            <div class="data-row">
+              <span>#{{ item.rank }} {{ item.name }}</span>
+              <span>{{ item.unitsSold }} units</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-data">No trending items found.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="management-section-grid">
+    <div class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Staff</h2>
+          <p class="card-subtitle">Current staff overview</p>
+        </div>
+      </div>
+
+      {% if management.staff and management.staff.length > 0 %}
+        <div class="management-table-wrapper">
+          <table class="management-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Assigned Orders</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for member in management.staff %}
+                <tr>
+                  <td>{{ member.name }}</td>
+                  <td>{{ member.role }}</td>
+                  <td><span class="status-badge">{{ member.status }}</span></td>
+                  <td>{{ member.assignedOrders }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="no-data">No staff data available.</p>
+      {% endif %}
+    </div>
+
+    <div class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Order Assignment</h2>
+          <p class="card-subtitle">Orders currently waiting to be assigned or processed</p>
+        </div>
+      </div>
+
+      {% if management.ordersToAssign and management.ordersToAssign.length > 0 %}
+        <div class="management-table-wrapper">
+          <table class="management-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Picker</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in management.ordersToAssign %}
+                <tr>
+                  <td>#{{ order.id }}</td>
+                  <td>{{ order.customer }}</td>
+                  <td><span class="status-badge">{{ order.status }}</span></td>
+                  <td>{{ order.picker }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="no-data">No orders to assign.</p>
+      {% endif %}
+    </div>
+
+    <div class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Promo Codes</h2>
+          <p class="card-subtitle">Current promotional offers and campaign status</p>
+        </div>
+      </div>
+
+      {% if management.promoCodes and management.promoCodes.length > 0 %}
+        <div class="management-table-wrapper">
+          <table class="management-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Discount</th>
+                <th>Status</th>
+                <th>Expiry</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for promo in management.promoCodes %}
+                <tr>
+                  <td>{{ promo.code }}</td>
+                  <td>{{ promo.description }}</td>
+                  <td>{{ promo.discount }}</td>
+                  <td><span class="status-badge">{{ promo.status }}</span></td>
+                  <td>{{ promo.expiry }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="no-data">No promo codes available.</p>
+      {% endif %}
+    </div>
+
+    <div class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Discounts</h2>
+          <p class="card-subtitle">Active product discounts currently highlighted in store</p>
+        </div>
+      </div>
+
+      {% if management.discounts and management.discounts.length > 0 %}
+        <div class="management-table-wrapper">
+          <table class="management-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Original Price</th>
+                <th>Discounted Price</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for discount in management.discounts %}
+                <tr>
+                  <td>{{ discount.product }}</td>
+                  <td>{{ discount.category }}</td>
+                  <td>&pound;{{ (discount.oldPricePence / 100).toFixed(2) }}</td>
+                  <td>&pound;{{ (discount.newPricePence / 100).toFixed(2) }}</td>
+                  <td><span class="status-badge">{{ discount.status }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="no-data">No discounts available.</p>
+      {% endif %}
     </div>
   </div>
 </div>
-
 {% endblock %}

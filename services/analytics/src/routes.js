@@ -10,7 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { getManagementData } from './service.js';
+import { getManagementView } from "./service.js";
 
 const router = Router();
 
@@ -24,13 +24,17 @@ router.get("/health", async (req, res) => {
 
 router.get("/management", async (req, res) => {
   try {
-    const scale = req.query.scale || 'week';
-    const search = req.query.search || '';
-    const data = await getManagementData(scale, search);
-    res.json(data);
+    const allowedScales = ["day", "week", "month"];
+    const scale = allowedScales.includes(req.query.scale) ? req.query.scale : "week";
+    const search = typeof req.query.search === "string" ? req.query.search : "";
+
+    const data = await getManagementView(scale, search);
+    res.status(200).json(data);
   } catch (error) {
-    console.error("management route error:", error);
-    res.status(400).json({ message: error.message || "unknown error" });
+    console.error("Failed to load management demo data:", error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to load management data",
+    });
   }
 });
 
