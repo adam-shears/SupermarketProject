@@ -15,7 +15,7 @@
     <div class="product-container">
       <div class="product-image">
         <img
-          src="{{ product.image_url | default('https://via.placeholder.com/400') }}"
+          src="/images/products/{{ product.id }}.JPG"
           alt="{{ product.name }}"
         />
       </div>
@@ -34,7 +34,7 @@
           data-id="{{ product.id }}"
           data-name="{{ product.name }}"
           data-price="{{ product.price_pence }}"
-          data-image="{{ product.image_url | default('https://via.placeholder.com/400') }}"
+          data-image="/images/products/{{ product.id }}.JPG"
         >
           <div class="quantity">
             <button
@@ -102,7 +102,7 @@
               data-id="{{ item.id }}"
               data-name="{{ item.name }}"
               data-price="{{ item.price_pence }}"
-              data-image="{{ item.image_url | default('https://via.placeholder.com/400') }}"
+              data-image="/images/products/{{ product.id }}.JPG"
             >
               <div class="quantity">
                 <button

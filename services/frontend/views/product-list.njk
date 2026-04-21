@@ -35,8 +35,8 @@
           <div class="product-details">
             <img
               class="product-image"
-              src="{{ product.image_url | default('https://via.placeholder.com/200') }}"
-              alt=""
+              src="/images/products/{{ product.id }}.JPG"
+              alt="{{product.name}}"
             >
             <span class="product-name">{{ product.name }}</span>
             <p class="product-price">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</p>
@@ -86,7 +86,7 @@
             data-id="{{ product.id }}"
             data-name="{{ product.name }}"
             data-price="{{ product.price_pence }}"
-            data-image="{{ product.image_url | default('https://via.placeholder.com/200') }}"
+            data-image="/images/products/{{ product.id }}.JPG"
           >
             Add
           </button>

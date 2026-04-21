@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("styles"));
 app.use(express.static("scripts"));
+app.use("/images", express.static("images"));
 
 app.use(
   session({
@@ -53,17 +54,26 @@ env.addFilter("toFixed", (value, decimals = 2) => {
 
 app.use("/", routes);
 app.use((req, res) => {
-  res.status(404).render("4xx.njk", { title: "Page Not Found", status: "404 - Not Found", message: "The page you are looking for does not exist." });
+  res.status(404).render("4xx.njk", {
+    title: "Page Not Found",
+    status: "404 - Not Found",
+    message: "The page you are looking for does not exist.",
+  });
 });
 app.use((err, req, res, next) => {
   console.error(err);
-  if(res.headersSent) {
+  if (res.headersSent) {
     return next(err);
   }
   const status = err.status || 500;
   const template = status >= 500 ? "5xx.njk" : "4xx.njk";
-  const message = status >= 500 ? "An unexpected error occurred on the server." : err.message || "An error occurred.";
-  res.status(status).render(template, { title: `Error ${status}`, status: `${status} - ${err.name}`, message });
+  const message =
+    status >= 500
+      ? "An unexpected error occurred on the server."
+      : err.message || "An error occurred.";
+  res
+    .status(status)
+    .render(template, { title: `Error ${status}`, status: `${status} - ${err.name}`, message });
 });
 
 const port = process.env.PORT || 3000;

@@ -133,6 +133,21 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
     color: #0056b3;
 }
 
+.category-image {
+    /* Used GPT-5.4 to assist with scaling the images within the category boxes and make them "pop" on hover (line 147-149) */
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+    margin-bottom: 10px;
+    background: #eeeeee;
+    transition: transform 0.2s ease;
+}
+
+.cat-item:hover .category-image {
+    transform: scale(1.03);
+}
+
 @media (max-width: 600px) {
     .banner-box {
         width: 100%;
