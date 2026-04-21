@@ -1,11 +1,14 @@
+/* Used Gemini to assist with explaining css scaling (rem/vw)
+https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-4284785701 */
+
 .banner-box {
-    background-color: #4caf50;
-    width: 60%; /* Increased from 40% so it's not too skinny on tablets */
-    min-height: 250px; /* Use min-height, not height */
-    padding: 20px; /* Gives text breathing room */
+    background-color: #2e7d32;
+    width: min(90%, 700px);
+    min-height: 300px;
+    padding: 24px;
     border-radius: 10px;
     display: flex;
-    flex-direction: column; /* Better for stacking text vertically */
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     color: white;
@@ -17,25 +20,49 @@
     text-align: center;
 }
 
+.banner-text h1,
+.banner-text p {
+    color: #ffffff;
+}
+
+.shop-link {
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.shop-link:hover,
+.shop-link:focus-visible {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
 .button-row {
     display: flex;
-    flex-wrap: wrap; /* Allows cards to drop to a new line */
     gap: 15px;
     margin-bottom: 40px;
+    flex-wrap: wrap;
 }
 
 .action-card {
-    flex: 1 1 200px; /* Grow, Shrink, but try to stay around 200px */
+    flex: 1 1 200px;
+    min-width: 180px;
     background: #f9f9f9;
     border: 1px solid #ddd;
     padding: 20px;
     text-align: center;
     border-radius: 10px;
+    text-decoration: none;
+    color: #222;
+    display: block;
     cursor: pointer;
 }
 
-.action-card:hover {
+.action-card:hover,
+.action-card:focus-visible {
     background: #f0f0f0;
+    outline: 3px solid #005fcc;
+    outline-offset: 2px;
 }
 
 .placeholder-icon {
@@ -48,19 +75,24 @@
 
 .grid-container {
     display: grid;
-    /* This is the magic line for scaling */
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
 }
 
 .cat-item {
     text-decoration: none;
-    color: black;
+    color: #111;
     text-align: center;
     border: 1px solid #eee;
     border-radius: 8px;
     padding-bottom: 10px;
     overflow: hidden;
+    display: block;
+}
+
+.cat-item:focus-visible {
+    outline: 3px solid #005fcc;
+    outline-offset: 2px;
 }
 
 .image-square {
@@ -78,20 +110,32 @@
 }
 
 .content-area {
-    width: 90%; /* Changed from 80% to give more room on small screens */
-    max-width: 1200px; /* Prevents it from getting too wide on huge monitors */
+    width: min(90%, 1200px);
+    max-width: 1200px;
     margin: 0 auto;
 }
 
-.category-title-bar a {
-    text-decoration: none;
-    color: #333;
-    /* Scales between 18px and 32px based on window width */
-    font-size: clamp(1.25rem, 2vw, 1.5rem);
+.category-title-bar h2 {
+    font-size: 24px;
     font-weight: bold;
+    color: #222;
 }
 
-.category-title-bar a:hover {
+.category-title-bar a {
     text-decoration: underline;
-    color: #007BFF;
+    color: #222;
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    font-weight: inherit;
+}
+
+.category-title-bar a:hover,
+.category-title-bar a:focus-visible {
+    color: #0056b3;
+}
+
+@media (max-width: 600px) {
+    .banner-box {
+        width: 100%;
+        min-height: 220px;
+    }
 }

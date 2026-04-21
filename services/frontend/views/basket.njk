@@ -6,79 +6,118 @@
 
 {% block content %}
 
-<div class="basket-page">
-    <div class="items-column">
-        <h2>Your Items</h2>
-        <div id="basket-items">
-            <!-- Items will be rendered by JavaScript from LocalStorage -->
-        </div>
-    </div>
+<div class="basket-wrapper">
+  <h1 class="basket-title">Your Basket</h1>
 
-    <div class="summary-column">
-        <h2>Summary</h2>
-        <div class="subtotal" id="subtotal-div">
-            <h3>Subtotal &pound;0.00</h3>
-        </div>
-        <div class="discount" id="discount-div" style="display: none;">
-            <h3 id="discount-text">Discount -&pound;0.00</h3>
-        </div>
-        <div class="promo">
-            <input type="text" placeholder="Promo">
-            <button>Add</button>
-        </div>
-        <div class="total">
-            <h3 id="total-text">Total &pound;0.00</h3>
-        </div>
+  <div class="basket-page">
+    <section class="items-column" aria-labelledby="basket-items-title">
+      <h2 id="basket-items-title">Your Items</h2>
+      <div id="basket-items">
+        <!-- Items will be rendered by JavaScript from LocalStorage -->
+      </div>
+    </section>
 
-        <button class="proceed">Proceed &rarr;</button>
-    </div>
+    <aside class="summary-column" aria-labelledby="basket-summary-title">
+      <h2 id="basket-summary-title">Summary</h2>
+
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span id="subtotal-text">&pound;0.00</span>
+      </div>
+
+      <div class="summary-row discount-row" id="discount-div" hidden>
+        <span>Discount</span>
+        <span id="discount-text">-&pound;0.00</span>
+      </div>
+
+      <div class="promo">
+        <label for="promo-code" class="visually-hidden">Promo code</label>
+        <input id="promo-code" type="text" placeholder="Promo code">
+        <button type="button" class="promo-btn">Add</button>
+      </div>
+
+      <div class="summary-row total-row">
+        <span>Total</span>
+        <span id="total-text">&pound;0.00</span>
+      </div>
+
+      <button type="button" class="proceed">Proceed &rarr;</button>
+    </aside>
+  </div>
 </div>
 
 <script type="module">
   import * as service from '/service.js';
 
-  // Update subtotal, discount, and total in the summary
+  function formatPrice(pence) {
+    return `£${(pence / 100).toFixed(2)}`;
+  }
+
   function updateTotals() {
     const totals = service.calculateTotals();
 
-    document.getElementById('subtotal-div').innerHTML = `<h3>Subtotal &pound;${(totals.subtotal / 100).toFixed(2)}</h3>`;
-    document.getElementById('total-text').textContent = `Total £${(totals.total / 100).toFixed(2)}`;
+    document.getElementById('subtotal-text').textContent = formatPrice(totals.subtotal);
+    document.getElementById('total-text').textContent = formatPrice(totals.total);
+
+    const discountDiv = document.getElementById('discount-div');
+    const discountText = document.getElementById('discount-text');
 
     if (totals.discounts > 0) {
-      document.getElementById('discount-div').style.display = 'block';
-      document.getElementById('discount-text').textContent = `Discount -£${(totals.discounts / 100).toFixed(2)}`;
+      discountDiv.hidden = false;
+      discountText.textContent = `-${formatPrice(totals.discounts)}`;
     } else {
-      document.getElementById('discount-div').style.display = 'none';
+      discountDiv.hidden = true;
+      discountText.textContent = '-£0.00';
     }
   }
 
-  // Render all basket items
   function renderBasket() {
     const items = service.getBasket();
     const itemsColumn = document.getElementById('basket-items');
     itemsColumn.innerHTML = '';
 
     if (items.length === 0) {
-      itemsColumn.innerHTML = '<p>Your basket is empty</p>';
+      itemsColumn.innerHTML = `
+        <p class="empty-basket">Your basket is empty.</p>
+      `;
       updateTotals();
       return;
     }
 
-    items.forEach(item => {
+    items.forEach((item) => {
       itemsColumn.innerHTML += `
-        <div class="item-card">
-          <a href="/products/${item.productId}?from=basket">
+        <article class="item-card">
+          <a href="/products/${item.productId}?from=basket" class="item-link">
             <img src="${item.image_url}" alt="${item.name}" class="product-thumbnail">
             <div class="item-details">
-              <h3>${item.name}</h3>
-              <p>&pound;${(item.price_pence / 100).toFixed(2)}</p>
+              <h3 class="item-name">${item.name}</h3>
+              <p class="item-price">${formatPrice(item.price_pence)}</p>
             </div>
           </a>
+
           <div class="item-actions">
-            <input type="number" value="${item.quantity}" class="quantity-input" data-id="${item.productId}" min="1">
-            <button class="delete-button" data-id="${item.productId}">X</button>
+            <label for="qty-${item.productId}" class="visually-hidden">
+              Quantity for ${item.name}
+            </label>
+            <input
+              id="qty-${item.productId}"
+              type="number"
+              value="${item.quantity}"
+              class="quantity-input"
+              data-id="${item.productId}"
+              min="1"
+            >
+
+            <button
+              type="button"
+              class="delete-button"
+              data-id="${item.productId}"
+              aria-label="Remove ${item.name} from basket"
+            >
+              Remove
+            </button>
           </div>
-        </div>
+        </article>
       `;
     });
 
@@ -86,22 +125,19 @@
     updateTotals();
   }
 
-  // Attach event listeners to delete buttons and quantity inputs
   function attachEventListeners() {
-    // Delete item
-    document.querySelectorAll('.delete-button').forEach(btn => {
+    document.querySelectorAll('.delete-button').forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        const productId = Number(e.target.dataset.id);
+        const productId = Number(e.currentTarget.dataset.id);
         service.removeFromBasket(productId);
         renderBasket();
       });
     });
 
-    // Quantity change
-    document.querySelectorAll('.quantity-input').forEach(input => {
-      input.addEventListener('input', (e) => {
+    document.querySelectorAll('.quantity-input').forEach((input) => {
+      const update = (e) => {
         const productId = Number(e.target.dataset.id);
-        let quantity = parseInt(e.target.value) || 1;
+        let quantity = parseInt(e.target.value, 10) || 1;
 
         if (quantity < 1) {
           quantity = 1;
@@ -110,24 +146,13 @@
 
         service.updateQuantity(productId, quantity);
         updateTotals();
-      });
+      };
 
-      input.addEventListener('change', (e) => {
-        const productId = Number(e.target.dataset.id);
-        let quantity = parseInt(e.target.value) || 1;
-
-        if (quantity < 1) {
-          quantity = 1;
-          e.target.value = 1;
-        }
-
-        service.updateQuantity(productId, quantity);
-        updateTotals();
-      });
+      input.addEventListener('input', update);
+      input.addEventListener('change', update);
     });
   }
 
-  // Initial render on page load
   renderBasket();
 </script>
 

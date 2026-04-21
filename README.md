@@ -33,13 +33,28 @@ The [Project Brief](https://github.com/adam-shears/SupermarketProject/Project_Br
 ## Building the Project
 
 > [!IMPORTANT]
-> Ensure you have the necessary prerequisites before continuing, these steps should not be skipped
+> This section outlines the steps to install our prerequisites, clone the repository, and build the project. Please read to the end and ensure you don't skip any steps.  
+> If you encounter difficulties, please refer to the [Troubleshooting](https://github.com/adam-shears/SupermarketProject/tree/main?tab=contributing-ov-file#troubleshooting) section of the contributing guidelines.
+
+> [!NOTE]
+> During our testing, we found that the project is not compatible with the Bragg Linux machines as they don't have Docker installed and the version of Podman running on them didn't seem to be compatible with using network file storage. The project **can** run on these machines but you will have to use Codespaces. When using Codespaces, please use the npm wrapper commands with `:cs` appended to them (i.e. `npm run up:cs`) otherwise you will encounter Docker versioning issues. For more information, see [Troubleshooting](https://github.com/adam-shears/SupermarketProject/blob/main/CONTRIBUTING.md#docker-client-version-too-new-codespaces)
+
+### Quick Start Steps
+If you already have Docker installed and prefer to work locally, the project can be built and run simply by executing the following commands:
+```bash
+git clone https://github.com/adam-shears/SupermarketProject.git
+cd SupermarketProject
+cp .env.example .env
+docker compose up --build
+```
+This is recommended for some users, but be aware that we can't make guarantees for every unique system and environment. If you encounter issues with your local setup, or don't know whether you have Docker, please follow the installation steps below (in order).
 
 ### Prerequesites
 
 #### Docker
+Below, you can find the links to Docker's installation guidelines. Please head to the link corresponding to your current operating system and follow the instructions there - we cannot guarantee a working environment if the Docker install steps aren't followed.
 
-**Windows**:
+**Windows**  
 
 > https://docs.docker.com/desktop/setup/install/windows-install/
 
@@ -51,26 +66,34 @@ The [Project Brief](https://github.com/adam-shears/SupermarketProject/Project_Br
 
 > https://docs.docker.com/engine/install/
 
-Verify your install in the command line:
+After downloading and installing Docker, you should verify your installation in the command line. Open a terminal and run these two commands separately:
 
 ```bash
 docker --version
+```
+and
+```bash
 docker compose version
 ```
+You should see version numbers printed in the terminal. If you don't, or if you see errors, then Docker is not installed correctly and you should follow Docker's Troubleshooting Guidelines ([Windows/macOS](https://docs.docker.com/desktop/troubleshoot-and-support/troubleshoot/) | [Linux](https://docs.docker.com/engine/daemon/troubleshoot/))
 
-#### VS Code
-
+#### Visual Studio Code
+Installation link:  
 > https://code.visualstudio.com/download
 
 > [!TIP]
 > When installing VS Code, it's useful to add the code extension to your PATH so that it can be executed from the command line
 
 ### Cloning the Repository
-
+After installing VS Code, you can now clone the repository. Open a terminal and run the following command:
 ```bash
 git clone https://github.com/adam-shears/SupermarketProject.git
+```
+After clone has finished running, you should change your working directory to the repository by running the following command:
+```
 cd SupermarketProject
 ```
+If your terminal prompt shows you in `SupermarketProject`, please continue.
 
 ### Dev Environment
 
@@ -80,41 +103,61 @@ cd SupermarketProject
 #### Initial Setup
 
 1. Open VS Code
-2. Install the "Dev Containers" extension
+2. Navigate to the Extensions Marketplace (`ctrl` + `shift` + `X` by default)
+3. Install the "Dev Containers" extension
    ![The Dev Containers extension as seen in VS Code extensions marketplace](https://i.ibb.co/5gbRpMvN/image.png)
-3. Open this repository in VS Code
-4. When prompted (usually bottom right), click "Reopen in container"
+4. Open this repository in VS Code (File -> Open Folder -> select `SupermarketProject`)
+5. When prompted (usually bottom right), click "Reopen in container"
 
 > [!TIP]
 > If you aren't given a prompt, you don't need to reopen the repository. Simply press `ctrl` + `shift` + `p` and look/search for `Dev Containers: Rebuild and Reopen in Container`
 
 > [!NOTE]
-> This will take a while to run
+> This will take a while to run. A new VS Code window with the repository should open.  
+> If you encounter errors at this stage, you should refer to [Microsoft's guidelines for Dev Containers in VS Code](https://code.visualstudio.com/docs/devcontainers/containers)
 
-Once in the container, you will have access to a Debian-based environment with common tools for all team members.
+Once in the container, you will have access to a Debian-based environment with common tools for all team members.  
+You may need to create a new terminal (`ctrl` + `shift` + `'` by default) to be able to use commands, if you don't see one when the container finishes loading.
+
+### Configuring Environment Variables
+> [!IMPORTANT]
+> The build scripts rely on having a `.env` file configured in your workspace. The project will not function without a `.env`.  
+> We provide `.env.example` to facilitate this.
+
+In the VS Code terminal, execute the following command:
+```bash
+cp .env.example .env
+```
+You should now see a new file called `.env` appear in your file explorer.
 
 ### Running the Project
 
-To build the services for the first time, you can run:
-
+To build the services for the first time, you can run the following command in the VS Code terminal:
 ```bash
 docker compose up --build
 ```
+After running this command, wait until you see the following line in the terminal:
+```bash
+db-1    | ... [1] LOG: database system is ready to accept connections
+```
+This means that the database has built successfully.  
+If you don't see this or see errors instead, please ensure the command was executed from the repo root and that you created a `.env` file.
+
+At this point, head to http://localhost:3000 in your regular browser to access the site.
+
+--- 
 
 To stop the services, you can run:
-
 ```bash
 docker compose down
 ```
 
 To restart the services, you can run:
-
 ```bash
 docker compose up
 ```
 
 If you need a hard reset (i.e. resetting the DB), you can run:
-
 ```bash
 docker compose down -v
 ```
@@ -127,6 +170,7 @@ docker compose down -v
 > npm run down = docker compose down
 > npm run reset = docker compose down -v
 > ```
+
 
 ## Notes
 

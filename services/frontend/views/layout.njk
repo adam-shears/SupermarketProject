@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }} | Supermarket</title>
   <link rel="stylesheet" href="/layout.css" />
   {% block styles %}
@@ -10,21 +12,26 @@
   data-user-id="{{ user.id if user else '' }}"
   data-user-first-name="{{ user.firstName if user else '' }}"
 >
-    <div class="header">
+    <header class="header">
         <div class="logo">
             <a href="/">Supermarket</a>
         </div>
-        <div>
-          <div>
-            <form action="/products" method="GET">
-              <input class="search" type="text" name="q" placeholder="Search for products..." aria-label="Search for products" />
-              <button type="submit">Search</button>
-            </form>
-          </div>
-        </div>
-        <div class="user-actions">
+
+        <form action="/products" method="GET" role="search">
+          <label for="site-search" class="visually-hidden">Search for products</label>
+          <input
+            id="site-search"
+            class="search"
+            type="text"
+            name="q"
+            placeholder="Search for products..."
+          />
+          <button type="submit">Search</button>
+        </form>
+
+        <nav class="user-actions" aria-label="Primary navigation">
           {% if user %}
-            <span>Hello, {{ user.first_name }} {{user.last_name}}</span>
+            <span>Hello, {{ user.first_name }} {{ user.last_name }}</span>
             <form action="/logout" method="POST" style="display:inline;">
               <button type="submit" class="logout-button">Logout</button>
             </form>
@@ -39,26 +46,43 @@
     </div>
 
     {% if not user or (user.admin_level | default(0)) < 1 %}
-      <div id="shopping-list-widget" class="shopping-list-widget">
-        <button id="shopping-list-toggle" class="shopping-list-toggle" type="button">Shopping List</button>
+      <section
+        id="shopping-list-widget"
+        class="shopping-list-widget"
+        aria-label="Shopping list"
+      >
+        <button id="shopping-list-toggle" class="shopping-list-toggle" type="button">
+          Shopping List
+        </button>
 
-        <div id="shopping-list-panel" class="shopping-list-panel hidden">
+        <div
+          id="shopping-list-panel"
+          class="shopping-list-panel hidden"
+          aria-labelledby="shopping-list-title"
+        >
           <div class="shopping-list-header">
-            <h3>Your Shopping List</h3>
-            <button id="shopping-list-close" type="button" aria-label="Close shopping list">x</button>
+            <h2 id="shopping-list-title">Your Shopping List</h2>
+            <button id="shopping-list-close" type="button" aria-label="Close shopping list">×</button>
           </div>
 
           <div class="shopping-list-search">
-            <input id="shopping-list-input" type="text" placeholder="Type a product name..." autocomplete="off" aria-label="Type a product name to add to list" />
+            <label for="shopping-list-input" class="visually-hidden">
+              Type a product name to add to list
+            </label>
+            <input
+              id="shopping-list-input"
+              type="text"
+              placeholder="Type a product name..."
+              autocomplete="off"
+            />
             <div id="shopping-list-suggestions" class="shopping-list-suggestions"></div>
           </div>
 
           <div id="shopping-list-items" class="shopping-list-items"></div>
         </div>
-      </div>
+      </section>
     {% endif %}
 
-    {% block content %} {% endblock %}
     <script type="module" src="/shoppingList.js"></script>
 </body>
 </html>

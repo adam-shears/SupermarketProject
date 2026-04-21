@@ -28,6 +28,7 @@ function requireAuth(requiredAdminLevel = 1) {
         title: "Forbidden",
         status: "403 - Forbidden",
         message: "You do not have permission to access this resource",
+        user: req.session.user || null,
       });
     }
 
@@ -35,13 +36,25 @@ function requireAuth(requiredAdminLevel = 1) {
   };
 }
 
+// not implemented pages
+router.get(["/orders/repeat", "/baskets/saved", "/loyalty"], (req, res) => {
+  res.status(501).render("5xx.njk", {
+    title: "Coming Soon",
+    status: "501 - Not Implemented",
+    message: "This feature is currently under development. Check back soon!",
+    user: req.session.user || null,
+  });
+});
+
 // Home page
 router.get("/", async (req, res) => {
   try {
     const products = await api.listProducts();
+
     res.render("home.njk", {
       title: "Home",
       products,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
@@ -49,6 +62,7 @@ router.get("/", async (req, res) => {
       title: "Internal Server Error",
       status: "500 - Internal Server Error",
       message: "Failed to load products",
+      user: req.session.user || null,
     });
   }
 });
@@ -56,28 +70,40 @@ router.get("/", async (req, res) => {
 // Product details page
 router.get("/products/:id", async (req, res) => {
   try {
-    const from = req.query.from;
-    const productId = req.params.id;
+    const from = req.query.from || "";
+    const productId = Number(req.params.id);
+
+    if (!Number.isInteger(productId)) {
+      return res.status(404).render("4xx.njk", {
+        title: "Product Not Found",
+        status: "404 - Not Found",
+        message: "The product you are looking for does not exist.",
+        user: req.session.user || null,
+      });
+    }
 
     let backlink = "/products";
-    let backtext = "Back to all products";
+    let backtext = "Back to All Products";
 
-    if (from === undefined || from === "") {
-      backlink = "/products";
-      backtext = "Back to All Products";
-    } else if (from === "basket") {
+    if (from === "basket") {
       backlink = "/basket";
       backtext = "Back to Basket";
-    } else if (!isNaN(from)) {
-      backlink = `/products/${from}`;
+    } else if (from && !Number.isNaN(Number(from))) {
+      backlink = `/products/${Number(from)}`;
       backtext = "Back to previous product";
-    } else {
+    } else if (from) {
       backlink = `/products?category=${encodeURIComponent(from)}`;
       backtext = `Back to ${from}`;
     }
 
-    const [product, products] = await Promise.all([api.getProduct(productId), api.listProducts()]);
-    const recommendations = products.filter((item) => item.id !== product.id).slice(0, 4);
+    const [product, products] = await Promise.all([
+      api.getProduct(productId),
+      api.listProducts(),
+    ]);
+
+    const recommendations = products
+      .filter((item) => Number(item.id) !== productId)
+      .slice(0, 4);
 
     res.render("product.njk", {
       title: product.name,
@@ -85,20 +111,25 @@ router.get("/products/:id", async (req, res) => {
       recommendations,
       backlink,
       backtext,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
+
     if (error.status === 404) {
       return res.status(404).render("4xx.njk", {
         title: "Product Not Found",
         status: "404 - Not Found",
         message: "The product you are looking for does not exist.",
+        user: req.session.user || null,
       });
     }
+
     res.status(500).render("5xx.njk", {
       title: "Internal Server Error",
       status: "500 - Internal Server Error",
       message: "Failed to load product",
+      user: req.session.user || null,
     });
   }
 });
@@ -106,8 +137,9 @@ router.get("/products/:id", async (req, res) => {
 // Product list page
 router.get("/products", async (req, res) => {
   try {
-    const category = req.query.category || "";
+    const category = (req.query.category || "").trim();
     const searchTerm = req.query.q ? req.query.q.trim() : "";
+
     let products;
     let title;
 
@@ -121,7 +153,8 @@ router.get("/products", async (req, res) => {
 
     if (category) {
       products = products.filter(
-        (product) => product.category_name.toLowerCase() === category.toLowerCase()
+        (product) =>
+          (product.category_name || "").toLowerCase() === category.toLowerCase()
       );
       title += ` in "${category}"`;
     }
@@ -131,6 +164,8 @@ router.get("/products", async (req, res) => {
       category,
       products,
       searchTerm,
+      encodedCategory: category ? encodeURIComponent(category) : "",
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
@@ -138,11 +173,11 @@ router.get("/products", async (req, res) => {
       title: "Internal Server Error",
       status: "500 - Internal Server Error",
       message: "Failed to load product list",
+      user: req.session.user || null,
     });
   }
 });
-
-// Basket POST endpoint (temporary)
+// Basket POST endpoint
 router.post("/basket/items", async (req, res) => {
   try {
     const { productId, quantity } = req.body;
@@ -154,7 +189,7 @@ router.post("/basket/items", async (req, res) => {
   }
 });
 
-// Basket GET endpoint (temporary hardcoded)
+// Basket GET endpoint
 router.get("/basket", async (req, res) => {
   try {
     const basket = {
@@ -183,6 +218,7 @@ router.get("/basket", async (req, res) => {
       subtotal: basket.subtotal,
       discounts: basket.discounts,
       total: basket.total,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
@@ -190,12 +226,17 @@ router.get("/basket", async (req, res) => {
       title: "Internal Server Error",
       status: "500 - Internal Server Error",
       message: "Failed to load basket",
+      user: req.session.user || null,
     });
   }
 });
 
 router.get("/login", (req, res) => {
-  res.render("login.njk", { title: "Login", error: null });
+  res.render("login.njk", {
+    title: "Login",
+    error: null,
+    user: req.session.user || null,
+  });
 });
 
 router.post("/login", async (req, res) => {
@@ -211,12 +252,17 @@ router.post("/login", async (req, res) => {
     res.status(401).render("login.njk", {
       title: "Login",
       error: "Invalid email or password",
+      user: req.session.user || null,
     });
   }
 });
 
 router.get("/register", (req, res) => {
-  res.render("register.njk", { title: "Register", error: null });
+  res.render("register.njk", {
+    title: "Register",
+    error: null,
+    user: req.session.user || null,
+  });
 });
 
 router.post("/register", async (req, res) => {
@@ -236,6 +282,7 @@ router.post("/register", async (req, res) => {
     res.status(400).render("register.njk", {
       title: "Register",
       error: error.message || "Failed to register",
+      user: req.session.user || null,
     });
   }
 });
@@ -260,6 +307,7 @@ router.get("/management", requireAuth(2), async (req, res) => {
       management,
       scale,
       search,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error("Management view error:", error);
@@ -274,6 +322,7 @@ router.get("/management", requireAuth(2), async (req, res) => {
       scale: "week",
       search: "",
       error: "Management data is temporarily unavailable. Please try again later.",
+      user: req.session.user || null,
     });
   }
 });
@@ -328,7 +377,6 @@ router.get("/api/products/search", async (req, res) => {
 
 /*
 Shopping list endpoints
-All of these endpoints require user to be logged in to their account
 */
 
 router.get("/api/shopping-list", requireAuth(0), async (req, res) => {
@@ -379,7 +427,6 @@ router.delete("/api/shopping-list/items/:productId", requireAuth(0), async (req,
 Picker + stock/location synchronisation routes
 */
 
-// API proxy for picker polling / sync
 router.get("/api/picker/orders", requireAuth(2), async (req, res) => {
   try {
     const orders = await api.getPickerOrders();
@@ -402,6 +449,7 @@ router.get("/picker", requireAuth(2), async (req, res) => {
       issueResolved: req.query.issueResolved === "1",
       orderFinalised: req.query.orderFinalised === "1",
       error: req.query.error || null,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error("Failed to load picker view:", error);
@@ -472,6 +520,7 @@ router.get("/inventory", requireAuth(2), async (req, res) => {
       managementIssues,
       updated: req.query.updated === "1",
       error: req.query.error || null,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error("Failed to load inventory view:", error);
