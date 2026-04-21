@@ -232,7 +232,7 @@ npm run reset:cs
 npm run logs:cs
 ```
 
-### Docker Elevated Account Issues During Install
+### Docker Elevated Account Issues During Install (Windows)
 On some versions of Windows, installing Docker Desktop will fail with an error:  
 > For security reasons C:\ProgramData\DockerDesktop must be owned by an elevated account
 
@@ -249,6 +249,18 @@ icacls "C:\ProgramData\DockerDesktop" /grant SYSTEM:F /t /c
 icacls "C:\ProgramData\DockerDesktop" /grant Administrators:F /t
 ```
 6. Attempt the install again
+
+### localhost Refused to connect.
+First, make sure the services are definitely running:
+```bash
+docker compose ps
+```
+You should see six entries beginning with `supermarketproject`. If you don't, start the containers:
+```bash
+docker compose up --build
+```
+If the containers are running and you still cannot get a response from `localhost`, you may be on a Remote setup where you need to forward a port.  
+In VS Code, head to the "Ports" section of the integrated terminal, and manually forward port `3000`. This is especially relevant when using Codespaces.
 
 ## Notes
 
