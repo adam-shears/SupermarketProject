@@ -58,14 +58,25 @@
   margin-top: -6px;
 }
 
-.password-strength.weak {
+.password-requirements {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.password-requirements li.unchecked {
   color: #b42318;
 }
 
-.password-strength.medium {
-  color: #b54708;
+.password-requirements li.checked {
+  color: #027a48;
 }
 
-.password-strength.strong {
-  color: #027a48;
+.required::after {
+  content: " *";
+  color: #b42318;
+}
+
+.explainer::before {
+  content: "* ";
+  color: #b42318;
 }
