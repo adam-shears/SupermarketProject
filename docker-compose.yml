@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgres:16
+    build:
+      context: ./db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -9,7 +10,6 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro
 
   catalogue:
     build: ./services/catalogue
