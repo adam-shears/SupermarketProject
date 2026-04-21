@@ -1,6 +1,9 @@
 /* Used Gemini to assist with explaining css scaling (rem/vw)
 https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-4284785701 */
 
+/* Used GPT-5.4 to assist with explaining how to make the search bar grow and shrink
+(Lines 42-55, 65-70, 84-85, 132-136, 284-293)*/
+
 :root {
   --header-height: 80px;
 }
@@ -36,12 +39,35 @@ body {
   flex-wrap: wrap;
 }
 
+.header form[role="search"] {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.header form[role="search"] button {
+  flex: 0 0 auto;
+}
+
+.logo {
+  flex: 0 0 auto;
+}
+
 .logo a {
   text-decoration: none;
   font-size: clamp(1.25rem, 2vw, 1.5rem);
   font-weight: bold;
   color: #222;
   white-space: nowrap;
+}
+
+.logo img {
+  height: auto;
+  max-height: 40px;
+  width: auto;
+  max-width: 200px;
 }
 
 .logo a:focus-visible,
@@ -56,6 +82,8 @@ body {
 
 .user-actions {
   display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
   align-items: center;
   gap: 15px;
   order: 3;
@@ -79,7 +107,10 @@ body {
   padding: 0;
 }
 
-.login-link:hover, .register-link:hover, .basket-link-text:hover, .logout-button:hover {
+.login-link:hover,
+.register-link:hover,
+.basket-link-text:hover,
+.logout-button:hover {
   text-decoration: underline;
   color: #0056b3;
 }
@@ -99,11 +130,11 @@ body {
 }
 
 .search {
-  flex: 1;
+  flex: 0 1 400px;
   flex-grow: 1;
-  width: 400px;
-  min-width: 250px;
-  max-width: 500px;
+  width: min(100%, 400px);
+  min-width: 0;
+  max-width: 400px;
   padding: 10px 14px;
   border: 1px solid #999;
   border-radius: 20px;
@@ -245,14 +276,21 @@ body {
   border: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 700px) {
   .header {
     align-items: stretch;
     padding: 16px;
   }
 
-  .logo {
+  .logo,
+  .header form[role="search"],
+  .user-actions {
     width: 100%;
+  }
+
+  .header form[role="search"] {
+    order: 2;
+    margin-top: 12px;
   }
 
   .search {
@@ -260,6 +298,7 @@ body {
   }
 
   .user-actions {
+    order: 3;
     width: 100%;
     justify-content: flex-start;
     flex-wrap: wrap;
