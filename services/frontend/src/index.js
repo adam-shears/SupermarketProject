@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("styles"));
 app.use(express.static("scripts"));
+app.use(express.static("images"));
 
 app.use(
   session({
