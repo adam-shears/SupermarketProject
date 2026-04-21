@@ -42,8 +42,12 @@
             <a href="/basket" class="basket-link">
             <span class="basket-link-text">Basket</span>
             <span id="basket-count">0</span></a>
-        </div>
-    </div>
+        </nav>
+    </header>
+
+    <main id="main-content">
+      {% block content %}{% endblock %}
+    </main>
 
     {% if not user or (user.admin_level | default(0)) < 1 %}
       <section
