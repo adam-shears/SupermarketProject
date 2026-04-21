@@ -55,6 +55,7 @@ export function updateQuantity(productId, quantity) {
   if (item) {
     item.quantity = quantity;
     saveBasket(basket);
+    updateHeaderCount();
   }
 }
 
