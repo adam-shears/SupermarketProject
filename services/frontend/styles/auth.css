@@ -70,3 +70,13 @@
 .password-requirements li.checked {
   color: #027a48;
 }
+
+.required::after {
+  content: " *";
+  color: #b42318;
+}
+
+.explainer::before {
+  content: "* ";
+  color: #b42318;
+}
