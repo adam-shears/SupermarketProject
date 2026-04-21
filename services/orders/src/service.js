@@ -15,7 +15,15 @@ This file should not be responsible for:
 */
 
 import bcrypt from "bcrypt";
-import { deleteShoppingListItem, insertNewCustomer, insertShoppingListItem, selectCustomerByEmail, selectShoppingListByCustomerID, selectStaffByEmail, updateShoppingList } from "./db.js";
+import {
+  deleteShoppingListItem,
+  insertNewCustomer,
+  insertShoppingListItem,
+  selectCustomerByEmail,
+  selectShoppingListByCustomerID,
+  selectStaffByEmail,
+  updateShoppingList,
+} from "./db.js";
 
 export const ordersDeps = {
   deleteShoppingListItem,
@@ -45,7 +53,7 @@ export async function addShoppingListItem(customerId, input) {
   const productId = input.productId;
   const quantity = input.quantity ?? 1;
 
-  if(!Number.isInteger(quantity) || quantity <= 0) {
+  if (!Number.isInteger(quantity) || quantity <= 0) {
     // basic check to make sure a valid quantity was provided
     throw new OrdersError("quantity must be a positive integer", 400);
   }
@@ -61,7 +69,7 @@ export async function updateShoppingListItem(customerId, productId, input) {
   //  throw new OrdersError("quantity must be a positive integer", 400);
   //}
 
-  const result = await ordersDeps.updateShoppingList(customerId, productId, {quantity, checked});
+  const result = await ordersDeps.updateShoppingList(customerId, productId, { quantity, checked });
 
   if (!result) {
     // if there's no result then that item doesn't exist in the shopping list so we can't update
@@ -93,7 +101,7 @@ export async function registerNewUser(input) {
       /[A-Z]/.test(password) &&
       /[a-z]/.test(password) &&
       /[0-9]/.test(password) &&
-      /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      /[@$!%*?&]/.test(password);
     if (!arrayTest) {
       throw new OrdersError(
         "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
@@ -136,8 +144,7 @@ export async function logCustomerIn(input) {
   if (email.endsWith("@supermarket.com")) {
     // then user is a staff member and in a different table
     user = await ordersDeps.selectStaffByEmail(email);
-  }
-  else {
+  } else {
     user = await ordersDeps.selectCustomerByEmail(email);
   }
 
