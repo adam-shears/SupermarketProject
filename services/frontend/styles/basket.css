@@ -1,3 +1,6 @@
+/* Used Gemini to assist with explaining css scaling (rem/vw)
+https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-4284785701 */
+
 .basket-wrapper {
   max-width: 1200px;
   margin: 0 auto;
@@ -12,7 +15,12 @@
 
 .basket-page {
   display: flex;
-  gap: 40px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: clamp(15px, 3vw, 40px);
+  padding: clamp(10px, 4vw, 40px);
+  max-width: 1200px;
+  margin: 0 auto;
   align-items: flex-start;
 }
 
@@ -35,6 +43,7 @@
   border-radius: 16px;
   position: sticky;
   top: 90px;
+  min-width: 300px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
@@ -42,6 +51,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: 20px;
   background: #ffffff;
   padding: 20px;
@@ -81,7 +91,8 @@
 }
 
 .item-details {
-  min-width: 0;
+  flex-grow: 1;
+  min-width: 150px;
 }
 
 .item-name {
@@ -131,7 +142,10 @@
   border-color: #8f1c13;
 }
 
-.summary-row {
+.summary-row,
+.subtotal,
+.discount,
+.total {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -143,6 +157,10 @@
 .discount-row {
   color: #b42318;
   font-weight: 600;
+}
+
+.discount h3 {
+  color: #b42318;
 }
 
 .total-row {
@@ -157,10 +175,13 @@
   display: flex;
   gap: 10px;
   margin: 20px 0;
+  flex-wrap: wrap;
 }
 
 .promo input {
+  flex: 2;
   flex-grow: 1;
+  min-width: 120px;
   padding: 10px 12px;
   border: 1px solid #999;
   border-radius: 8px;
@@ -210,10 +231,12 @@
 @media (max-width: 900px) {
   .basket-page {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .summary-column {
     position: static;
+    order: 2;
     width: 100%;
   }
 

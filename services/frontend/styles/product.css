@@ -1,12 +1,16 @@
+/* Used Gemini to assist with explaining css scaling (rem/vw)
+https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-4284785701 */
+
 .main-content {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: center;
   gap: 24px;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: clamp(10px, 3vw, 24px);
 }
 
 .left-column {
@@ -19,9 +23,10 @@
 
 .back {
   position: sticky;
-  top: 90px;
+  top: calc(var(--header-height) + 10px);
   z-index: 20;
   width: fit-content;
+  margin: 10px 0 10px 20px;
 }
 
 .back a {
@@ -33,6 +38,7 @@
   text-decoration: none;
   color: #222222;
   font-weight: 600;
+  font-size: 0.95rem;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid #dddddd;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -51,10 +57,11 @@
 .product-container {
   display: flex;
   align-items: stretch;
+  justify-content: center;
   gap: 32px;
-  padding: 36px;
+  padding: clamp(20px, 5vw, 36px);
   background: #ffffff;
-  border-radius: 28px;
+  border-radius: clamp(15px, 4vw, 28px);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.1);
 }
 
@@ -86,7 +93,8 @@
   justify-content: flex-start;
 }
 
-.product-info .product-name {
+.product-info .product-name,
+.product-name {
   margin: 0;
   font-size: 2.6rem;
   line-height: 1.12;
@@ -125,7 +133,8 @@
   color: #222222;
 }
 
-.basket-form {
+.basket-form,
+#add-to-basket-form {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -331,6 +340,21 @@
   }
 }
 
+@media (max-width: 900px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .product-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .product-info {
+    min-height: auto;
+  }
+}
+
 @media (max-width: 800px) {
   .product-container {
     flex-direction: column;
@@ -342,7 +366,8 @@
     min-height: 260px;
   }
 
-  .product-info .product-name {
+  .product-info .product-name,
+  .product-name {
     font-size: 2.2rem;
   }
 
@@ -367,6 +392,7 @@
   }
 
   .basket-form,
+  #add-to-basket-form,
   .recommend-buttons {
     align-items: stretch;
   }

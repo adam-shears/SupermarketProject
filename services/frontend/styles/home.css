@@ -1,14 +1,18 @@
+/* Used Gemini to assist with explaining css scaling (rem/vw)
+https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-4284785701 */
+
 .banner-box {
     background-color: #2e7d32;
     width: min(90%, 700px);
     min-height: 300px;
+    padding: 24px;
     border-radius: 10px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     color: white;
     margin: 30px auto;
-    padding: 24px;
     box-sizing: border-box;
 }
 
@@ -41,7 +45,7 @@
 }
 
 .action-card {
-    flex: 1;
+    flex: 1 1 200px;
     min-width: 180px;
     background: #f9f9f9;
     border: 1px solid #ddd;
@@ -51,6 +55,7 @@
     text-decoration: none;
     color: #222;
     display: block;
+    cursor: pointer;
 }
 
 .action-card:hover,
@@ -70,7 +75,7 @@
 
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
 }
 
@@ -106,6 +111,7 @@
 
 .content-area {
     width: min(90%, 1200px);
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -118,7 +124,7 @@
 .category-title-bar a {
     text-decoration: underline;
     color: #222;
-    font-size: inherit;
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
     font-weight: inherit;
 }
 
@@ -127,17 +133,7 @@
     color: #0056b3;
 }
 
-@media (max-width: 900px) {
-    .grid-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
 @media (max-width: 600px) {
-    .grid-container {
-        grid-template-columns: 1fr;
-    }
-
     .banner-box {
         width: 100%;
         min-height: 220px;

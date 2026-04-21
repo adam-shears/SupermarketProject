@@ -1,3 +1,16 @@
+/* Used Gemini to assist with explaining css scaling (rem/vw)
+https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-4284785701 */
+
+:root {
+  --header-height: 80px;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --header-height: 160px;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -25,9 +38,10 @@ body {
 
 .logo a {
   text-decoration: none;
-  font-size: 24px;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
   font-weight: bold;
   color: #222;
+  white-space: nowrap;
 }
 
 .logo a:focus-visible,
@@ -44,6 +58,7 @@ body {
   display: flex;
   align-items: center;
   gap: 15px;
+  order: 3;
 }
 
 .user-actions a,
@@ -52,6 +67,7 @@ body {
   color: #222;
   font-weight: 500;
   margin-left: 0;
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
 }
 
 .logout-button {
@@ -70,8 +86,11 @@ body {
 }
 
 .search {
+  flex: 1;
+  flex-grow: 1;
   width: 400px;
-  max-width: 100%;
+  min-width: 250px;
+  max-width: 500px;
   padding: 10px 14px;
   border: 1px solid #999;
   border-radius: 20px;
@@ -109,9 +128,9 @@ body {
   position: absolute;
   right: 0;
   bottom: calc(100% + 12px);
-  width: 320px;
+  width: clamp(280px, 90vw, 320px);
   max-width: min(320px, 90vw);
-  max-height: 420px;
+  max-height: 80vh;
   background: white;
   border: 1px solid #ddd;
   border-radius: 16px;
@@ -201,7 +220,6 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* 给隐藏但可被屏幕阅读器读取的 label 用 */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -214,7 +232,6 @@ body {
   border: 0;
 }
 
-/* responsive */
 @media (max-width: 768px) {
   .header {
     align-items: stretch;
