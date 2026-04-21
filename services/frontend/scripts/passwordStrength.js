@@ -1,28 +1,29 @@
 const passwordInput = document.getElementById("password");
 const strengthIndicator = document.getElementById("password-strength");
 
-function evalStrength(password) {
-  let score = 0;
+const requirements = [
+  { text: "One uppercase letter", regex: /[A-Z]/ },
+  { text: "One lowercase letter", regex: /[a-z]/ },
+  { text: "One number", regex: /\d/ },
+  { text: "One special character (@$!%*?&)", regex: /[@$!%*?&]/ },
+];
 
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[a-z]/.test(password)) score++;
-  if (/\d/.test(password)) score++;
-  if (/[@$!%*?&]/.test(password)) score++;
-
-  if (score <= 2) {
-    return { label: "too weak", className: "weak" };
-  }
-  if (score === 3 || score === 4) {
-    return { label: "medium", className: "medium" };
-  }
-  return { label: "strong", className: "strong" };
+function listRequirements(password = "") {
+  strengthIndicator.innerHTML = `
+  <span>Password must contain at least one of the following:</span>
+  <ul class="password-requirements">
+    ${requirements
+      .map((requirement) => {
+        const checked = password.match(requirement.regex) ? "checked" : "unchecked";
+        return `<li class="${checked}">${requirement.text}</li>`;
+      })
+      .join("")}
+  </ul>`;
 }
 
 if (passwordInput && strengthIndicator) {
+  listRequirements();
   passwordInput.addEventListener("input", () => {
-    const strength = evalStrength(passwordInput.value);
-    strengthIndicator.textContent = `Strength: ${strength.label}`;
-    strengthIndicator.className = `password-strength ${strength.className}`;
+    listRequirements(passwordInput.value);
   });
 }
