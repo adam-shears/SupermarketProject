@@ -1,11 +1,11 @@
 .product-list-page {
-  padding: clamp(15px, 5vw, 60px);
+  padding: 60px;
   padding-top: 20px;
 }
 
 .hero-banner {
   background: #e3f2fd;
-  padding: clamp(20px, 4vw, 40px);
+  padding: 40px;
   border-radius: 8px;
   margin-bottom: 40px;
   text-align: center;
@@ -56,9 +56,6 @@
   margin: 10px 0 8px;
   font-size: 1.05rem;
   font-weight: 700;
-.product-card h3 {
-  margin: 10px 0;
-  font-size: clamp(1rem, 1.5vw, 1.2rem); 
   color: #333;
   min-height: 2.4em;
   line-height: 1.35;
@@ -90,14 +87,7 @@
   justify-content: center;
   align-items: center;
   gap: 5px;
-  height: 44px;
-  flex-shrink: 0;
-}
-
-@media (max-width: 480px) {
-  .basket-controls {
-    flex-direction: column;
-  }
+  height: 40px;
 }
 
 .quantity-input {
