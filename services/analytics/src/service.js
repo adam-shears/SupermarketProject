@@ -67,18 +67,72 @@ function filterManagementPayload(payload, rawSearch = "") {
   };
 }
 
-export async function getManagementView(scale = "week", search = "") {
+async function getPayloadForScale(scale) {
   const result = await pool.query(
     "SELECT payload FROM management_demo_data WHERE scale = $1",
     [scale]
   );
 
   if (result.rows.length === 0) {
+    return null;
+  }
+
+  return result.rows[0].payload;
+}
+
+export const analyticsDeps = {
+  async getTotalSales(scale) {
+    const payload = await getPayloadForScale(scale);
+    return payload?.totalSalesPence ?? 0;
+  },
+
+  async getBestSellers(scale) {
+    const payload = await getPayloadForScale(scale);
+    return payload?.bestSellers ?? [];
+  },
+
+  async getSalesPerCategory(scale) {
+    const payload = await getPayloadForScale(scale);
+    return payload?.salesPerCategory ?? [];
+  },
+
+  async getTrendingItems(scale) {
+    const payload = await getPayloadForScale(scale);
+    return payload?.trendingItems ?? [];
+  },
+};
+
+export async function getManagementData(scale = "week") {
+  const validScales = ["day", "week", "month"];
+
+  if (!validScales.includes(scale)) {
+    throw new Error("Invalid scale. Must be day, week, or month.");
+  }
+
+  const [totalSalesPence, bestSellers, salesPerCategory, trendingItems] =
+    await Promise.all([
+      analyticsDeps.getTotalSales(scale),
+      analyticsDeps.getBestSellers(scale),
+      analyticsDeps.getSalesPerCategory(scale),
+      analyticsDeps.getTrendingItems(scale),
+    ]);
+
+  return {
+    totalSalesPence,
+    bestSellers,
+    salesPerCategory,
+    trendingItems,
+  };
+}
+
+export async function getManagementView(scale = "week", search = "") {
+  const payload = await getPayloadForScale(scale);
+
+  if (!payload) {
     const error = new Error(`No management demo data found for scale: ${scale}`);
     error.status = 404;
     throw error;
   }
 
-  const payload = result.rows[0].payload;
   return filterManagementPayload(payload, search);
 }
