@@ -1,3 +1,13 @@
+:root {
+  --header-height: 80px;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --header-height: 160px; /* Adjust this to match your mobile header height */
+  }
+}
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -8,19 +18,28 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 15px 20px;
   background: white;
   border-bottom: 1px solid #ddd;
   position: sticky;
   top: 0;
   z-index: 1000;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .logo a {
   text-decoration: none;
-  font-size: 24px;
+  font-size: clamp(1.25rem, 2vw, 1.5rem); 
   font-weight: bold;
   color: #333;
+  white-space: nowrap;
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  order: 3;
 }
 
 .user-actions a, .logout-button {
@@ -28,6 +47,7 @@ body {
   color: #333;
   font-weight: 500;
   margin-left: 15px;
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
 }
 
 .logout-button {
@@ -58,11 +78,14 @@ body {
 }
 
 .search {
-  width: 400px;
-  padding: 10px;
+  flex: 1;            
+  min-width: 250px;   
+  max-width: 500px;   
+  padding: 10px 15px;
   border: 1px solid #ccc;
   border-radius: 20px;
   outline: none;
+  flex-grow: 1;
 }
 
 .shopping-list-widget {
@@ -85,13 +108,13 @@ body {
   position: absolute;
   right: 0;
   bottom: calc(100% + 12px);
-  width: 320px;
-  max-height: 420px;
+  width: clamp(280px, 90vw, 320px); 
+  max-height: 80vh;
   background: white;
   border: 1px solid #ddd;
   border-radius: 16px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
-  overflow: visble;
+  overflow: visible;
 }
 
 .shopping-list-panel.hidden {

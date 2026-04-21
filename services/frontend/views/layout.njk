@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>{{ title }} | Supermarket</title>
   <link rel="stylesheet" href="/layout.css" />
@@ -10,23 +10,23 @@
   data-user-id="{{ user.id if user else '' }}"
   data-user-first-name="{{ user.firstName if user else '' }}"
 >
-    <div class = "header">
-        <div class = "logo">
-            <a href = "/">Supermarket</a>
+    <div class="header">
+        <div class="logo">
+            <a href="/">Supermarket</a>
         </div>
         <div>
           <div>
             <form action="/products" method="GET">
-              <input class="search" type="text" name="q" placeholder="Search for products..." />
-              <button>Search</button>
+              <input class="search" type="text" name="q" placeholder="Search for products..." aria-label="Search for products" />
+              <button type="submit">Search</button>
             </form>
           </div>
         </div>
-        <div class = "user-actions">
+        <div class="user-actions">
           {% if user %}
             <span>Hello, {{ user.first_name }} {{user.last_name}}</span>
             <form action="/logout" method="POST" style="display:inline;">
-              <button type="submit" class = "logout-button">Logout</button>
+              <button type="submit" class="logout-button">Logout</button>
             </form>
           {% else %}
             <a href = "/login" class="login-link">Login</a>
@@ -45,11 +45,11 @@
         <div id="shopping-list-panel" class="shopping-list-panel hidden">
           <div class="shopping-list-header">
             <h3>Your Shopping List</h3>
-            <button id="shopping-list-close" type="button">x</button>
+            <button id="shopping-list-close" type="button" aria-label="Close shopping list">x</button>
           </div>
 
           <div class="shopping-list-search">
-            <input id="shopping-list-input" type="text" placeholder="Type a product name..." autocomplete="off" />
+            <input id="shopping-list-input" type="text" placeholder="Type a product name..." autocomplete="off" aria-label="Type a product name to add to list" />
             <div id="shopping-list-suggestions" class="shopping-list-suggestions"></div>
           </div>
 
