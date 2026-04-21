@@ -7,74 +7,92 @@
 {% block content %}
 <div class="home-wrapper">
 
-    <div class="banner-box">
+    <section class="banner-box" aria-labelledby="home-banner-title">
         <div class="banner-text">
-            <h1>Fresh Groceries</h1>
+            <h1 id="home-banner-title">Fresh Groceries</h1>
             <p>From our warehouse to your house.</p>
-            <a href="/products" class="shop-link">View All Products</a>
+            <a href="/products" class="shop-link">View all products</a>
         </div>
-    </div>
+    </section>
 
     <div class="content-area">
         <div class="button-row">
-            <div class="action-card">
-                <div class="placeholder-icon"></div> <div>Repeat Last Order</div>
-            </div>
-            <div class="action-card">
-                <div class="placeholder-icon"></div> <div>Saved Baskets</div>
-            </div>
-            <div class="action-card">
-                <div class="placeholder-icon"></div> <div>Loyalty Card</div>
-            </div>
+            <a href="/orders/repeat" class="action-card" aria-label="Repeat your last order">
+                <div class="placeholder-icon" aria-hidden="true"></div>
+                <div>Repeat Last Order</div>
+            </a>
+
+            <a href="/baskets/saved" class="action-card" aria-label="View your saved baskets">
+                <div class="placeholder-icon" aria-hidden="true"></div>
+                <div>Saved Baskets</div>
+            </a>
+
+            <a href="/loyalty" class="action-card" aria-label="View your loyalty card">
+                <div class="placeholder-icon" aria-hidden="true"></div>
+                <div>Loyalty Card</div>
+            </a>
         </div>
 
-        <div class="category-area">
+        <section class="category-area" aria-labelledby="shop-by-category-title">
             <div class="category-title-bar">
-                <h2>Shop By Category | <a href="/products">All products ></a></h2>
+                <h2 id="shop-by-category-title">
+                    Shop by category |
+                    <a href="/products">All products</a>
+                </h2>
             </div>
 
             <div class="grid-container">
-                <a href="/products?category=Groceries%20%26%20Essentials" class="cat-item">
-                    <div class="image-square"></div> <span>Groceries & Essentials</span>
+                <a href="/products?category=Groceries%20%26%20Essentials" class="cat-item" aria-label="Browse Groceries and Essentials">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Groceries &amp; Essentials</span>
                 </a>
 
-                <a href="/products?category=Fresh%20Food" class="cat-item">
-                    <div class="image-square"></div> <span>Fresh Food</span>
+                <a href="/products?category=Fresh%20Food" class="cat-item" aria-label="Browse Fresh Food">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Fresh Food</span>
                 </a>
 
-                <a href="/products?category=Bakery" class="cat-item">
-                    <div class="image-square"></div> <span>Bakery</span>
+                <a href="/products?category=Bakery" class="cat-item" aria-label="Browse Bakery">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Bakery</span>
                 </a>
 
-                <a href="/products?category=Frozen%20Food" class="cat-item">
-                    <div class="image-square"></div> <span>Frozen Food</span>
+                <a href="/products?category=Frozen%20Food" class="cat-item" aria-label="Browse Frozen Food">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Frozen Food</span>
                 </a>
 
-                <a href="/products?category=Treats%20%26%20Snacks" class="cat-item">
-                    <div class="image-square"></div> <span>Treats & Snacks</span>
+                <a href="/products?category=Treats%20%26%20Snacks" class="cat-item" aria-label="Browse Treats and Snacks">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Treats &amp; Snacks</span>
                 </a>
 
-                <a href="/products?category=Drinks" class="cat-item">
-                    <div class="image-square"></div> <span>Drinks</span>
+                <a href="/products?category=Drinks" class="cat-item" aria-label="Browse Drinks">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Drinks</span>
                 </a>
 
-                <a href="/products?category=Baby%20%26%20Toddler" class="cat-item">
-                    <div class="image-square"></div> <span>Baby & Toddler</span>
+                <a href="/products?category=Baby%20%26%20Toddler" class="cat-item" aria-label="Browse Baby and Toddler products">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Baby &amp; Toddler</span>
                 </a>
 
-                <a href="/products?category=Health%20%26%20Beauty" class="cat-item">
-                    <div class="image-square"></div> <span>Health & Beauty</span>
+                <a href="/products?category=Health%20%26%20Beauty" class="cat-item" aria-label="Browse Health and Beauty products">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Health &amp; Beauty</span>
                 </a>
 
-                <a href="/products?category=Pets" class="cat-item">
-                    <div class="image-square"></div> <span>Pets</span>
+                <a href="/products?category=Pets" class="cat-item" aria-label="Browse Pet products">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Pets</span>
                 </a>
 
-                <a href="/products?category=Household%20%26%20Cleaning" class="cat-item">
-                    <div class="image-square"></div> <span>Household & Cleaning</span>
+                <a href="/products?category=Household%20%26%20Cleaning" class="cat-item" aria-label="Browse Household and Cleaning products">
+                    <div class="image-square" aria-hidden="true"></div>
+                    <span>Household &amp; Cleaning</span>
                 </a>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 {% endblock %}

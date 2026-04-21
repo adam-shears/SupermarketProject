@@ -17,52 +17,82 @@ import { api } from "./api.js";
 const router = Router();
 
 // function to check if user is logged in for accessing certain endpoints
-function requireAuth(requiredAdminLevel) {
+function requireAuth(requiredAdminLevel = 1) {
   return (req, res, next) => {
-    if(!req.session.user) {
-      return res.status(401).render("4xx.njk", { title: "Unauthorized", status: "401 - Unauthorized", message: "You must be logged in to access this resource" });
+    if (!req.session.user) {
+      return res.redirect("/login");
     }
+
     if ((req.session.user.admin_level || 0) < requiredAdminLevel) {
-      return res.status(403).render("4xx.njk", { title: "Forbidden", status: "403 - Forbidden", message: "You do not have permission to access this resource" });
+      return res.status(403).render("4xx.njk", {
+        title: "Forbidden",
+        status: "403 - Forbidden",
+        message: "You do not have permission to access this resource",
+        user: req.session.user || null,
+      });
     }
+
     next();
   };
 }
+
+// not implemented pages
+router.get(["/orders/repeat", "/baskets/saved", "/loyalty"], (req, res) => {
+  res.status(501).render("5xx.njk", {
+    title: "Coming Soon",
+    status: "501 - Not Implemented",
+    message: "This feature is currently under development. Check back soon!",
+    user: req.session.user || null,
+  });
+});
 
 // Home page
 router.get("/", async (req, res) => {
   try {
     const products = await api.listProducts();
+
     res.render("home.njk", {
       title: "Home",
       products,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load products" });
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load products",
+      user: req.session.user || null,
+    });
   }
 });
 
 // Product details page
 router.get("/products/:id", async (req, res) => {
   try {
-    const from = req.query.from;
-    const productId = req.params.id;
+    const from = req.query.from || "";
+    const productId = Number(req.params.id);
 
-    let backlink = "/product-list";
-    let backtext = "Back to all products";
+    if (!Number.isInteger(productId)) {
+      return res.status(404).render("4xx.njk", {
+        title: "Product Not Found",
+        status: "404 - Not Found",
+        message: "The product you are looking for does not exist.",
+        user: req.session.user || null,
+      });
+    }
 
-    if (from === undefined) {
-      backlink = "/product-list?category=All Products";
-      backtext = "Back to All Products";
-    } else if (from === "basket") {
+    let backlink = "/products";
+    let backtext = "Back to All Products";
+
+    if (from === "basket") {
       backlink = "/basket";
       backtext = "Back to Basket";
-    } else if (!isNaN(from)) {
-      backlink = `/products/${from}`;
+    } else if (from && !Number.isNaN(Number(from))) {
+      backlink = `/products/${Number(from)}`;
       backtext = "Back to previous product";
-    } else {
-      backlink = `/product-list?category=${encodeURIComponent(from)}`;
+    } else if (from) {
+      backlink = `/products?category=${encodeURIComponent(from)}`;
       backtext = `Back to ${from}`;
     }
 
@@ -70,7 +100,10 @@ router.get("/products/:id", async (req, res) => {
       api.getProduct(productId),
       api.listProducts(),
     ]);
-    const recommendations = products.filter((item) => item.id !== product.id).slice(0, 4);
+
+    const recommendations = products
+      .filter((item) => Number(item.id) !== productId)
+      .slice(0, 4);
 
     res.render("product.njk", {
       title: product.name,
@@ -78,21 +111,35 @@ router.get("/products/:id", async (req, res) => {
       recommendations,
       backlink,
       backtext,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
-    if(error.status === 404) {
-      return res.status(404).render("4xx.njk", { title: "Product Not Found", status: "404 - Not Found", message: "The product you are looking for does not exist." });
+
+    if (error.status === 404) {
+      return res.status(404).render("4xx.njk", {
+        title: "Product Not Found",
+        status: "404 - Not Found",
+        message: "The product you are looking for does not exist.",
+        user: req.session.user || null,
+      });
     }
-    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load product" });
+
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load product",
+      user: req.session.user || null,
+    });
   }
 });
 
 // Product list page
 router.get("/products", async (req, res) => {
   try {
-    const category = req.query.category || "";
+    const category = (req.query.category || "").trim();
     const searchTerm = req.query.q ? req.query.q.trim() : "";
+
     let products;
     let title;
 
@@ -106,7 +153,8 @@ router.get("/products", async (req, res) => {
 
     if (category) {
       products = products.filter(
-        (product) => product.category_name.toLowerCase() === category.toLowerCase()
+        (product) =>
+          (product.category_name || "").toLowerCase() === category.toLowerCase()
       );
       title += ` in "${category}"`;
     }
@@ -116,18 +164,23 @@ router.get("/products", async (req, res) => {
       category,
       products,
       searchTerm,
+      encodedCategory: category ? encodeURIComponent(category) : "",
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load product list" });
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load product list",
+      user: req.session.user || null,
+    });
   }
 });
-
-// Basket POST endpoint (temporary)
+// Basket POST endpoint
 router.post("/basket/items", async (req, res) => {
   try {
     const { productId, quantity } = req.body;
-    // await api.addToBasket(productId, quantity);
     console.log(`Adding product ${productId} with quantity ${quantity} to basket`);
     res.status(200).json({ message: "Item added to basket" });
   } catch (error) {
@@ -136,11 +189,9 @@ router.post("/basket/items", async (req, res) => {
   }
 });
 
-// Basket GET endpoint (temporary hardcoded)
+// Basket GET endpoint
 router.get("/basket", async (req, res) => {
   try {
-    // const basket = await api.getBasket();
-
     const basket = {
       items: [
         {
@@ -167,15 +218,25 @@ router.get("/basket", async (req, res) => {
       subtotal: basket.subtotal,
       discounts: basket.discounts,
       total: basket.total,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).render("5xx.njk", { title: "Internal Server Error", status: "500 - Internal Server Error", message: "Failed to load basket" });
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load basket",
+      user: req.session.user || null,
+    });
   }
 });
 
 router.get("/login", (req, res) => {
-  res.render("login.njk", { title: "Login", error: null });
+  res.render("login.njk", {
+    title: "Login",
+    error: null,
+    user: req.session.user || null,
+  });
 });
 
 router.post("/login", async (req, res) => {
@@ -191,12 +252,17 @@ router.post("/login", async (req, res) => {
     res.status(401).render("login.njk", {
       title: "Login",
       error: "Invalid email or password",
+      user: req.session.user || null,
     });
   }
 });
 
 router.get("/register", (req, res) => {
-  res.render("register.njk", { title: "Register", error: null });
+  res.render("register.njk", {
+    title: "Register",
+    error: null,
+    user: req.session.user || null,
+  });
 });
 
 router.post("/register", async (req, res) => {
@@ -216,6 +282,7 @@ router.post("/register", async (req, res) => {
     res.status(400).render("register.njk", {
       title: "Register",
       error: error.message || "Failed to register",
+      user: req.session.user || null,
     });
   }
 });
@@ -240,6 +307,7 @@ router.get("/management", requireAuth(2), async (req, res) => {
       management,
       scale,
       search,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error("Management view error:", error);
@@ -254,6 +322,7 @@ router.get("/management", requireAuth(2), async (req, res) => {
       scale: "week",
       search: "",
       error: "Management data is temporarily unavailable. Please try again later.",
+      user: req.session.user || null,
     });
   }
 });
@@ -287,10 +356,7 @@ router.get("/management/export.csv", requireAuth(2), async (req, res) => {
     const csv = lines.join("\n");
 
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="management-${scale}.csv"`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename="management-${scale}.csv"`);
 
     res.send(csv);
   } catch (error) {
@@ -311,7 +377,6 @@ router.get("/api/products/search", async (req, res) => {
 
 /*
 Shopping list endpoints
-All of these endpoints require user to be logged in to their account
 */
 
 router.get("/api/shopping-list", requireAuth(0), async (req, res) => {
@@ -362,8 +427,7 @@ router.delete("/api/shopping-list/items/:productId", requireAuth(0), async (req,
 Picker + stock/location synchronisation routes
 */
 
-// API proxy for picker polling / sync
-router.get("/api/picker/orders", async (req, res) => {
+router.get("/api/picker/orders", requireAuth(2), async (req, res) => {
   try {
     const orders = await api.getPickerOrders();
     res.json(orders);
@@ -373,7 +437,7 @@ router.get("/api/picker/orders", async (req, res) => {
   }
 });
 
-router.get("/picker", async (req, res) => {
+router.get("/picker", requireAuth(2), async (req, res) => {
   try {
     const orders = await api.getPickerOrders();
 
@@ -385,6 +449,7 @@ router.get("/picker", async (req, res) => {
       issueResolved: req.query.issueResolved === "1",
       orderFinalised: req.query.orderFinalised === "1",
       error: req.query.error || null,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error("Failed to load picker view:", error);
@@ -392,7 +457,7 @@ router.get("/picker", async (req, res) => {
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/complete", async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(2), async (req, res) => {
   try {
     const { orderId, productId } = req.params;
     await api.completePickerItem(orderId, productId);
@@ -403,7 +468,7 @@ router.post("/picker/orders/:orderId/items/:productId/complete", async (req, res
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(2), async (req, res) => {
   try {
     const { orderId, productId } = req.params;
     const { substituteProductId, reason } = req.body;
@@ -420,7 +485,7 @@ router.post("/picker/orders/:orderId/items/:productId/issue", async (req, res) =
   }
 });
 
-router.post("/picker/issues/:issueId/resolve", async (req, res) => {
+router.post("/picker/issues/:issueId/resolve", requireAuth(2), async (req, res) => {
   try {
     const { issueId } = req.params;
     await api.resolvePickerIssue(issueId);
@@ -431,7 +496,7 @@ router.post("/picker/issues/:issueId/resolve", async (req, res) => {
   }
 });
 
-router.post("/picker/orders/:orderId/finalise", async (req, res) => {
+router.post("/picker/orders/:orderId/finalise", requireAuth(2), async (req, res) => {
   try {
     const { orderId } = req.params;
     await api.finalisePickerOrder(orderId);
@@ -442,7 +507,7 @@ router.post("/picker/orders/:orderId/finalise", async (req, res) => {
   }
 });
 
-router.get("/inventory", async (req, res) => {
+router.get("/inventory", requireAuth(2), async (req, res) => {
   try {
     const [inventory, managementIssues] = await Promise.all([
       api.getInventory(),
@@ -455,6 +520,7 @@ router.get("/inventory", async (req, res) => {
       managementIssues,
       updated: req.query.updated === "1",
       error: req.query.error || null,
+      user: req.session.user || null,
     });
   } catch (error) {
     console.error("Failed to load inventory view:", error);
@@ -462,7 +528,7 @@ router.get("/inventory", async (req, res) => {
   }
 });
 
-router.post("/inventory/:productId", async (req, res) => {
+router.post("/inventory/:productId", requireAuth(2), async (req, res) => {
   try {
     const { productId } = req.params;
     const { quantity, locationCode } = req.body;
@@ -478,6 +544,7 @@ router.post("/inventory/:productId", async (req, res) => {
     res.redirect(`/inventory?error=${encodeURIComponent(error.message)}`);
   }
 });
+
 // Health check
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "frontend service is healthy." });
