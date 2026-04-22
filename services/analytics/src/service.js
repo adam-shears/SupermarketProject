@@ -14,98 +14,32 @@ This file should not be responsible for:
 - Any logic that is not directly related to the business logic of the analytics service
 */
 
-import { pool } from "./db.js";
-
-function matchesSearch(value, search) {
-  return String(value || "").toLowerCase().includes(search);
-}
-
-function filterManagementPayload(payload, rawSearch = "") {
-  const search = rawSearch.trim().toLowerCase();
-
-  if (!search) {
-    return payload;
-  }
-
-  return {
-    ...payload,
-    bestSellers: (payload.bestSellers || []).filter((item) =>
-      matchesSearch(item.name, search)
-    ),
-    salesPerCategory: (payload.salesPerCategory || []).filter((item) =>
-      matchesSearch(item.category, search)
-    ),
-    trendingItems: (payload.trendingItems || []).filter((item) =>
-      matchesSearch(item.name, search)
-    ),
-    staff: (payload.staff || []).filter(
-      (item) =>
-        matchesSearch(item.name, search) ||
-        matchesSearch(item.role, search) ||
-        matchesSearch(item.status, search)
-    ),
-    ordersToAssign: (payload.ordersToAssign || []).filter(
-      (item) =>
-        matchesSearch(item.id, search) ||
-        matchesSearch(item.customer, search) ||
-        matchesSearch(item.status, search) ||
-        matchesSearch(item.picker, search)
-    ),
-    promoCodes: (payload.promoCodes || []).filter(
-      (item) =>
-        matchesSearch(item.code, search) ||
-        matchesSearch(item.description, search) ||
-        matchesSearch(item.discount, search) ||
-        matchesSearch(item.status, search)
-    ),
-    discounts: (payload.discounts || []).filter(
-      (item) =>
-        matchesSearch(item.product, search) ||
-        matchesSearch(item.category, search) ||
-        matchesSearch(item.status, search)
-    ),
-  };
-}
-
-async function getPayloadForScale(scale) {
-  const result = await pool.query(
-    "SELECT payload FROM management_demo_data WHERE scale = $1",
-    [scale]
-  );
-
-  if (result.rows.length === 0) {
-    return null;
-  }
-
-  return result.rows[0].payload;
-}
+import {
+  getBestSellers,
+  getSalesPerCategory,
+  getTotalSales,
+  getTrendingItems,
+} from "./db.js";
 
 export const analyticsDeps = {
-  async getTotalSales(scale) {
-    const payload = await getPayloadForScale(scale);
-    return payload?.totalSalesPence ?? 0;
-  },
-
-  async getBestSellers(scale) {
-    const payload = await getPayloadForScale(scale);
-    return payload?.bestSellers ?? [];
-  },
-
-  async getSalesPerCategory(scale) {
-    const payload = await getPayloadForScale(scale);
-    return payload?.salesPerCategory ?? [];
-  },
-
-  async getTrendingItems(scale) {
-    const payload = await getPayloadForScale(scale);
-    return payload?.trendingItems ?? [];
-  },
+  filterBySearch,
+  getManagementData,
+  getTotalSales,
+  getBestSellers,
+  getSalesPerCategory,
+  getTrendingItems,
 };
 
-export async function getManagementData(scale = "week") {
-  const validScales = ["day", "week", "month"];
+function filterBySearch(items, searchQuery, fieldName) {
+  if (!searchQuery) return items;
+  const query = searchQuery.toLowerCase();
+  return items.filter((item) =>
+    String(item[fieldName] || "").toLowerCase().includes(query)
+  );
+}
 
-  if (!validScales.includes(scale)) {
+export async function getManagementData(scale = "week", search = "") {
+  if (!["day", "week", "month"].includes(scale)) {
     throw new Error("Invalid scale. Must be day, week, or month.");
   }
 
@@ -117,22 +51,41 @@ export async function getManagementData(scale = "week") {
       analyticsDeps.getTrendingItems(scale),
     ]);
 
+  let bestSellersFormatted = bestSellers.map((item) => ({
+    id: item.id,
+    name: item.name,
+  }));
+  bestSellersFormatted = analyticsDeps.filterBySearch(
+    bestSellersFormatted,
+    search,
+    "name"
+  );
+
+  let salesPerCategoryFormatted = salesPerCategory.map((item) => ({
+    category: item.category,
+    salesPence: Number(item.sales_pence || 0),
+  }));
+  salesPerCategoryFormatted = analyticsDeps.filterBySearch(
+    salesPerCategoryFormatted,
+    search,
+    "category"
+  );
+
+  let trendingItemsFormatted = trendingItems.map((item, index) => ({
+    rank: index + 1,
+    name: item.name,
+    unitsSold: Number(item.units_sold || 0),
+  }));
+  trendingItemsFormatted = analyticsDeps.filterBySearch(
+    trendingItemsFormatted,
+    search,
+    "name"
+  );
+
   return {
-    totalSalesPence,
-    bestSellers,
-    salesPerCategory,
-    trendingItems,
+    totalSalesPence: Number(totalSalesPence || 0),
+    bestSellers: bestSellersFormatted,
+    salesPerCategory: salesPerCategoryFormatted,
+    trendingItems: trendingItemsFormatted,
   };
-}
-
-export async function getManagementView(scale = "week", search = "") {
-  const payload = await getPayloadForScale(scale);
-
-  if (!payload) {
-    const error = new Error(`No management demo data found for scale: ${scale}`);
-    error.status = 404;
-    throw error;
-  }
-
-  return filterManagementPayload(payload, search);
 }
