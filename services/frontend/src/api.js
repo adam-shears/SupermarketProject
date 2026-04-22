@@ -87,16 +87,19 @@ export const api = {
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 
-  getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
-  addShoppingListItem: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
-  updateShoppingListItem: (customerId, productId, payload) => patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
-  deleteShoppingListItem: (customerId, productId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
-
+  getShoppingList: (customerId) =>
+    getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  addShoppingListItem: (customerId, payload) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
+  updateShoppingListItem: (customerId, productId, payload) =>
+    patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
+  deleteShoppingListItem: (customerId, productId) =>
+    deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
 
   getManagementView: async (scale = "week", search = "") => {
-  const params = new URLSearchParams({ scale, search }).toString();
-  return await getJson(`${ANALYTICS_URL}/management?${params}`);
-},
+    const params = new URLSearchParams({ scale, search }).toString();
+    return await getJson(`${ANALYTICS_URL}/management?${params}`);
+  },
 
   getSalesByCategoryCsvUrl: (scale = "week", search = "") => {
     const params = new URLSearchParams({ scale, search }).toString();
@@ -122,4 +125,11 @@ export const api = {
 
   updateInventory: (productId, payload) =>
     patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),
+
+  // Frontend scaffolding for management flow.
+  registerStaffMember: (payload) =>
+    postJson(`${ORDERS_URL}/management/staff`, payload),
+
+  assignPickerToOrder: (orderId, payload) =>
+    postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
 };

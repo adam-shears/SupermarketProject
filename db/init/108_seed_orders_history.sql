@@ -65,12 +65,12 @@ INSERT INTO order_items (
     ),
     (
       2002,
-      (SELECT id FROM products WHERE name = 'Coca Cola Zero Sugar 8 x 330ml' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Coca-Cola Zero Sugar 24x330ml' LIMIT 1),
       2, 480, 960, 0, NULL, 960
     ),
     (
       2002,
-      (SELECT id FROM products WHERE name = 'Warburtons Medium Sliced White Bread' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Warburtons Toastie Thick White 800g' LIMIT 1),
       1, 881, 881, 6, NULL, 875
     ),
 
@@ -82,12 +82,12 @@ INSERT INTO order_items (
     ),
     (
       2003,
-      (SELECT id FROM products WHERE name = 'Tesco Free Range Large Eggs 12 pack' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Tesco Free Range Eggs 12 pack' LIMIT 1),
       1, 420, 420, 0, NULL, 420
     ),
     (
       2003,
-      (SELECT id FROM products WHERE name = 'Cathedral City Mature Cheddar 350g' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Cathedral City Cheddar 350g' LIMIT 1),
       1, 452, 452, 0, NULL, 452
     ),
 
@@ -101,12 +101,12 @@ INSERT INTO order_items (
     ),
     (
       2004,
-      (SELECT id FROM products WHERE name = 'Andrex Gentle Clean Toilet Tissue 9 rolls' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Andrex Gentle Clean Toilet Roll 9 pack' LIMIT 1),
       1, 999, 999, 0, NULL, 999
     ),
     (
       2004,
-      (SELECT id FROM products WHERE name = 'Coca Cola Zero Sugar 8 x 330ml' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Coca-Cola Zero Sugar 24x330ml' LIMIT 1),
       1, 480, 480, 0, NULL, 480
     ),
     (
@@ -128,7 +128,7 @@ INSERT INTO order_items (
     ),
     (
       2005,
-      (SELECT id FROM products WHERE name = 'Coca Cola Zero Sugar 8 x 330ml' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Coca-Cola Zero Sugar 24x330ml' LIMIT 1),
       1, 538, 538, 0, NULL, 538
     ),
 
@@ -156,7 +156,7 @@ INSERT INTO order_items (
     -- 2007
     (
       2007,
-      (SELECT id FROM products WHERE name = 'Birds Eye Chicken Dippers 24 pack' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Birds Eye Southern Fried Chicken 710g' LIMIT 1),
       2, 525, 1050, 0, NULL, 1050
     ),
     (
@@ -166,19 +166,19 @@ INSERT INTO order_items (
     ),
     (
       2007,
-      (SELECT id FROM products WHERE name = 'Coca Cola Zero Sugar 8 x 330ml' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Coca-Cola Zero Sugar 24x330ml' LIMIT 1),
       1, 828, 828, 0, NULL, 828
     ),
 
     -- 2008
     (
       2008,
-      (SELECT id FROM products WHERE name = 'Tesco Free Range Large Eggs 12 pack' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Tesco Free Range Eggs 12 pack' LIMIT 1),
       2, 420, 840, 0, NULL, 840
     ),
     (
       2008,
-      (SELECT id FROM products WHERE name = 'Warburtons Medium Sliced White Bread' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Warburtons Toastie Thick White 800g' LIMIT 1),
       2, 419, 838, 0, NULL, 838
     ),
 
@@ -192,7 +192,7 @@ INSERT INTO order_items (
     ),
     (
       2009,
-      (SELECT id FROM products WHERE name = 'Andrex Gentle Clean Toilet Tissue 9 rolls' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Andrex Gentle Clean Toilet Roll 9 pack' LIMIT 1),
       1, 999, 999, 0, NULL, 999
     ),
     (
@@ -228,12 +228,12 @@ INSERT INTO order_items (
     ),
     (
       2011,
-      (SELECT id FROM products WHERE name = 'Coca Cola Zero Sugar 8 x 330ml' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Coca-Cola Zero Sugar 24x330ml' LIMIT 1),
       3, 480, 1440, 0, NULL, 1440
     ),
     (
       2011,
-      (SELECT id FROM products WHERE name = 'Birds Eye Chicken Dippers 24 pack' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Birds Eye Southern Fried Chicken 710g' LIMIT 1),
       2, 678, 1356, 64,
       (SELECT id FROM discounts WHERE code = 'MONTH20' LIMIT 1),
       1292
@@ -247,17 +247,17 @@ INSERT INTO order_items (
     ),
     (
       2012,
-      (SELECT id FROM products WHERE name = 'Cathedral City Mature Cheddar 350g' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Cathedral City Cheddar 350g' LIMIT 1),
       1, 452, 452, 0, NULL, 452
     ),
     (
       2012,
-      (SELECT id FROM products WHERE name = 'Tesco Free Range Large Eggs 12 pack' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Tesco Free Range Eggs 12 pack' LIMIT 1),
       1, 420, 420, 0, NULL, 420
     ),
     (
       2012,
-      (SELECT id FROM products WHERE name = 'Warburtons Medium Sliced White Bread' LIMIT 1),
+      (SELECT id FROM products WHERE name = 'Warburtons Toastie Thick White 800g' LIMIT 1),
       1, 464, 464, 0, NULL, 464
     );
 
