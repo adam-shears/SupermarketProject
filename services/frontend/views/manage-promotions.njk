@@ -105,7 +105,7 @@
                     <button
                       type="button"
                       class="category-select-button"
-                      onclick="return removeCheckedProducts(this, 'promo-products-list')"
+                      onclick="return clearCategoryChecked(this)"
                     >
                       Clear
                     </button>
@@ -198,7 +198,7 @@
                     <button
                       type="button"
                       class="category-select-button"
-                      onclick="return removeCheckedProducts(this, 'discount-products-list')"
+                      onclick="return clearCategoryChecked(this)"
                     >
                       Clear
                     </button>
@@ -266,54 +266,22 @@
 </div>
 
 <script>
-  function getStorageKey(containerId) {
-    return "managementHiddenProducts:" + containerId;
-  }
-
-  function readHiddenProducts(containerId) {
-    try {
-      const raw = localStorage.getItem(getStorageKey(containerId));
-      return raw ? JSON.parse(raw) : [];
-    } catch (error) {
-      return [];
-    }
-  }
-
-  function writeHiddenProducts(containerId, products) {
-    localStorage.setItem(getStorageKey(containerId), JSON.stringify(products));
-  }
-
-  function addHiddenProducts(containerId, productsToAdd) {
-    const existing = readHiddenProducts(containerId);
-    const merged = [...new Set([...existing, ...productsToAdd])];
-    writeHiddenProducts(containerId, merged);
-  }
-
-  function applyHiddenProducts(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const hiddenProducts = new Set(readHiddenProducts(containerId));
-    const items = container.querySelectorAll(".product-checkbox-item");
-
-    items.forEach((item) => {
-      const productName = item.dataset.product || "";
-      if (hiddenProducts.has(productName)) {
-        item.remove();
-      }
-    });
-
-    cleanupEmptyCategories(containerId);
-  }
-
   function cleanupEmptyCategories(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
     const groups = container.querySelectorAll(".product-category-group");
     groups.forEach((group) => {
-      const remainingItems = group.querySelectorAll(".product-checkbox-item");
-      group.style.display = remainingItems.length > 0 ? "block" : "none";
+      const items = group.querySelectorAll(".product-checkbox-item");
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        if (item.style.display !== "none") {
+          visibleCount += 1;
+        }
+      });
+
+      group.style.display = visibleCount > 0 ? "block" : "none";
     });
   }
 
@@ -326,25 +294,25 @@
 
     groups.forEach((group) => {
       const items = group.querySelectorAll(".product-checkbox-item");
-      let visibleCount = 0;
 
       items.forEach((item) => {
         const text = item.textContent.toLowerCase();
         const matched = text.includes(value);
         item.style.display = matched ? "flex" : "none";
-        if (matched) visibleCount += 1;
       });
-
-      const stillHasItems = group.querySelectorAll(".product-checkbox-item").length > 0;
-      group.style.display = visibleCount > 0 && stillHasItems ? "block" : "none";
     });
+
+    cleanupEmptyCategories(containerId);
   }
 
   function setCategoryChecked(button, checked) {
     const categoryGroup = button.closest(".product-category-group");
     if (!categoryGroup) return false;
 
-    const checkboxes = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]');
+    const checkboxes = categoryGroup.querySelectorAll(
+      '.product-checkbox-item input[type="checkbox"]'
+    );
+
     checkboxes.forEach((checkbox) => {
       checkbox.checked = checked;
     });
@@ -352,30 +320,8 @@
     return false;
   }
 
-  function removeCheckedProducts(button, containerId) {
-    const categoryGroup = button.closest(".product-category-group");
-    if (!categoryGroup) return false;
-
-    const checkedItems = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]:checked');
-    const removedNames = [];
-
-    checkedItems.forEach((checkbox) => {
-      const item = checkbox.closest(".product-checkbox-item");
-      if (!item) return;
-
-      const productName = item.dataset.product || "";
-      if (productName) {
-        removedNames.push(productName);
-      }
-      item.remove();
-    });
-
-    if (removedNames.length > 0) {
-      addHiddenProducts(containerId, removedNames);
-    }
-
-    cleanupEmptyCategories(containerId);
-    return false;
+  function clearCategoryChecked(button) {
+    return setCategoryChecked(button, false);
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -385,9 +331,6 @@
         scaleSelect.form.requestSubmit();
       });
     }
-
-    applyHiddenProducts("promo-products-list");
-    applyHiddenProducts("discount-products-list");
   });
 </script>
 {% endblock %}
