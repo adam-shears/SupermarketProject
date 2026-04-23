@@ -20,6 +20,7 @@ import {
   insertNewCustomer,
   insertNewStaff,
   insertShoppingListItem,
+  selectAllStaff,
   selectCustomerByEmail,
   selectShoppingListByCustomerID,
   selectStaffByEmail,
@@ -37,6 +38,7 @@ export const ordersDeps = {
   hashPassword: bcrypt.hash,
   comparePassword: bcrypt.compare,
   insertNewStaff,
+  selectAllStaff,
 };
 
 export class OrdersError extends Error {
@@ -83,6 +85,10 @@ export async function updateShoppingListItem(customerId, productId, input) {
 
 export async function removeShoppingListItem(customerId, productId) {
   await ordersDeps.deleteShoppingListItem(customerId, productId);
+}
+
+export async function getStaffMembers() {
+  return ordersDeps.selectAllStaff();
 }
 
 export async function registerNewUser(input) {

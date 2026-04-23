@@ -1,0 +1,312 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/management.css" />
+{% endblock %}
+
+{% block content %}
+<div class="management-page">
+  <div class="management-header">
+    <div class="management-title-block">
+      <h1>Staff Management</h1>
+      <p class="management-page-subtitle">Register new staff members and assign orders to pickers</p>
+    </div>
+  </div>
+
+  {% if error %}
+    <div class="error-message">
+      <p>{{ error }}</p>
+    </div>
+  {% endif %}
+
+  {% if managementActionError %}
+    <div class="error-message">
+      <p>{{ managementActionError }}</p>
+    </div>
+  {% endif %}
+
+  {% if staffRegisterSuccess %}
+    <div class="success-message">
+      <p>New staff member registered successfully.</p>
+    </div>
+  {% endif %}
+
+  {% if assignSuccess %}
+    <div class="success-message">
+      <p>Picker assignment request submitted.</p>
+    </div>
+  {% endif %}
+
+  <div class="management-section-grid">
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Register Staff Member</h2>
+          <p class="card-subtitle">Create a new staff account so team members can access the system.</p>
+        </div>
+      </div>
+
+      <form action="/management/staff/register" method="post" class="management-form">
+        <div class="management-form-grid">
+          <div class="management-form-group">
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" type="text" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" type="text" required>
+          </div>
+
+          <div class="management-form-group management-form-group--full">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="new.staff@supermarket.com" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input id="confirm_password" name="confirm_password" type="password" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="text">
+          </div>
+
+          <div class="management-form-group">
+            <label for="admin_level">Admin level</label>
+            <select id="admin_level" name="admin_level">
+              <option value="1" selected>Picker</option>
+              <option value="2">Manager</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="management-button">Register Staff</button>
+      </form>
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Staff Members</h2>
+          <p class="card-subtitle">List of all current staff accounts.</p>
+        </div
+      </div>
+
+      {% if staff.length > 0 %}
+        <div class="management-table-wrapper">
+          <table class="management-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Registered At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for account in staff %}
+                <tr>
+                  <td>{{ account.first_name }} {{ account.last_name }}</td>
+                  <td>{{ account.email }}</td>
+                  {% if account.admin_level == 1 %}
+                    <td>Picker</td>
+                  {% elif account.admin_level == 2 %}
+                    <td>Manager</td>
+                  {% elif account.admin_level > 2 %}
+                    <td>Superuser</td>
+                  {% else %}
+                    <td>Undefined</td>
+                  {% endif %}
+                  <td>{{ account.created_at }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="no-data">No staff members</p>
+      {% endif %}
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Assign Picker to Order</h2>
+          <p class="card-subtitle">Allocate open orders to staff so they can begin picking.</p>
+        </div>
+      </div>
+
+      {% if assignmentOrders.length > 0 %}
+        <div class="management-table-wrapper">
+          <table class="management-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Assign Picker</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in assignmentOrders %}
+                <tr>
+                  <td>#{{ order.id }}</td>
+                  <td>{{ order.customer }}</td>
+                  <td><span class="status-badge">{{ order.status }}</span></td>
+                  <td>
+                    <form action="/management/orders/{{ order.id }}/assign" method="post" class="assign-inline-form">
+                      <label class="sr-only" for="picker-email-{{ order.id }}">Picker for order {{ order.id }}</label>
+                      <select id="picker-email-{{ order.id }}" name="picker_email" required>
+                        <option value="">Select picker</option>
+                        {% for picker in pickerOptions %}
+                          <option value="{{ picker.value }}">{{ picker.label }}</option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="management-button management-button--small">Assign</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="no-data">No orders available to assign.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<script>
+  function getStorageKey(containerId) {
+    return "managementHiddenProducts:" + containerId;
+  }
+
+  function readHiddenProducts(containerId) {
+    try {
+      const raw = localStorage.getItem(getStorageKey(containerId));
+      return raw ? JSON.parse(raw) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writeHiddenProducts(containerId, products) {
+    localStorage.setItem(getStorageKey(containerId), JSON.stringify(products));
+  }
+
+  function addHiddenProducts(containerId, productsToAdd) {
+    const existing = readHiddenProducts(containerId);
+    const merged = [...new Set([...existing, ...productsToAdd])];
+    writeHiddenProducts(containerId, merged);
+  }
+
+  function applyHiddenProducts(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const hiddenProducts = new Set(readHiddenProducts(containerId));
+    const items = container.querySelectorAll(".product-checkbox-item");
+
+    items.forEach((item) => {
+      const productName = item.dataset.product || "";
+      if (hiddenProducts.has(productName)) {
+        item.remove();
+      }
+    });
+
+    cleanupEmptyCategories(containerId);
+  }
+
+  function cleanupEmptyCategories(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const groups = container.querySelectorAll(".product-category-group");
+    groups.forEach((group) => {
+      const remainingItems = group.querySelectorAll(".product-checkbox-item");
+      group.style.display = remainingItems.length > 0 ? "block" : "none";
+    });
+  }
+
+  function filterProductOptions(containerId, query) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const value = (query || "").toLowerCase();
+    const groups = container.querySelectorAll(".product-category-group");
+
+    groups.forEach((group) => {
+      const items = group.querySelectorAll(".product-checkbox-item");
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        const text = item.textContent.toLowerCase();
+        const matched = text.includes(value);
+        item.style.display = matched ? "flex" : "none";
+        if (matched) visibleCount += 1;
+      });
+
+      const stillHasItems = group.querySelectorAll(".product-checkbox-item").length > 0;
+      group.style.display = visibleCount > 0 && stillHasItems ? "block" : "none";
+    });
+  }
+
+  function setCategoryChecked(button, checked) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkboxes = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = checked;
+    });
+
+    return false;
+  }
+
+  function removeCheckedProducts(button, containerId) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkedItems = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]:checked');
+    const removedNames = [];
+
+    checkedItems.forEach((checkbox) => {
+      const item = checkbox.closest(".product-checkbox-item");
+      if (!item) return;
+
+      const productName = item.dataset.product || "";
+      if (productName) {
+        removedNames.push(productName);
+      }
+      item.remove();
+    });
+
+    if (removedNames.length > 0) {
+      addHiddenProducts(containerId, removedNames);
+    }
+
+    cleanupEmptyCategories(containerId);
+    return false;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const scaleSelect = document.getElementById("scale");
+    if (scaleSelect && scaleSelect.form) {
+      scaleSelect.addEventListener("change", () => {
+        scaleSelect.form.requestSubmit();
+      });
+    }
+
+    applyHiddenProducts("promo-products-list");
+    applyHiddenProducts("discount-products-list");
+  });
+</script>
+{% endblock %}

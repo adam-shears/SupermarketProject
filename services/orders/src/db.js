@@ -53,6 +53,13 @@ export async function insertNewStaff(email, passwordHash, firstName, lastName, p
   return result.rows[0];
 }
 
+export async function selectAllStaff() {
+  const result = await pool.query(
+    `SELECT id, admin_level, email, first_name, last_name, phone, created_at FROM staff ORDER BY admin_level DESC, created_at ASC`
+  );
+  return result.rows;
+}
+
 export async function selectShoppingListByCustomerID(customerID) {
   const result = await pool.query(
     `

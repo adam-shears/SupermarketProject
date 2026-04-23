@@ -322,15 +322,11 @@ router.get("/management", requireAuth(2), async (req, res) => {
     const management = await api.getManagementView(scale, search);
 
     res.render("management.njk", {
-      title: "Management View",
+      title: "Sales Analytics",
       management,
       scale,
       search,
       user: req.session.user || null,
-      pickerOptions: getFallbackPickerOptions(),
-      assignmentOrders: getFallbackAssignmentOrders(),
-      staffRegisterSuccess: req.query.staffRegisterSuccess === "1",
-      assignSuccess: req.query.assignSuccess === "1",
       promoSuccess: req.query.promoSuccess === "1",
       discountSuccess: req.query.discountSuccess === "1",
       managementActionError: req.query.managementActionError || null,
@@ -368,6 +364,28 @@ router.get("/management", requireAuth(2), async (req, res) => {
   }
 });
 
+router.get("/staff-management", requireAuth(2), async (req, res) => {
+  try {
+    const staff = await api.getStaffMembers();
+    res.render("staff-management.njk", {
+      title: "Staff Management",
+      staff,
+      pickerOptions: getFallbackPickerOptions(),
+      assignmentOrders: getFallbackAssignmentOrders(),
+      staffRegisterSuccess: req.query.staffRegisterSuccess === "1",
+      assignSuccess: req.query.assignSuccess === "1",
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load staff management view:", error);
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load staff management view",
+      user: req.session.user || null,
+    });
+  }
+});
 
 router.post("/management/staff/register", requireAuth(2), async (req, res) => {
   try {

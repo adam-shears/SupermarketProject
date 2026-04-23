@@ -126,10 +126,11 @@ export const api = {
   updateInventory: (productId, payload) =>
     patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),
 
-  // Frontend scaffolding for management flow.
   registerStaffMember: (payload) =>
     postJson(`${ORDERS_URL}/auth/register-staff`, payload),
 
   assignPickerToOrder: (orderId, payload) =>
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
+
+  getStaffMembers: () => getJson(`${ORDERS_URL}/staff`),
 };
