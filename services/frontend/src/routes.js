@@ -42,6 +42,12 @@ function requireAuth(requiredAdminLevel = 1) {
   };
 }
 
+// function to convert naive timestamps to UTC
+function toUTC(localDateTime) {
+  if(!localDateTime) return null;
+  return new Date(localDateTime).toISOString();
+}
+
 // not implemented pages
 router.get(["/orders/repeat", "/baskets/saved", "/loyalty"], (req, res) => {
   res.status(501).render("5xx.njk", {
@@ -459,8 +465,8 @@ router.post("/management/promotions/promo-codes", requireAuth(2), async (req, re
       name: req.body.name,
       type: req.body.type,
       value: Number(req.body.value),
-      startsAt: req.body.starts_at,
-      endsAt: req.body.ends_at,
+      startsAt: toUTC(req.body.starts_at),
+      endsAt: toUTC(req.body.ends_at),
       products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
     });
 
@@ -482,8 +488,8 @@ router.post("/management/promotions/discounts", requireAuth(2), async (req, res)
       name: req.body.name,
       type: req.body.type,
       value: Number(req.body.value),
-      startsAt: req.body.starts_at,
-      endsAt: req.body.ends_at,
+      startsAt: toUTC(req.body.starts_at),
+      endsAt: toUTC(req.body.ends_at),
       products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
     });
 
