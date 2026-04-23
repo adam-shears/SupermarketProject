@@ -422,11 +422,11 @@ router.post("/management/staff/register", requireAuth(2), async (req, res) => {
       adminLevel: Number(req.body.admin_level || 1),
     });
 
-    res.redirect("/management?staffRegisterSuccess=1");
+    res.redirect("/staff-management?staffRegisterSuccess=1");
   } catch (error) {
     console.error("Staff registration error:", error);
     res.redirect(
-      `/management?managementActionError=${encodeURIComponent(
+      `/staff-management?managementActionError=${encodeURIComponent(
         error.message || "Failed to register staff member."
       )}`
     );
@@ -441,11 +441,11 @@ router.post("/management/orders/:orderId/assign", requireAuth(2), async (req, re
       pickerEmail: req.body.picker_email,
     });
 
-    res.redirect("/management?assignSuccess=1");
+    res.redirect("/staff-management?assignSuccess=1");
   } catch (error) {
     console.error("Assign picker error:", error);
     res.redirect(
-      `/management?managementActionError=${encodeURIComponent(
+      `/staff-management?managementActionError=${encodeURIComponent(
         error.message || "Failed to assign picker."
       )}`
     );
@@ -464,11 +464,11 @@ router.post("/management/promotions/promo-codes", requireAuth(2), async (req, re
       active: req.body.active === "true",
     });
 
-    res.redirect("/management?promoSuccess=1");
+    res.redirect("/manage-promotions?promoSuccess=1");
   } catch (error) {
     console.error("Promo code creation error:", error);
     res.redirect(
-      `/management?managementActionError=${encodeURIComponent(
+      `/manage-promotions?managementActionError=${encodeURIComponent(
         error.message || "Failed to create promo code."
       )}`
     );
@@ -487,11 +487,11 @@ router.post("/management/promotions/discounts", requireAuth(2), async (req, res)
       active: req.body.active === "true",
     });
 
-    res.redirect("/management?discountSuccess=1");
+    res.redirect("/manage-promotions?discountSuccess=1");
   } catch (error) {
     console.error("Discount creation error:", error);
     res.redirect(
-      `/management?managementActionError=${encodeURIComponent(
+      `/manage-promotions?managementActionError=${encodeURIComponent(
         error.message || "Failed to create discount."
       )}`
     );
