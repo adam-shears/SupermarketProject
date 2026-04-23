@@ -76,6 +76,7 @@ async function deleteRequest(url) {
 
 export const api = {
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
+  chunkProductsByCategory: () => getJson(`${CATALOGUE_URL}/products?chunkByCategory=true`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
   searchProducts: (term) =>
     getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
@@ -133,4 +134,6 @@ export const api = {
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
 
   getStaffMembers: () => getJson(`${ORDERS_URL}/staff`),
+
+  getCurrentPromotions: () => getJson(`${CATALOGUE_URL}/deals`),
 };

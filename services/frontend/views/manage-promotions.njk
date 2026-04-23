@@ -1,0 +1,409 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/management.css" />
+{% endblock %}
+
+{% block content %}
+<div class="management-page">
+  {% if error %}
+    <div class="error-message">
+      <p>{{ error }}</p>
+    </div>
+  {% endif %}
+
+  {% if managementActionError %}
+    <div class="error-message">
+      <p>{{ managementActionError }}</p>
+    </div>
+  {% endif %}
+
+  {% if promoSuccess %}
+    <div class="success-message">
+      <p>Promo code creation request submitted.</p>
+    </div>
+  {% endif %}
+
+  {% if discountSuccess %}
+    <div class="success-message">
+      <p>Discount creation request submitted.</p>
+    </div>
+  {% endif %}
+
+  <div class="management-section-grid">
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Add Promo Code</h2>
+          <p class="card-subtitle">Create a code customers can enter during checkout to redeem an offer.</p>
+        </div>
+      </div>
+
+      <form action="/management/promotions/promo-codes" method="post" class="management-form">
+        <div class="management-form-grid">
+          <div class="management-form-group">
+            <label for="promo_code">Promo code</label>
+            <input id="promo_code" name="code" type="text" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_name">Campaign name</label>
+            <input id="promo_name" name="name" type="text" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_type">Discount type</label>
+            <select id="promo_type" name="type">
+              <option value="percentage">Percentage</option>
+              <option value="fixed">Fixed amount</option>
+            </select>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_value">Value</label>
+            <input id="promo_value" name="value" type="number" step="0.01" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_starts_at">Starts at</label>
+            <input id="promo_starts_at" name="starts_at" type="datetime-local" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_ends_at">Ends at</label>
+            <input id="promo_ends_at" name="ends_at" type="datetime-local" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_active">Status</label>
+            <select id="promo_active" name="active">
+              <option value="true" selected>Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset class="product-picker-block">
+          <legend class="product-picker-legend">Eligible products</legend>
+
+          <div class="product-picker-header">
+            <label for="promo-product-search">Search products</label>
+            <input
+              id="promo-product-search"
+              type="text"
+              class="product-search-input"
+              placeholder="Search products"
+              oninput="filterProductOptions('promo-products-list', this.value)"
+            >
+          </div>
+
+          <div id="promo-products-list" class="product-picker-list">
+            {% for category, products in groupedProducts %}
+              <div class="product-category-group" data-category="{{ category }}">
+                <div class="product-category-header">
+                  <span>{{ category }}</span>
+                  <div class="category-action-group">
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return setCategoryChecked(this, true)"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return removeCheckedProducts(this, 'promo-products-list')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="product-checkbox-grid">
+                  {% for product in products %}
+                    <label class="product-checkbox-item" data-product="{{ product }}">
+                      <input type="checkbox" name="product_names" value="{{ product }}">
+                      <span>{{ product }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <button type="submit" class="management-button">Create Promo Code</button>
+      </form>
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Add Discount</h2>
+          <p class="card-subtitle">Set up an automatic reduction that applies to selected products without a customer code.</p>
+        </div>
+      </div>
+
+      <form action="/management/promotions/discounts" method="post" class="management-form">
+        <div class="management-form-grid">
+          <div class="management-form-group management-form-group--full">
+            <label for="discount_name">Discount name</label>
+            <input id="discount_name" name="name" type="text" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_type">Discount type</label>
+            <select id="discount_type" name="type">
+              <option value="percentage">Percentage</option>
+              <option value="fixed">Fixed amount</option>
+            </select>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_value">Value</label>
+            <input id="discount_value" name="value" type="number" step="0.01" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_starts_at">Starts at</label>
+            <input id="discount_starts_at" name="starts_at" type="datetime-local" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_ends_at">Ends at</label>
+            <input id="discount_ends_at" name="ends_at" type="datetime-local" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_active">Status</label>
+            <select id="discount_active" name="active">
+              <option value="true" selected>Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset class="product-picker-block">
+          <legend class="product-picker-legend">Discounted products</legend>
+
+          <div class="product-picker-header">
+            <label for="discount-product-search">Search products</label>
+            <input
+              id="discount-product-search"
+              type="text"
+              class="product-search-input"
+              placeholder="Search products"
+              oninput="filterProductOptions('discount-products-list', this.value)"
+            >
+          </div>
+
+          <div id="discount-products-list" class="product-picker-list">
+            {% for category, products in groupedProducts %}
+              <div class="product-category-group" data-category="{{ category }}">
+                <div class="product-category-header">
+                  <span>{{ category }}</span>
+                  <div class="category-action-group">
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return setCategoryChecked(this, true)"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return removeCheckedProducts(this, 'discount-products-list')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="product-checkbox-grid">
+                  {% for product in products %}
+                    <label class="product-checkbox-item" data-product="{{ product }}">
+                      <input type="checkbox" name="product_names" value="{{ product }}">
+                      <span>{{ product }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <button type="submit" class="management-button">Create Discount</button>
+      </form>
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Active Promotions</h2>
+          <p class="card-subtitle">List of all current active promotions.</p>
+        </div
+      </div>
+
+      {% if currentPromotions.length > 0 %}
+        <div class="management-table-wrapper">
+          <table class="management-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Code (if available)</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Products Applied To</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for promo in currentPromotions %}
+                <tr>
+                  <td>{{ promo.name }}</td>
+                  <td>{{ promo.code }} || N/A</td>
+                  <td>{{ promo.type }}</td>
+                  <td>{{ promo.products }}</td>
+                  <td>{{ promo.startDate }}</td>
+                  <td>{{ promo.endDate }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="no-data">No active promotions</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<script>
+  function getStorageKey(containerId) {
+    return "managementHiddenProducts:" + containerId;
+  }
+
+  function readHiddenProducts(containerId) {
+    try {
+      const raw = localStorage.getItem(getStorageKey(containerId));
+      return raw ? JSON.parse(raw) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writeHiddenProducts(containerId, products) {
+    localStorage.setItem(getStorageKey(containerId), JSON.stringify(products));
+  }
+
+  function addHiddenProducts(containerId, productsToAdd) {
+    const existing = readHiddenProducts(containerId);
+    const merged = [...new Set([...existing, ...productsToAdd])];
+    writeHiddenProducts(containerId, merged);
+  }
+
+  function applyHiddenProducts(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const hiddenProducts = new Set(readHiddenProducts(containerId));
+    const items = container.querySelectorAll(".product-checkbox-item");
+
+    items.forEach((item) => {
+      const productName = item.dataset.product || "";
+      if (hiddenProducts.has(productName)) {
+        item.remove();
+      }
+    });
+
+    cleanupEmptyCategories(containerId);
+  }
+
+  function cleanupEmptyCategories(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const groups = container.querySelectorAll(".product-category-group");
+    groups.forEach((group) => {
+      const remainingItems = group.querySelectorAll(".product-checkbox-item");
+      group.style.display = remainingItems.length > 0 ? "block" : "none";
+    });
+  }
+
+  function filterProductOptions(containerId, query) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const value = (query || "").toLowerCase();
+    const groups = container.querySelectorAll(".product-category-group");
+
+    groups.forEach((group) => {
+      const items = group.querySelectorAll(".product-checkbox-item");
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        const text = item.textContent.toLowerCase();
+        const matched = text.includes(value);
+        item.style.display = matched ? "flex" : "none";
+        if (matched) visibleCount += 1;
+      });
+
+      const stillHasItems = group.querySelectorAll(".product-checkbox-item").length > 0;
+      group.style.display = visibleCount > 0 && stillHasItems ? "block" : "none";
+    });
+  }
+
+  function setCategoryChecked(button, checked) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkboxes = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = checked;
+    });
+
+    return false;
+  }
+
+  function removeCheckedProducts(button, containerId) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkedItems = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]:checked');
+    const removedNames = [];
+
+    checkedItems.forEach((checkbox) => {
+      const item = checkbox.closest(".product-checkbox-item");
+      if (!item) return;
+
+      const productName = item.dataset.product || "";
+      if (productName) {
+        removedNames.push(productName);
+      }
+      item.remove();
+    });
+
+    if (removedNames.length > 0) {
+      addHiddenProducts(containerId, removedNames);
+    }
+
+    cleanupEmptyCategories(containerId);
+    return false;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const scaleSelect = document.getElementById("scale");
+    if (scaleSelect && scaleSelect.form) {
+      scaleSelect.addEventListener("change", () => {
+        scaleSelect.form.requestSubmit();
+      });
+    }
+
+    applyHiddenProducts("promo-products-list");
+    applyHiddenProducts("discount-products-list");
+  });
+</script>
+{% endblock %}

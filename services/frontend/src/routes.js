@@ -327,8 +327,6 @@ router.get("/management", requireAuth(2), async (req, res) => {
       scale,
       search,
       user: req.session.user || null,
-      promoSuccess: req.query.promoSuccess === "1",
-      discountSuccess: req.query.discountSuccess === "1",
       managementActionError: req.query.managementActionError || null,
     });
   } catch (error) {
@@ -364,6 +362,30 @@ router.get("/management", requireAuth(2), async (req, res) => {
   }
 });
 
+router.get("/manage-promotions", requireAuth(2), async (req, res) => {
+  try {
+    const currentPromotions = await api.getCurrentPromotions();
+    const groupedProducts = await api.chunkProductsByCategory();
+    res.render("manage-promotions.njk", {
+      title: "Promotions Management",
+      groupedProducts: groupedProducts,
+      currentPromotions: currentPromotions,
+      user: req.session.user || null,
+      promoSuccess: req.query.promoSuccess === "1",
+      discountSuccess: req.query.discountSuccess === "1",
+      managementActionError: req.query.managementActionError || null,
+    });
+  } catch (error) {
+    console.error("Failed to load promotions management view:", error);
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load promotions management view",
+      user: req.session.user || null,
+    });
+  }
+});
+
 router.get("/staff-management", requireAuth(2), async (req, res) => {
   try {
     const staff = await api.getStaffMembers();
@@ -375,6 +397,7 @@ router.get("/staff-management", requireAuth(2), async (req, res) => {
       staffRegisterSuccess: req.query.staffRegisterSuccess === "1",
       assignSuccess: req.query.assignSuccess === "1",
       user: req.session.user || null,
+      managementActionError: req.query.managementActionError || null,
     });
   } catch (error) {
     console.error("Failed to load staff management view:", error);
