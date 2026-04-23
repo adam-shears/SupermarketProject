@@ -61,7 +61,7 @@
 
   {% if staffRegisterSuccess %}
     <div class="success-message">
-      <p>Staff registration request submitted.</p>
+      <p>New staff member registered successfully.</p>
     </div>
   {% endif %}
 
@@ -223,6 +223,11 @@
           </div>
 
           <div class="management-form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input id="confirm_password" name="confirm_password" type="password" required>
+          </div>
+
+          <div class="management-form-group">
             <label for="phone">Phone</label>
             <input id="phone" name="phone" type="text">
           </div>
@@ -230,9 +235,8 @@
           <div class="management-form-group">
             <label for="admin_level">Admin level</label>
             <select id="admin_level" name="admin_level">
-              <option value="1">Staff</option>
-              <option value="2" selected>Picker / Manager access</option>
-              <option value="3">Admin</option>
+              <option value="1">Picker</option>
+              <option value="2" selected>Manager</option>
             </select>
           </div>
         </div>

@@ -18,6 +18,7 @@ import bcrypt from "bcrypt";
 import {
   deleteShoppingListItem,
   insertNewCustomer,
+  insertNewStaff,
   insertShoppingListItem,
   selectCustomerByEmail,
   selectShoppingListByCustomerID,
@@ -35,6 +36,7 @@ export const ordersDeps = {
   updateShoppingList,
   hashPassword: bcrypt.hash,
   comparePassword: bcrypt.compare,
+  insertNewStaff,
 };
 
 export class OrdersError extends Error {
@@ -124,6 +126,27 @@ export async function registerNewUser(input) {
   const existing = await ordersDeps.selectCustomerByEmail(email);
   if (existing) {
     throw new OrdersError("Email is already in use", 409);
+  }
+
+  if (input.isStaff) {
+    // if this is a staff registration, also check the staff table for existing email and make sure it ends with @supermarket.com
+    if (!email.endsWith("@supermarket.com")) {
+      throw new OrdersError("Staff email must end with @supermarket.com", 400);
+    }
+
+    const existingStaff = await ordersDeps.selectStaffByEmail(email);
+    if (existingStaff) {
+      throw new OrdersError("Email is already in use", 409);
+    }
+
+    const adminLevel = input.adminLevel || 1; // default to lowest staff level if not provided
+    const passwordHash = await ordersDeps.hashPassword(password, 12);
+    return ordersDeps.insertNewStaff(email, passwordHash, firstName, lastName, phone, adminLevel);
+  }
+
+  // if the user is not a staff member, proceed with normal registration unless they try to provide a staff email
+  if (email.endsWith("@supermarket.com")) {
+    throw new OrdersError("You cannot register with a staff email. If you are a staff member, contact your administrator to register you.", 403);
   }
 
   // at this point, the user's input is valid so we can register

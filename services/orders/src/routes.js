@@ -68,6 +68,15 @@ router.post("/auth/login", async (req, res) => {
   }
 });
 
+router.post("/auth/register-staff", async (req, res) => {
+  try {
+    const user = await registerNewUser({ ...req.body, isStaff: true });
+    res.status(201).json(user);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to register new staff user.");
+  }
+});
+
 router.post("/auth/register", async (req, res) => {
   try {
     const user = await registerNewUser(req.body);

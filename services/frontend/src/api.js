@@ -128,7 +128,7 @@ export const api = {
 
   // Frontend scaffolding for management flow.
   registerStaffMember: (payload) =>
-    postJson(`${ORDERS_URL}/management/staff`, payload),
+    postJson(`${ORDERS_URL}/auth/register-staff`, payload),
 
   assignPickerToOrder: (orderId, payload) =>
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),

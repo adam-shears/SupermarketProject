@@ -41,6 +41,18 @@ export async function insertNewCustomer(email, passwordHash, firstName, lastName
   return result.rows[0];
 }
 
+export async function insertNewStaff(email, passwordHash, firstName, lastName, phone, adminLevel) {
+  const result = await pool.query(
+    `
+        INSERT INTO staff (email, password_hash, first_name, last_name, phone, admin_level, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        RETURNING id, email, first_name, last_name, phone, admin_level, created_at
+    `,
+    [email, passwordHash, firstName, lastName, phone, adminLevel]
+  );
+  return result.rows[0];
+}
+
 export async function selectShoppingListByCustomerID(customerID) {
   const result = await pool.query(
     `

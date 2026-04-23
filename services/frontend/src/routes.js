@@ -364,8 +364,9 @@ router.post("/management/staff/register", requireAuth(2), async (req, res) => {
       lastName: req.body.last_name,
       email: req.body.email,
       password: req.body.password,
+      confirmPassword: req.body.confirm_password,
       phone: req.body.phone,
-      adminLevel: Number(req.body.admin_level || 2),
+      adminLevel: Number(req.body.admin_level || 1),
     });
 
     res.redirect("/management?staffRegisterSuccess=1");
@@ -544,7 +545,7 @@ router.delete("/api/shopping-list/items/:productId", requireAuth(0), async (req,
 Picker + stock/location synchronisation routes
 */
 
-router.get("/api/picker/orders", requireAuth(2), async (req, res) => {
+router.get("/api/picker/orders", requireAuth(1), async (req, res) => {
   try {
     const orders = await api.getPickerOrders();
     res.json(orders);
@@ -554,7 +555,7 @@ router.get("/api/picker/orders", requireAuth(2), async (req, res) => {
   }
 });
 
-router.get("/picker", requireAuth(2), async (req, res) => {
+router.get("/picker", requireAuth(1), async (req, res) => {
   try {
     const orders = await api.getPickerOrders();
 
@@ -574,7 +575,7 @@ router.get("/picker", requireAuth(2), async (req, res) => {
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(2), async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(1), async (req, res) => {
   try {
     const { orderId, productId } = req.params;
     await api.completePickerItem(orderId, productId);
@@ -585,7 +586,7 @@ router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(2),
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(2), async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(1), async (req, res) => {
   try {
     const { orderId, productId } = req.params;
     const { substituteProductId, reason } = req.body;
@@ -602,7 +603,7 @@ router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(2), as
   }
 });
 
-router.post("/picker/issues/:issueId/resolve", requireAuth(2), async (req, res) => {
+router.post("/picker/issues/:issueId/resolve", requireAuth(1), async (req, res) => {
   try {
     const { issueId } = req.params;
     await api.resolvePickerIssue(issueId);
@@ -613,7 +614,7 @@ router.post("/picker/issues/:issueId/resolve", requireAuth(2), async (req, res) 
   }
 });
 
-router.post("/picker/orders/:orderId/finalise", requireAuth(2), async (req, res) => {
+router.post("/picker/orders/:orderId/finalise", requireAuth(1), async (req, res) => {
   try {
     const { orderId } = req.params;
     await api.finalisePickerOrder(orderId);
