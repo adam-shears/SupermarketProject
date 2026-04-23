@@ -12,7 +12,9 @@ API failures to serve error pages.
 */
 
 import { Router } from "express";
+import { DateTime } from "luxon";
 import { api } from "./api.js";
+
 function getFallbackPickerOptions() {
   return [];
 }
@@ -21,6 +23,17 @@ function getFallbackAssignmentOrders() {
   return [];
 }
 const router = Router();
+
+// --- Helper Functions ---
+
+// function to convert london timestamps to UTC
+// containers run in UTC but user inputs for promos are local time, so we need to convert to UTC before they go to the db
+// ideally, this should be more robust and take actual timezone into account, but we're just assuming the staff member is in london for now
+function toUTC(londonDateTime) {
+  if (!londonDateTime) return null;
+  const dt = DateTime.fromFormat(londonDateTime, "yyyy-MM-dd'T'HH:mm", { zone: "Europe/London" });
+  return dt.toUTC().toISO();
+}
 
 // function to check if user is logged in for accessing certain endpoints
 function requireAuth(requiredAdminLevel = 1) {
@@ -40,12 +53,6 @@ function requireAuth(requiredAdminLevel = 1) {
 
     next();
   };
-}
-
-// function to convert naive timestamps to UTC
-function toUTC(localDateTime) {
-  if(!localDateTime) return null;
-  return new Date(localDateTime).toISOString();
 }
 
 // not implemented pages
