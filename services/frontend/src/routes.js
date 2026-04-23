@@ -13,7 +13,13 @@ API failures to serve error pages.
 
 import { Router } from "express";
 import { api } from "./api.js";
+function getFallbackPickerOptions() {
+  return [];
+}
 
+function getFallbackAssignmentOrders() {
+  return [];
+}
 const router = Router();
 
 // function to check if user is logged in for accessing certain endpoints
@@ -177,6 +183,7 @@ router.get("/products", async (req, res) => {
     });
   }
 });
+
 // Basket POST endpoint
 router.post("/basket/items", async (req, res) => {
   try {
@@ -308,6 +315,13 @@ router.get("/management", requireAuth(2), async (req, res) => {
       scale,
       search,
       user: req.session.user || null,
+      pickerOptions: getFallbackPickerOptions(),
+      assignmentOrders: getFallbackAssignmentOrders(),
+      staffRegisterSuccess: req.query.staffRegisterSuccess === "1",
+      assignSuccess: req.query.assignSuccess === "1",
+      promoSuccess: req.query.promoSuccess === "1",
+      discountSuccess: req.query.discountSuccess === "1",
+      managementActionError: req.query.managementActionError || null,
     });
   } catch (error) {
     console.error("Management view error:", error);
@@ -318,12 +332,115 @@ router.get("/management", requireAuth(2), async (req, res) => {
         salesPerCategory: [],
         trendingItems: [],
         totalSalesPence: 0,
+        totalSalesDisplay: "0.00",
+        orderCount: 0,
+        averageOrderValuePence: 0,
+        averageOrderValueDisplay: "0.00",
+        staff: [],
+        ordersToAssign: [],
+        promoCodes: [],
+        discounts: [],
       },
       scale: "week",
       search: "",
       error: "Management data is temporarily unavailable. Please try again later.",
       user: req.session.user || null,
+      pickerOptions: getFallbackPickerOptions(),
+      assignmentOrders: getFallbackAssignmentOrders(),
+      staffRegisterSuccess: false,
+      assignSuccess: false,
+      promoSuccess: false,
+      discountSuccess: false,
+      managementActionError: null,
     });
+  }
+});
+
+
+router.post("/management/staff/register", requireAuth(2), async (req, res) => {
+  try {
+    await api.registerStaffMember({
+      firstName: req.body.first_name,
+      lastName: req.body.last_name,
+      email: req.body.email,
+      password: req.body.password,
+      phone: req.body.phone,
+      adminLevel: Number(req.body.admin_level || 2),
+    });
+
+    res.redirect("/management?staffRegisterSuccess=1");
+  } catch (error) {
+    console.error("Staff registration error:", error);
+    res.redirect(
+      `/management?managementActionError=${encodeURIComponent(
+        error.message || "Failed to register staff member."
+      )}`
+    );
+  }
+});
+
+router.post("/management/orders/:orderId/assign", requireAuth(2), async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    await api.assignPickerToOrder(orderId, {
+      pickerEmail: req.body.picker_email,
+    });
+
+    res.redirect("/management?assignSuccess=1");
+  } catch (error) {
+    console.error("Assign picker error:", error);
+    res.redirect(
+      `/management?managementActionError=${encodeURIComponent(
+        error.message || "Failed to assign picker."
+      )}`
+    );
+  }
+});
+
+router.post("/management/promotions/promo-codes", requireAuth(2), async (req, res) => {
+  try {
+    await api.createPromoCode({
+      code: req.body.code,
+      name: req.body.name,
+      type: req.body.type,
+      value: Number(req.body.value),
+      startsAt: req.body.starts_at,
+      endsAt: req.body.ends_at,
+      active: req.body.active === "true",
+    });
+
+    res.redirect("/management?promoSuccess=1");
+  } catch (error) {
+    console.error("Promo code creation error:", error);
+    res.redirect(
+      `/management?managementActionError=${encodeURIComponent(
+        error.message || "Failed to create promo code."
+      )}`
+    );
+  }
+});
+
+router.post("/management/promotions/discounts", requireAuth(2), async (req, res) => {
+  try {
+    await api.createDiscount({
+      code: req.body.code,
+      name: req.body.name,
+      type: req.body.type,
+      value: Number(req.body.value),
+      startsAt: req.body.starts_at,
+      endsAt: req.body.ends_at,
+      active: req.body.active === "true",
+    });
+
+    res.redirect("/management?discountSuccess=1");
+  } catch (error) {
+    console.error("Discount creation error:", error);
+    res.redirect(
+      `/management?managementActionError=${encodeURIComponent(
+        error.message || "Failed to create discount."
+      )}`
+    );
   }
 });
 
@@ -339,14 +456,14 @@ router.get("/management/export.csv", requireAuth(2), async (req, res) => {
       "Metric,Value",
       `Time Scale,${scale}`,
       `Search Filter,${search || "none"}`,
-      `Total Sales,${(management.totalSalesPence / 100).toFixed(2)}`,
+      `Total Sales,${(Number(management.totalSalesPence || 0) / 100).toFixed(2)}`,
       "",
       "Trending Item,Units Sold",
       ...management.trendingItems.map((item) => `${item.name},${item.unitsSold}`),
       "",
       "Category,Sales",
       ...management.salesPerCategory.map(
-        (item) => `${item.category},${(item.salesPence / 100).toFixed(2)}`
+        (item) => `${item.category},${(Number(item.salesPence || 0) / 100).toFixed(2)}`
       ),
       "",
       "Best Sellers",

@@ -5,23 +5,19 @@
 {% endblock %}
 
 {% block content %}
-
 <div class="management-page">
   <div class="management-header">
-    <h1>Management View</h1>
-
-    {% if error %}
-    <div class="error-message">
-      <p>{{ error }}</p>
+    <div class="management-title-block">
+      <h1>Management View</h1>
+      <p class="management-page-subtitle">Monitor store performance and manage staff, order allocation, and promotions.</p>
     </div>
-    {% endif %}
 
     <div class="management-controls">
-      <form action="/management" method="get" class="management-filter-form">
+      <form action="/management" method="get" class="management-filter-form" id="management-filter-form">
         <div class="filter-row">
           <div class="filter-group">
             <label for="scale">Time Scale</label>
-            <select name="scale" id="scale" onchange="this.form.submit()">
+            <select name="scale" id="scale">
               <option value="day" {% if scale == "day" %}selected{% endif %}>Day</option>
               <option value="week" {% if scale == "week" %}selected{% endif %}>Week</option>
               <option value="month" {% if scale == "month" %}selected{% endif %}>Month</option>
@@ -30,10 +26,16 @@
 
           <div class="filter-group">
             <label for="search">Search</label>
-            <input type="text" name="search" id="search" placeholder="Search by name or category..." value="{{ search }}">
+            <input
+              type="text"
+              name="search"
+              id="search"
+              placeholder="Search by name or category"
+              value="{{ search }}"
+            >
           </div>
 
-          <button type="submit" class="filter-button">Search</button>
+          <button type="submit" class="filter-button">Apply Filters</button>
         </div>
       </form>
 
@@ -45,64 +47,579 @@
     </div>
   </div>
 
+  {% if error %}
+    <div class="error-message">
+      <p>{{ error }}</p>
+    </div>
+  {% endif %}
+
+  {% if managementActionError %}
+    <div class="error-message">
+      <p>{{ managementActionError }}</p>
+    </div>
+  {% endif %}
+
+  {% if staffRegisterSuccess %}
+    <div class="success-message">
+      <p>Staff registration request submitted.</p>
+    </div>
+  {% endif %}
+
+  {% if assignSuccess %}
+    <div class="success-message">
+      <p>Picker assignment request submitted.</p>
+    </div>
+  {% endif %}
+
+  {% if promoSuccess %}
+    <div class="success-message">
+      <p>Promo code creation request submitted.</p>
+    </div>
+  {% endif %}
+
+  {% if discountSuccess %}
+    <div class="success-message">
+      <p>Discount creation request submitted.</p>
+    </div>
+  {% endif %}
+
+  {% set groupedProducts = {
+    "Fresh Food": [
+      "Tesco British Strawberries 400g",
+      "Tesco Free Range Eggs 12 pack",
+      "Cathedral City Cheddar 350g"
+    ],
+    "Bakery": [
+      "Tesco Bakery Butter Croissants 4 pack",
+      "Warburtons Toastie Thick White 800g"
+    ],
+    "Drinks": [
+      "Alpro Oat Drink 1L",
+      "Coca-Cola Zero Sugar 24x330ml"
+    ],
+    "Treats & Snacks": [
+      "Walkers Ready Salted Crisps 6 pack"
+    ],
+    "Frozen Food": [
+      "Haagen Dazs Vanilla 460ml",
+      "Birds Eye Southern Fried Chicken 710g"
+    ],
+    "Household & Cleaning": [
+      "Ariel All in One Pods 24 pack",
+      "Andrex Gentle Clean Toilet Roll 9 pack"
+    ]
+  } %}
+
   <div class="management-grid">
-    <div class="management-card total-sales-card">
-      <h2>Total Sales</h2>
-      <p class="card-subtitle">Filtered by {{ scale }}</p>
+    <section class="management-card total-sales-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Total Sales</h2>
+          <p class="card-subtitle">View sales totals for the selected reporting period.</p>
+        </div>
+        <span class="card-chip">{{ scale | upper }}</span>
+      </div>
+
       <p class="total-sales-value">&pound;{{ (management.totalSalesPence / 100).toFixed(2) }}</p>
-    </div>
+    </section>
 
-    <div class="management-card">
-      <h2>Best Sellers</h2>
-      <p class="card-subtitle">Top-selling products for this {{ scale }}</p>
-
-      <div class="best-sellers-list">
-        {% for item in management.bestSellers %}
-        <div class="best-seller-item">
-          <div class="best-seller-placeholder">{{ item.name }}</div>
-          <p>{{ item.name }}</p>
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Best Sellers</h2>
+          <p class="card-subtitle">See which products are performing best during the selected period.</p>
         </div>
-        {% endfor %}
-        {% if management.bestSellers.length == 0 %}
-        <p class="no-data">No results found</p>
-        {% endif %}
+        <span class="card-chip">Top {{ management.bestSellers.length }}</span>
       </div>
-    </div>
 
-    <div class="management-card">
-      <h2>Sales by Category</h2>
-      <p class="card-subtitle">Revenue grouped by category</p>
-
-      <div class="data-list">
-        {% for item in management.salesPerCategory %}
-        <div class="data-row">
-          <span>{{ item.category }}</span>
-          <span>&pound;{{ (item.salesPence / 100).toFixed(2) }}</span>
+      {% if management.bestSellers.length > 0 %}
+        <div class="best-sellers-list">
+          {% for item in management.bestSellers %}
+            <div class="best-seller-item">
+              <div class="best-seller-rank">#{{ loop.index }}</div>
+              <div class="best-seller-name">{{ item.name }}</div>
+            </div>
+          {% endfor %}
         </div>
-        {% endfor %}
-        {% if management.salesPerCategory.length == 0 %}
-        <p class="no-data">No results found</p>
-        {% endif %}
-      </div>
-    </div>
+      {% else %}
+        <p class="no-data">No best seller data available.</p>
+      {% endif %}
+    </section>
 
-    <div class="management-card">
-      <h2>Trending Items</h2>
-      <p class="card-subtitle">Items with higher than usual sales for {{ scale }}</p>
-
-      <div class="data-list">
-        {% for item in management.trendingItems %}
-        <div class="data-row">
-          <span>#{{ item.rank }} {{ item.name }}</span>
-          <span>{{ item.unitsSold }} units</span>
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Sales by Category</h2>
+          <p class="card-subtitle">Compare revenue across product categories.</p>
         </div>
-        {% endfor %}
-        {% if management.trendingItems.length == 0 %}
-        <p class="no-data">No trending items found</p>
-        {% endif %}
       </div>
-    </div>
+
+      {% if management.salesPerCategory.length > 0 %}
+        <div class="data-list">
+          {% for item in management.salesPerCategory %}
+            <div class="data-row">
+              <span>{{ item.category }}</span>
+              <span>&pound;{{ (item.salesPence / 100).toFixed(2) }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-data">No category sales available.</p>
+      {% endif %}
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Trending Items</h2>
+          <p class="card-subtitle">Identify products with stronger-than-usual demand.</p>
+        </div>
+      </div>
+
+      {% if management.trendingItems.length > 0 %}
+        <div class="data-list">
+          {% for item in management.trendingItems %}
+            <div class="data-row">
+              <span>#{{ item.rank }} {{ item.name }}</span>
+              <span>{{ item.unitsSold }} units</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-data">No trending items found.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="management-section-grid">
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Register Staff Member</h2>
+          <p class="card-subtitle">Create a new staff account so team members can access the system.</p>
+        </div>
+      </div>
+
+      <form action="/management/staff/register" method="post" class="management-form">
+        <div class="management-form-grid">
+          <div class="management-form-group">
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" type="text" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" type="text" required>
+          </div>
+
+          <div class="management-form-group management-form-group--full">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="new.staff@supermarket.com" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="text">
+          </div>
+
+          <div class="management-form-group">
+            <label for="admin_level">Admin level</label>
+            <select id="admin_level" name="admin_level">
+              <option value="1">Staff</option>
+              <option value="2" selected>Picker / Manager access</option>
+              <option value="3">Admin</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="management-button">Register Staff</button>
+      </form>
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Assign Picker to Order</h2>
+          <p class="card-subtitle">Allocate open orders to staff so they can begin picking.</p>
+        </div>
+      </div>
+
+      {% if assignmentOrders.length > 0 %}
+        <div class="management-table-wrapper">
+          <table class="management-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Assign Picker</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in assignmentOrders %}
+                <tr>
+                  <td>#{{ order.id }}</td>
+                  <td>{{ order.customer }}</td>
+                  <td><span class="status-badge">{{ order.status }}</span></td>
+                  <td>
+                    <form action="/management/orders/{{ order.id }}/assign" method="post" class="assign-inline-form">
+                      <label class="sr-only" for="picker-email-{{ order.id }}">Picker for order {{ order.id }}</label>
+                      <select id="picker-email-{{ order.id }}" name="picker_email" required>
+                        <option value="">Select picker</option>
+                        {% for picker in pickerOptions %}
+                          <option value="{{ picker.value }}">{{ picker.label }}</option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="management-button management-button--small">Assign</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="no-data">No orders available to assign.</p>
+      {% endif %}
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Add Promo Code</h2>
+          <p class="card-subtitle">Create a code customers can enter during checkout to redeem an offer.</p>
+        </div>
+      </div>
+
+      <form action="/management/promotions/promo-codes" method="post" class="management-form">
+        <div class="management-form-grid">
+          <div class="management-form-group">
+            <label for="promo_code">Promo code</label>
+            <input id="promo_code" name="code" type="text" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_name">Campaign name</label>
+            <input id="promo_name" name="name" type="text" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_type">Discount type</label>
+            <select id="promo_type" name="type">
+              <option value="percentage">Percentage</option>
+              <option value="fixed">Fixed amount</option>
+            </select>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_value">Value</label>
+            <input id="promo_value" name="value" type="number" step="0.01" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_starts_at">Starts at</label>
+            <input id="promo_starts_at" name="starts_at" type="datetime-local" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_ends_at">Ends at</label>
+            <input id="promo_ends_at" name="ends_at" type="datetime-local" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="promo_active">Status</label>
+            <select id="promo_active" name="active">
+              <option value="true" selected>Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset class="product-picker-block">
+          <legend class="product-picker-legend">Eligible products</legend>
+
+          <div class="product-picker-header">
+            <label for="promo-product-search">Search products</label>
+            <input
+              id="promo-product-search"
+              type="text"
+              class="product-search-input"
+              placeholder="Search products"
+              oninput="filterProductOptions('promo-products-list', this.value)"
+            >
+          </div>
+
+          <div id="promo-products-list" class="product-picker-list">
+            {% for category, products in groupedProducts %}
+              <div class="product-category-group" data-category="{{ category }}">
+                <div class="product-category-header">
+                  <span>{{ category }}</span>
+                  <div class="category-action-group">
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return setCategoryChecked(this, true)"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return removeCheckedProducts(this, 'promo-products-list')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="product-checkbox-grid">
+                  {% for product in products %}
+                    <label class="product-checkbox-item" data-product="{{ product }}">
+                      <input type="checkbox" name="product_names" value="{{ product }}">
+                      <span>{{ product }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <button type="submit" class="management-button">Create Promo Code</button>
+      </form>
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Add Discount</h2>
+          <p class="card-subtitle">Set up an automatic reduction that applies to selected products without a customer code.</p>
+        </div>
+      </div>
+
+      <form action="/management/promotions/discounts" method="post" class="management-form">
+        <div class="management-form-grid">
+          <div class="management-form-group management-form-group--full">
+            <label for="discount_name">Discount name</label>
+            <input id="discount_name" name="name" type="text" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_type">Discount type</label>
+            <select id="discount_type" name="type">
+              <option value="percentage">Percentage</option>
+              <option value="fixed">Fixed amount</option>
+            </select>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_value">Value</label>
+            <input id="discount_value" name="value" type="number" step="0.01" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_starts_at">Starts at</label>
+            <input id="discount_starts_at" name="starts_at" type="datetime-local" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_ends_at">Ends at</label>
+            <input id="discount_ends_at" name="ends_at" type="datetime-local" required>
+          </div>
+
+          <div class="management-form-group">
+            <label for="discount_active">Status</label>
+            <select id="discount_active" name="active">
+              <option value="true" selected>Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset class="product-picker-block">
+          <legend class="product-picker-legend">Discounted products</legend>
+
+          <div class="product-picker-header">
+            <label for="discount-product-search">Search products</label>
+            <input
+              id="discount-product-search"
+              type="text"
+              class="product-search-input"
+              placeholder="Search products"
+              oninput="filterProductOptions('discount-products-list', this.value)"
+            >
+          </div>
+
+          <div id="discount-products-list" class="product-picker-list">
+            {% for category, products in groupedProducts %}
+              <div class="product-category-group" data-category="{{ category }}">
+                <div class="product-category-header">
+                  <span>{{ category }}</span>
+                  <div class="category-action-group">
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return setCategoryChecked(this, true)"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return removeCheckedProducts(this, 'discount-products-list')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="product-checkbox-grid">
+                  {% for product in products %}
+                    <label class="product-checkbox-item" data-product="{{ product }}">
+                      <input type="checkbox" name="product_names" value="{{ product }}">
+                      <span>{{ product }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <button type="submit" class="management-button">Create Discount</button>
+      </form>
+    </section>
   </div>
 </div>
 
+<script>
+  function getStorageKey(containerId) {
+    return "managementHiddenProducts:" + containerId;
+  }
+
+  function readHiddenProducts(containerId) {
+    try {
+      const raw = localStorage.getItem(getStorageKey(containerId));
+      return raw ? JSON.parse(raw) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writeHiddenProducts(containerId, products) {
+    localStorage.setItem(getStorageKey(containerId), JSON.stringify(products));
+  }
+
+  function addHiddenProducts(containerId, productsToAdd) {
+    const existing = readHiddenProducts(containerId);
+    const merged = [...new Set([...existing, ...productsToAdd])];
+    writeHiddenProducts(containerId, merged);
+  }
+
+  function applyHiddenProducts(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const hiddenProducts = new Set(readHiddenProducts(containerId));
+    const items = container.querySelectorAll(".product-checkbox-item");
+
+    items.forEach((item) => {
+      const productName = item.dataset.product || "";
+      if (hiddenProducts.has(productName)) {
+        item.remove();
+      }
+    });
+
+    cleanupEmptyCategories(containerId);
+  }
+
+  function cleanupEmptyCategories(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const groups = container.querySelectorAll(".product-category-group");
+    groups.forEach((group) => {
+      const remainingItems = group.querySelectorAll(".product-checkbox-item");
+      group.style.display = remainingItems.length > 0 ? "block" : "none";
+    });
+  }
+
+  function filterProductOptions(containerId, query) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const value = (query || "").toLowerCase();
+    const groups = container.querySelectorAll(".product-category-group");
+
+    groups.forEach((group) => {
+      const items = group.querySelectorAll(".product-checkbox-item");
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        const text = item.textContent.toLowerCase();
+        const matched = text.includes(value);
+        item.style.display = matched ? "flex" : "none";
+        if (matched) visibleCount += 1;
+      });
+
+      const stillHasItems = group.querySelectorAll(".product-checkbox-item").length > 0;
+      group.style.display = visibleCount > 0 && stillHasItems ? "block" : "none";
+    });
+  }
+
+  function setCategoryChecked(button, checked) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkboxes = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = checked;
+    });
+
+    return false;
+  }
+
+  function removeCheckedProducts(button, containerId) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkedItems = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]:checked');
+    const removedNames = [];
+
+    checkedItems.forEach((checkbox) => {
+      const item = checkbox.closest(".product-checkbox-item");
+      if (!item) return;
+
+      const productName = item.dataset.product || "";
+      if (productName) {
+        removedNames.push(productName);
+      }
+      item.remove();
+    });
+
+    if (removedNames.length > 0) {
+      addHiddenProducts(containerId, removedNames);
+    }
+
+    cleanupEmptyCategories(containerId);
+    return false;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const scaleSelect = document.getElementById("scale");
+    if (scaleSelect && scaleSelect.form) {
+      scaleSelect.addEventListener("change", () => {
+        scaleSelect.form.requestSubmit();
+      });
+    }
+
+    applyHiddenProducts("promo-products-list");
+    applyHiddenProducts("discount-products-list");
+  });
+</script>
 {% endblock %}

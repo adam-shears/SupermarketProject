@@ -10,7 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { getManagementData } from './service.js';
+import { getManagementData } from "./service.js";
 
 const router = Router();
 
@@ -24,8 +24,8 @@ router.get("/health", async (req, res) => {
 
 router.get("/management", async (req, res) => {
   try {
-    const scale = req.query.scale || 'week';
-    const search = req.query.search || '';
+    const scale = req.query.scale || "week";
+    const search = req.query.search || "";
     const data = await getManagementData(scale, search);
     res.json(data);
   } catch (error) {
