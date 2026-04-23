@@ -73,6 +73,14 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Staff portal home page
+router.get("/staff-portal", requireAuth(1), (req, res) => {
+  res.render("staff-portal.njk", {
+    title: "Staff Portal",
+    user: req.session.user || null,
+  });
+});
+
 // Product details page
 router.get("/products/:id", async (req, res) => {
   try {
@@ -254,11 +262,15 @@ router.post("/login", async (req, res) => {
     });
 
     req.session.user = user;
-    res.redirect("/");
+    if(user.admin_level > 0) {
+      res.redirect("/staff-portal");
+    } else {
+      res.redirect("/");
+    }
   } catch (error) {
     res.status(401).render("login.njk", {
       title: "Login",
-      error: "Invalid email or password",
+      error: error.message || "Invalid email or password",
       user: req.session.user || null,
     });
   }

@@ -14,7 +14,11 @@
 >
     <header class="header">
         <div class="logo">
+          {% if user.admin_level > 0 %}
+            <a href="/staff-portal"><img src="/images/logo.png" alt="Group 44 Supermarket Logo"></a>
+          {% else %}
             <a href="/"><img src="/images/logo.png" alt="Group 44 Supermarket Logo"></a>
+          {% endif %}
         </div>
 
     <form action="/products" method="GET" role="search">
@@ -40,10 +44,14 @@
         <a href="/register" class="register-link">Register</a>
       {% endif %}
 
-      <a href="/basket" class="basket-link" aria-label="Basket">
-        <span class="basket-link-text">Basket</span>
-        <span id="basket-count" aria-hidden="true">0</span>
-      </a>
+      {% if user.admin_level > 0 %}
+        <a href="/staff-portal" class="login-link" aria-label="Staff Portal">Staff Portal</a>
+      {% else %}
+        <a href="/basket" class="basket-link" aria-label="Basket">
+          <span class="basket-link-text">Basket</span>
+          <span id="basket-count" aria-hidden="true">0</span>
+        </a>
+      {% endif %}
     </nav>
   </header>
 
