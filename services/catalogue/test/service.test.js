@@ -125,8 +125,6 @@ describe("Catalogue Service", () => {
             sinon.stub(service.catalogueDeps, 'selectDealRows').resolves(mockData);
             const result = await service.getActiveDeals(true);
 
-            console.log(result);
-
             expect(result).to.deep.equal([
                 {id: 1, code: "IMACTIVE", name: "Deal 1 is a real and active deal", type: "percentage", value: 10, products: [{id: 1, name: "Real product"}], startDate: new Date(now.getTime() - 10000), endDate: new Date(now.getTime() + 10000)},
                 {id: 2, code: "IMNOTACTIVE", name: "Deal 2 is not an active deal", type: "fixed", value: 5, products: [{id: 2, name: "Real product 2"}], startDate: new Date(now.getTime() - 20000), endDate: new Date(now.getTime() - 10000)},
