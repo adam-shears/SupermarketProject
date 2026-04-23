@@ -75,7 +75,13 @@
         </p>
 
         {% if product.discounts and product.discounts.length > 0 %}
-          <div class="offer">Offer Available</div>
+          {% for discount in product.discounts %}
+            {% if discount.code %}
+              <div class="offer">Promo Code: {{ discount.code }} - {{ discount.name }}</div>
+            {% else %}
+              <div class="offer">Offer Available: {{ discount.name }}</div>
+            {% endif %}
+          {% endfor %}
         {% endif %}
       </div>
     </div>
