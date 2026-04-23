@@ -20,13 +20,13 @@
 
   {% if promoSuccess %}
     <div class="success-message">
-      <p>Promo code creation request submitted.</p>
+      <p>Promo code created successfully.</p>
     </div>
   {% endif %}
 
   {% if discountSuccess %}
     <div class="success-message">
-      <p>Discount creation request submitted.</p>
+      <p>Discount created successfully.</p>
     </div>
   {% endif %}
 
@@ -114,9 +114,9 @@
 
                 <div class="product-checkbox-grid">
                   {% for product in products %}
-                    <label class="product-checkbox-item" data-product="{{ product }}">
-                      <input type="checkbox" name="product_names" value="{{ product }}">
-                      <span>{{ product }}</span>
+                    <label class="product-checkbox-item" data-product="{{ product.name }}">
+                      <input type="checkbox" name="products" value="{{ product.id }}">
+                      <span>{{ product.name }}</span>
                     </label>
                   {% endfor %}
                 </div>
@@ -207,9 +207,9 @@
 
                 <div class="product-checkbox-grid">
                   {% for product in products %}
-                    <label class="product-checkbox-item" data-product="{{ product }}">
-                      <input type="checkbox" name="product_names" value="{{ product }}">
-                      <span>{{ product }}</span>
+                    <label class="product-checkbox-item" data-product="{{ product.name }}">
+                      <input type="checkbox" name="products" value="{{ product.id }}">
+                      <span>{{ product.name }}</span>
                     </label>
                   {% endfor %}
                 </div>
@@ -225,9 +225,9 @@
     <section class="management-card">
       <div class="card-header-row">
         <div>
-          <h2>Active Promotions</h2>
-          <p class="card-subtitle">List of all current active promotions.</p>
-        </div
+          <h2>Promotions</h2>
+          <p class="card-subtitle">List of all promotions.</p>
+        </div>
       </div>
 
       {% if currentPromotions.length > 0 %}
@@ -248,9 +248,20 @@
               {% for promo in currentPromotions %}
                 <tr>
                   <td>{{ promo.name }}</td>
-                  <td>{{ promo.code }} || N/A</td>
+                  {% if promo.code %}
+                    <td>{{ promo.code }}</td>
+                  {% else %}
+                    <td>N/A</td>
+                  {% endif %}
                   <td>{{ promo.type }}</td>
-                  <td>{{ promo.products }}</td>
+                  <td>{{ promo.value }}</td>
+                  <td>
+                    <ul class="promo-products-list">
+                      {% for product in promo.products %}
+                        <li>{{ product.name }}</li>
+                      {% endfor %}
+                    </ul>
+                  </td>
                   <td>{{ promo.startDate }}</td>
                   <td>{{ promo.endDate }}</td>
                 </tr>

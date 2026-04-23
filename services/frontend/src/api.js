@@ -136,4 +136,6 @@ export const api = {
   getStaffMembers: () => getJson(`${ORDERS_URL}/staff`),
 
   getCurrentPromotions: () => getJson(`${CATALOGUE_URL}/deals`),
+  getAllPromotions: () => getJson(`${CATALOGUE_URL}/deals?includeExpired=true`),
+  createDeal: (payload) => postJson(`${CATALOGUE_URL}/deals/create`, payload),
 };

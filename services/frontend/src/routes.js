@@ -364,12 +364,12 @@ router.get("/management", requireAuth(2), async (req, res) => {
 
 router.get("/manage-promotions", requireAuth(2), async (req, res) => {
   try {
-    const currentPromotions = await api.getCurrentPromotions();
+    const allPromotions = await api.getAllPromotions();
     const groupedProducts = await api.chunkProductsByCategory();
     res.render("manage-promotions.njk", {
       title: "Promotions Management",
       groupedProducts: groupedProducts,
-      currentPromotions: currentPromotions,
+      currentPromotions: allPromotions,
       user: req.session.user || null,
       promoSuccess: req.query.promoSuccess === "1",
       discountSuccess: req.query.discountSuccess === "1",
@@ -454,14 +454,14 @@ router.post("/management/orders/:orderId/assign", requireAuth(2), async (req, re
 
 router.post("/management/promotions/promo-codes", requireAuth(2), async (req, res) => {
   try {
-    await api.createPromoCode({
+    await api.createDeal({
       code: req.body.code,
       name: req.body.name,
       type: req.body.type,
       value: Number(req.body.value),
       startsAt: req.body.starts_at,
       endsAt: req.body.ends_at,
-      active: req.body.active === "true",
+      products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
     });
 
     res.redirect("/manage-promotions?promoSuccess=1");
@@ -477,14 +477,14 @@ router.post("/management/promotions/promo-codes", requireAuth(2), async (req, re
 
 router.post("/management/promotions/discounts", requireAuth(2), async (req, res) => {
   try {
-    await api.createDiscount({
+    await api.createDeal({
       code: req.body.code,
       name: req.body.name,
       type: req.body.type,
       value: Number(req.body.value),
       startsAt: req.body.starts_at,
       endsAt: req.body.ends_at,
-      active: req.body.active === "true",
+      products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
     });
 
     res.redirect("/manage-promotions?discountSuccess=1");

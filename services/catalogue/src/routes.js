@@ -12,6 +12,7 @@ Actual validation should be done in service.js.
 import { Router } from "express";
 import {
   CatalogueError,
+  createDeal,
   getActiveDeals,
   getProductById,
   getProductsByCategoryWithDiscounts,
@@ -70,8 +71,21 @@ router.get("/products/:id", async (req, res) => {
   }
 });
 
+router.post("/deals/create", async (req, res) => {
+  try {
+    const deal = await createDeal(req.body);
+    res.status(201).json(deal);
+  } catch (error) {
+    sendErrorResponse(res, error, "failed to create deal");
+  }
+});
+
 router.get("/deals", async (req, res) => {
   try {
+    if(req.query.includeExpired === "true") {
+      const deals = await getActiveDeals(true);
+      return res.status(200).json(deals);
+    }
     const deals = await getActiveDeals();
     res.status(200).json(deals);
   } catch (error) {
