@@ -9,15 +9,15 @@
   <div class="management-header">
     <div class="management-title-block">
       <h1>Management View</h1>
-      <p class="management-page-subtitle">Store performance, staffing, promotions, and operational overview.</p>
+      <p class="management-page-subtitle">Monitor store performance and manage staff, order allocation, and promotions.</p>
     </div>
 
     <div class="management-controls">
-      <form action="/management" method="get" class="management-filter-form">
+      <form action="/management" method="get" class="management-filter-form" id="management-filter-form">
         <div class="filter-row">
           <div class="filter-group">
             <label for="scale">Time Scale</label>
-            <select name="scale" id="scale" onchange="this.form.submit()">
+            <select name="scale" id="scale">
               <option value="day" {% if scale == "day" %}selected{% endif %}>Day</option>
               <option value="week" {% if scale == "week" %}selected{% endif %}>Week</option>
               <option value="month" {% if scale == "month" %}selected{% endif %}>Month</option>
@@ -35,7 +35,7 @@
             >
           </div>
 
-          <button type="submit" class="filter-button">Search</button>
+          <button type="submit" class="filter-button">Apply Filters</button>
         </div>
       </form>
 
@@ -83,24 +83,51 @@
     </div>
   {% endif %}
 
+  {% set groupedProducts = {
+    "Fresh Food": [
+      "Tesco British Strawberries 400g",
+      "Tesco Free Range Eggs 12 pack",
+      "Cathedral City Cheddar 350g"
+    ],
+    "Bakery": [
+      "Tesco Bakery Butter Croissants 4 pack",
+      "Warburtons Toastie Thick White 800g"
+    ],
+    "Drinks": [
+      "Alpro Oat Drink 1L",
+      "Coca-Cola Zero Sugar 24x330ml"
+    ],
+    "Treats & Snacks": [
+      "Walkers Ready Salted Crisps 6 pack"
+    ],
+    "Frozen Food": [
+      "Haagen Dazs Vanilla 460ml",
+      "Birds Eye Southern Fried Chicken 710g"
+    ],
+    "Household & Cleaning": [
+      "Ariel All in One Pods 24 pack",
+      "Andrex Gentle Clean Toilet Roll 9 pack"
+    ]
+  } %}
+
   <div class="management-grid">
-    <div class="management-card total-sales-card">
+    <section class="management-card total-sales-card">
       <div class="card-header-row">
         <div>
           <h2>Total Sales</h2>
-          <p class="card-subtitle">Filtered by {{ scale }}</p>
+          <p class="card-subtitle">View sales totals for the selected reporting period.</p>
         </div>
         <span class="card-chip">{{ scale | upper }}</span>
       </div>
 
       <p class="total-sales-value">&pound;{{ (management.totalSalesPence / 100).toFixed(2) }}</p>
-    </div>
+    </section>
 
-    <div class="management-card">
+    <section class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Best Sellers</h2>
-          <p class="card-subtitle">Top-selling products for this {{ scale }}</p>
+          <p class="card-subtitle">See which products are performing best during the selected period.</p>
         </div>
         <span class="card-chip">Top {{ management.bestSellers.length }}</span>
       </div>
@@ -117,13 +144,13 @@
       {% else %}
         <p class="no-data">No best seller data available.</p>
       {% endif %}
-    </div>
+    </section>
 
-    <div class="management-card">
+    <section class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Sales by Category</h2>
-          <p class="card-subtitle">Revenue grouped by category</p>
+          <p class="card-subtitle">Compare revenue across product categories.</p>
         </div>
       </div>
 
@@ -139,13 +166,13 @@
       {% else %}
         <p class="no-data">No category sales available.</p>
       {% endif %}
-    </div>
+    </section>
 
-    <div class="management-card">
+    <section class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Trending Items</h2>
-          <p class="card-subtitle">Items with stronger than usual performance this {{ scale }}</p>
+          <p class="card-subtitle">Identify products with stronger-than-usual demand.</p>
         </div>
       </div>
 
@@ -161,15 +188,15 @@
       {% else %}
         <p class="no-data">No trending items found.</p>
       {% endif %}
-    </div>
+    </section>
   </div>
 
   <div class="management-section-grid">
-    <div class="management-card">
+    <section class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Register Staff Member</h2>
-          <p class="card-subtitle">Create a new staff account from the management view</p>
+          <p class="card-subtitle">Create a new staff account so team members can access the system.</p>
         </div>
       </div>
 
@@ -212,13 +239,13 @@
 
         <button type="submit" class="management-button">Register Staff</button>
       </form>
-    </div>
+    </section>
 
-    <div class="management-card">
+    <section class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Assign Picker to Order</h2>
-          <p class="card-subtitle">Allocate a picker to one of the seeded real orders</p>
+          <p class="card-subtitle">Allocate open orders to staff so they can begin picking.</p>
         </div>
       </div>
 
@@ -241,7 +268,8 @@
                   <td><span class="status-badge">{{ order.status }}</span></td>
                   <td>
                     <form action="/management/orders/{{ order.id }}/assign" method="post" class="assign-inline-form">
-                      <select name="picker_email" required>
+                      <label class="sr-only" for="picker-email-{{ order.id }}">Picker for order {{ order.id }}</label>
+                      <select id="picker-email-{{ order.id }}" name="picker_email" required>
                         <option value="">Select picker</option>
                         {% for picker in pickerOptions %}
                           <option value="{{ picker.value }}">{{ picker.label }}</option>
@@ -258,30 +286,30 @@
       {% else %}
         <p class="no-data">No orders available to assign.</p>
       {% endif %}
-    </div>
+    </section>
 
-    <div class="management-card">
+    <section class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Add Promo Code</h2>
-          <p class="card-subtitle">Create a new promo code for the real database flow</p>
+          <p class="card-subtitle">Create a code customers can enter during checkout to redeem an offer.</p>
         </div>
       </div>
 
       <form action="/management/promotions/promo-codes" method="post" class="management-form">
         <div class="management-form-grid">
           <div class="management-form-group">
-            <label for="promo_code">Code</label>
+            <label for="promo_code">Promo code</label>
             <input id="promo_code" name="code" type="text" required>
           </div>
 
           <div class="management-form-group">
-            <label for="promo_name">Name</label>
+            <label for="promo_name">Campaign name</label>
             <input id="promo_name" name="name" type="text" required>
           </div>
 
           <div class="management-form-group">
-            <label for="promo_type">Type</label>
+            <label for="promo_type">Discount type</label>
             <select id="promo_type" name="type">
               <option value="percentage">Percentage</option>
               <option value="fixed">Fixed amount</option>
@@ -304,40 +332,85 @@
           </div>
 
           <div class="management-form-group">
-            <label for="promo_active">Active</label>
+            <label for="promo_active">Status</label>
             <select id="promo_active" name="active">
-              <option value="true" selected>True</option>
-              <option value="false">False</option>
+              <option value="true" selected>Active</option>
+              <option value="false">Inactive</option>
             </select>
           </div>
         </div>
 
+        <fieldset class="product-picker-block">
+          <legend class="product-picker-legend">Eligible products</legend>
+
+          <div class="product-picker-header">
+            <label for="promo-product-search">Search products</label>
+            <input
+              id="promo-product-search"
+              type="text"
+              class="product-search-input"
+              placeholder="Search products"
+              oninput="filterProductOptions('promo-products-list', this.value)"
+            >
+          </div>
+
+          <div id="promo-products-list" class="product-picker-list">
+            {% for category, products in groupedProducts %}
+              <div class="product-category-group" data-category="{{ category }}">
+                <div class="product-category-header">
+                  <span>{{ category }}</span>
+                  <div class="category-action-group">
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return setCategoryChecked(this, true)"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return removeCheckedProducts(this, 'promo-products-list')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="product-checkbox-grid">
+                  {% for product in products %}
+                    <label class="product-checkbox-item" data-product="{{ product }}">
+                      <input type="checkbox" name="product_names" value="{{ product }}">
+                      <span>{{ product }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+
         <button type="submit" class="management-button">Create Promo Code</button>
       </form>
-    </div>
+    </section>
 
-    <div class="management-card">
+    <section class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Add Discount</h2>
-          <p class="card-subtitle">Create a new discount entry for the real database flow</p>
+          <p class="card-subtitle">Set up an automatic reduction that applies to selected products without a customer code.</p>
         </div>
       </div>
 
       <form action="/management/promotions/discounts" method="post" class="management-form">
         <div class="management-form-grid">
-          <div class="management-form-group">
-            <label for="discount_code">Code</label>
-            <input id="discount_code" name="code" type="text" required>
-          </div>
-
-          <div class="management-form-group">
-            <label for="discount_name">Name</label>
+          <div class="management-form-group management-form-group--full">
+            <label for="discount_name">Discount name</label>
             <input id="discount_name" name="name" type="text" required>
           </div>
 
           <div class="management-form-group">
-            <label for="discount_type">Type</label>
+            <label for="discount_type">Discount type</label>
             <select id="discount_type" name="type">
               <option value="percentage">Percentage</option>
               <option value="fixed">Fixed amount</option>
@@ -360,17 +433,193 @@
           </div>
 
           <div class="management-form-group">
-            <label for="discount_active">Active</label>
+            <label for="discount_active">Status</label>
             <select id="discount_active" name="active">
-              <option value="true" selected>True</option>
-              <option value="false">False</option>
+              <option value="true" selected>Active</option>
+              <option value="false">Inactive</option>
             </select>
           </div>
         </div>
 
+        <fieldset class="product-picker-block">
+          <legend class="product-picker-legend">Discounted products</legend>
+
+          <div class="product-picker-header">
+            <label for="discount-product-search">Search products</label>
+            <input
+              id="discount-product-search"
+              type="text"
+              class="product-search-input"
+              placeholder="Search products"
+              oninput="filterProductOptions('discount-products-list', this.value)"
+            >
+          </div>
+
+          <div id="discount-products-list" class="product-picker-list">
+            {% for category, products in groupedProducts %}
+              <div class="product-category-group" data-category="{{ category }}">
+                <div class="product-category-header">
+                  <span>{{ category }}</span>
+                  <div class="category-action-group">
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return setCategoryChecked(this, true)"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      class="category-select-button"
+                      onclick="return removeCheckedProducts(this, 'discount-products-list')"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div class="product-checkbox-grid">
+                  {% for product in products %}
+                    <label class="product-checkbox-item" data-product="{{ product }}">
+                      <input type="checkbox" name="product_names" value="{{ product }}">
+                      <span>{{ product }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+
         <button type="submit" class="management-button">Create Discount</button>
       </form>
-    </div>
+    </section>
   </div>
 </div>
+
+<script>
+  function getStorageKey(containerId) {
+    return "managementHiddenProducts:" + containerId;
+  }
+
+  function readHiddenProducts(containerId) {
+    try {
+      const raw = localStorage.getItem(getStorageKey(containerId));
+      return raw ? JSON.parse(raw) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writeHiddenProducts(containerId, products) {
+    localStorage.setItem(getStorageKey(containerId), JSON.stringify(products));
+  }
+
+  function addHiddenProducts(containerId, productsToAdd) {
+    const existing = readHiddenProducts(containerId);
+    const merged = [...new Set([...existing, ...productsToAdd])];
+    writeHiddenProducts(containerId, merged);
+  }
+
+  function applyHiddenProducts(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const hiddenProducts = new Set(readHiddenProducts(containerId));
+    const items = container.querySelectorAll(".product-checkbox-item");
+
+    items.forEach((item) => {
+      const productName = item.dataset.product || "";
+      if (hiddenProducts.has(productName)) {
+        item.remove();
+      }
+    });
+
+    cleanupEmptyCategories(containerId);
+  }
+
+  function cleanupEmptyCategories(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const groups = container.querySelectorAll(".product-category-group");
+    groups.forEach((group) => {
+      const remainingItems = group.querySelectorAll(".product-checkbox-item");
+      group.style.display = remainingItems.length > 0 ? "block" : "none";
+    });
+  }
+
+  function filterProductOptions(containerId, query) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const value = (query || "").toLowerCase();
+    const groups = container.querySelectorAll(".product-category-group");
+
+    groups.forEach((group) => {
+      const items = group.querySelectorAll(".product-checkbox-item");
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        const text = item.textContent.toLowerCase();
+        const matched = text.includes(value);
+        item.style.display = matched ? "flex" : "none";
+        if (matched) visibleCount += 1;
+      });
+
+      const stillHasItems = group.querySelectorAll(".product-checkbox-item").length > 0;
+      group.style.display = visibleCount > 0 && stillHasItems ? "block" : "none";
+    });
+  }
+
+  function setCategoryChecked(button, checked) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkboxes = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = checked;
+    });
+
+    return false;
+  }
+
+  function removeCheckedProducts(button, containerId) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkedItems = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]:checked');
+    const removedNames = [];
+
+    checkedItems.forEach((checkbox) => {
+      const item = checkbox.closest(".product-checkbox-item");
+      if (!item) return;
+
+      const productName = item.dataset.product || "";
+      if (productName) {
+        removedNames.push(productName);
+      }
+      item.remove();
+    });
+
+    if (removedNames.length > 0) {
+      addHiddenProducts(containerId, removedNames);
+    }
+
+    cleanupEmptyCategories(containerId);
+    return false;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const scaleSelect = document.getElementById("scale");
+    if (scaleSelect && scaleSelect.form) {
+      scaleSelect.addEventListener("change", () => {
+        scaleSelect.form.requestSubmit();
+      });
+    }
+
+    applyHiddenProducts("promo-products-list");
+    applyHiddenProducts("discount-products-list");
+  });
+</script>
 {% endblock %}
