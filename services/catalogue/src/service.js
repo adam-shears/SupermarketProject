@@ -119,6 +119,8 @@ export async function getActiveDeals() {
         type: row.type,
         value: row.value,
         products: [],
+        startDate: row.starts_at,
+        endDate: row.ends_at,
       });
     }
 
@@ -140,4 +142,21 @@ export async function searchProducts(searchTerm) {
 
   const rows = await catalogueDeps.selectProductsBySearchTerm(term);
   return catalogueDeps.mergeProductRows(rows);
+}
+
+export async function getProductsByCategoryWithDiscounts() {
+  const rows = await catalogueDeps.selectListedProductsWithDiscountRows();
+  const products = catalogueDeps.mergeProductRows(rows);
+
+  const categoryMap = new Map();
+
+  for (const product of products) {
+    const category = product.category_name || "No Category";
+    if (!categoryMap.has(category)) {
+      categoryMap.set(category, []);
+    }
+    categoryMap.get(category).push(product.name);
+  }
+
+  return Object.fromEntries(categoryMap);
 }

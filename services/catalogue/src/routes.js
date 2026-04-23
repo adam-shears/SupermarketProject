@@ -14,6 +14,7 @@ import {
   CatalogueError,
   getActiveDeals,
   getProductById,
+  getProductsByCategoryWithDiscounts,
   getProductsWithDiscounts,
   searchProducts,
 } from "./service.js";
@@ -39,6 +40,10 @@ router.get("/health", async (req, res) => {
 
 router.get("/products", async (req, res) => {
   try {
+    if (req.query.chunkByCategory === "true") {
+      const products = await getProductsByCategoryWithDiscounts();
+      return res.status(200).json(products);
+    }
     const products = await getProductsWithDiscounts();
     res.status(200).json(products);
   } catch (error) {

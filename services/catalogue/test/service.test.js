@@ -75,4 +75,27 @@ describe("Catalogue Service", () => {
             expect(result).to.deep.equal([]);
         });
     });
+
+    describe("getProductsByCategoryWithDiscounts", async () => {
+        it("should return a JSON object with an array of products grouped by category", async () => {
+            const mockData = [
+                {id: 1, name: "Product A", description: "Desc A", category_name: "Category 1", price_pence: 1000, discount_id: null, discount_code: null, discount_name: null, discount_type: null, discount_value: null},
+                {id: 2, name: "Product B", description: "Desc B", category_name: "Category 1", price_pence: 1500, discount_id: null, discount_code: null, discount_name: null, discount_type: null, discount_value: null},
+                {id: 3, name: "Product C", description: "Desc C", category_name: "Category 2", price_pence: 2000, discount_id: null, discount_code: null, discount_name: null, discount_type: null, discount_value: null},
+            ];
+
+            sinon.stub(service.catalogueDeps, 'selectListedProductsWithDiscountRows').resolves(mockData);
+            const result = await service.getProductsByCategoryWithDiscounts();
+
+            expect(result).to.deep.equal({
+                "Category 1": [
+                    "Product A",
+                    "Product B",
+                ],
+                "Category 2": [
+                    "Product C",
+                ]
+            });
+        });
+    });
 });
