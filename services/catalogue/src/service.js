@@ -183,6 +183,7 @@ export async function getProductsByCategoryWithDiscounts() {
 
 async function getLowestPriceOfProducts(products) {
   let lowestPrice, lowestPriceName;
+  let minPrice = Infinity, minPriceName = "";
   for (const productId of products) {
     [lowestPrice, lowestPriceName] = await getLowestPriceForProduct(productId);
     if (lowestPrice === null) {
@@ -191,8 +192,12 @@ async function getLowestPriceOfProducts(products) {
     if (lowestPrice === 0) {
       return [0, lowestPriceName];
     }
+    if (lowestPrice < minPrice) {
+      minPrice = lowestPrice;
+      minPriceName = lowestPriceName;
+    }
   }
-  return [lowestPrice, lowestPriceName];
+  return [minPrice, minPriceName];
 }
 
 async function getLowestPriceForProduct(productId) {
@@ -203,7 +208,7 @@ async function getLowestPriceForProduct(productId) {
 
   const basePrice = rows[0].price_pence;
   let lowestPrice = basePrice;
-  let lowestPriceName = "";
+  let lowestPriceName = rows[0].name;
   for (const row of rows) {
     const discount = catalogueDeps.toDiscount(row);
     if (discount) {
@@ -215,7 +220,6 @@ async function getLowestPriceForProduct(productId) {
       }
       if (discountedPrice < lowestPrice) {
         lowestPrice = discountedPrice;
-        lowestPriceName = row.name;
       }
     }
   }
@@ -250,8 +254,9 @@ export async function createDeal(deal) {
   if (type === "fixed" && value <= 0) {
     throw new CatalogueError("fixed value must be a positive number", 400);
   }
-  if (type === "fixed" && value > getLowestPriceOfProducts(products) / 100) {
-    throw new CatalogueError("fixed value cannot be greater than the lowest product price. ", 400);
+  const [lowestPrice, lowestPriceName] = await getLowestPriceOfProducts(products);
+  if (type === "fixed" && value > lowestPrice / 100) {
+    throw new CatalogueError(`fixed value cannot be greater than the lowest product price. ${lowestPriceName} has price of £${lowestPrice / 100}`, 400);
   }
 
   // date checks
