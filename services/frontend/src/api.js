@@ -10,6 +10,7 @@ HTTP validation should be performed in those services' routes.js files and busin
 should be performed in those services' service.js files.
 */
 
+
 const CATALOGUE_URL = process.env.CATALOGUE_URL || "http://catalogue:3000";
 const ORDERS_URL = process.env.ORDERS_URL || "http://orders:3000";
 const WAREHOUSE_URL = process.env.WAREHOUSE_URL || "http://warehouse:3000";
@@ -107,7 +108,7 @@ export const api = {
     return `/management/export.csv?${params}`;
   },
 
-  getPickerOrders: () => getJson(`${WAREHOUSE_URL}/picker/orders`),
+  getPickerOrders: (pickerId) => getJson(`${WAREHOUSE_URL}/picker/orders?pickerId=${pickerId}`),
 
   completePickerItem: (orderId, productId) =>
     postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/complete`, {}),
@@ -133,6 +134,7 @@ export const api = {
   assignPickerToOrder: (orderId, payload) =>
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
 
+  getPendingOrders: () => getJson(`${WAREHOUSE_URL}/management/orders/pending`),
   getStaffMembers: () => getJson(`${ORDERS_URL}/staff`),
 
   getCurrentPromotions: () => getJson(`${CATALOGUE_URL}/deals`),

@@ -25,8 +25,8 @@ router.get("/health", async (req, res) => {
 
 router.get("/picker/orders", async (req, res) => {
   try {
-    const orders = await service.getPickerOrders();
-    res.json(orders);
+    const orders = await service.getPickerOrders(req.query.pickerId);
+    res.status(200).json(orders);
   } catch (error) {
     console.error("Failed to load picker orders:", error);
     res.status(500).json({ message: error.message || "Failed to load picker orders" });
@@ -111,6 +111,26 @@ router.get("/management/issues", async (req, res) => {
   } catch (error) {
     console.error("Failed to load management issues:", error);
     res.status(500).json({ message: error.message || "Failed to load management issues" });
+  }
+});
+
+router.get("/management/orders/pending", async (req, res) => {
+  try {
+    const orders = await service.getPendingOrders();
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error("Failed to load pending orders:", error);
+    res.status(500).json({ message: error.message || "Failed to load pending orders" });
+  }
+});
+
+router.post("/management/orders/:orderId/assign", async (req, res) => {
+  try {
+    const result = await service.assignPicker(req.params.orderId, req.body.pickerId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Failed to assign picker to order:", error);
+    res.status(500).json({ message: error.message || "Failed to assign picker to order" });
   }
 });
 

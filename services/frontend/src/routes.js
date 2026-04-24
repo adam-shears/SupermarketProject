@@ -402,11 +402,17 @@ router.get("/manage-promotions", requireAuth(2), async (req, res) => {
 router.get("/staff-management", requireAuth(2), async (req, res) => {
   try {
     const staff = await api.getStaffMembers();
+    const assignmentOrders = await api.getPendingOrders();
+    const pickerOptions = staff.filter((member) => member.admin_level === 1).map((picker) => ({
+      value: picker.id,
+      label: `${picker.first_name} ${picker.last_name} (${picker.email})`,
+    }));
+
     res.render("staff-management.njk", {
       title: "Staff Management",
       staff,
-      pickerOptions: getFallbackPickerOptions(),
-      assignmentOrders: getFallbackAssignmentOrders(),
+      pickerOptions,
+      assignmentOrders,
       staffRegisterSuccess: req.query.staffRegisterSuccess === "1",
       assignSuccess: req.query.assignSuccess === "1",
       user: req.session.user || null,
@@ -449,9 +455,17 @@ router.post("/management/staff/register", requireAuth(2), async (req, res) => {
 router.post("/management/orders/:orderId/assign", requireAuth(2), async (req, res) => {
   try {
     const { orderId } = req.params;
+    const pickerId = Number(req.body.picker_id);
+
+    const staff = await api.getStaffMembers();
+    const picker = staff.find((member) => member.id === pickerId && member.admin_level === 1);
+
+    if (!picker) {
+      throw new Error("Invalid picker selected.");
+    }
 
     await api.assignPickerToOrder(orderId, {
-      pickerEmail: req.body.picker_email,
+      pickerId,
     });
 
     res.redirect("/staff-management?assignSuccess=1");
@@ -613,7 +627,7 @@ Picker + stock/location synchronisation routes
 
 router.get("/api/picker/orders", requireAuth(1), async (req, res) => {
   try {
-    const orders = await api.getPickerOrders();
+    const orders = await api.getPickerOrders(req.session.user.id);
     res.json(orders);
   } catch (error) {
     console.error("Failed to proxy picker orders:", error);
@@ -623,7 +637,7 @@ router.get("/api/picker/orders", requireAuth(1), async (req, res) => {
 
 router.get("/picker", requireAuth(1), async (req, res) => {
   try {
-    const orders = await api.getPickerOrders();
+    const orders = await api.getPickerOrders(req.session.user.id);
 
     res.render("picker.njk", {
       title: "Picker View",

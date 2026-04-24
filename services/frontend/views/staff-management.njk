@@ -33,7 +33,7 @@
 
   {% if assignSuccess %}
     <div class="success-message">
-      <p>Picker assignment request submitted.</p>
+      <p>Picker assignment to order successfully.</p>
     </div>
   {% endif %}
 
@@ -163,7 +163,7 @@
                   <td>
                     <form action="/management/orders/{{ order.id }}/assign" method="post" class="assign-inline-form">
                       <label class="sr-only" for="picker-email-{{ order.id }}">Picker for order {{ order.id }}</label>
-                      <select id="picker-email-{{ order.id }}" name="picker_email" required>
+                      <select id="picker-id-{{ order.id }}" name="picker_id" required>
                         <option value="">Select picker</option>
                         {% for picker in pickerOptions %}
                           <option value="{{ picker.value }}">{{ picker.label }}</option>

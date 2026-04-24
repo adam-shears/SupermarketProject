@@ -11,7 +11,43 @@ const { Pool } = pg;
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-export async function getPickerOrdersRows() {
+export async function assignPickerToOrder(orderId, pickerId) {
+  const result = await pool.query(`
+    UPDATE orders
+    SET assigned_picker_id = $1,
+        assigned_at = NOW(),
+        last_updated = NOW()
+    WHERE id = $2 AND status = 'pending'
+    RETURNING id, assigned_picker_id, assigned_at
+  `, [pickerId, orderId]);
+
+  return result.rows[0] || null;
+}
+
+export async function getPendingOrders() {
+  const result = await pool.query(`
+    SELECT
+      o.id,
+      o.status,
+      o.assigned_picker_id,
+      COALESCE(c.first_name || ' ' || c.last_name, o.guest_name, 'Guest Customer') AS customer
+    FROM orders o
+    LEFT JOIN customers c ON c.id = o.customer_id
+    WHERE o.status = 'pending'
+    ORDER BY o.created_at ASC
+  `);
+
+  return result.rows;
+}
+
+export async function getPickerOrdersRows(pickerId) {
+  let pickerSQL = "";
+  if (pickerId) {
+    pickerSQL = `
+      AND o.assigned_picker_id = ${pickerId}
+    `;
+  }
+
   const result = await pool.query(`
     SELECT
       o.id AS order_id,
@@ -49,6 +85,7 @@ export async function getPickerOrdersRows() {
       LIMIT 1
     ) pi ON TRUE
     WHERE o.status IN ('pending', 'picking')
+    ${pickerSQL}
     ORDER BY o.id, oi.product_id
   `);
 

@@ -28,10 +28,40 @@ export const warehouseDeps = {
   countUnresolvedIssuesForOrder: db.countUnresolvedIssuesForOrder,
   countUnpickedItemsForOrder: db.countUnpickedItemsForOrder,
   finalisePickerOrder: db.finalisePickerOrder,
+  assignPickerToOrder: db.assignPickerToOrder,
+  getPendingOrders: db.getPendingOrders,
 };
 
-export async function getPickerOrders() {
-  const rows = await warehouseDeps.getPickerOrdersRows();
+export class WarehouseError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.name = "WarehouseError";
+    this.statusCode = statusCode;
+  }
+}
+
+export async function getPendingOrders() {
+  return warehouseDeps.getPendingOrders();
+}
+
+export async function assignPicker(orderId, pickerId) {
+  if (!orderId || !pickerId) {
+    throw new WarehouseError("orderId and pickerId are required", 400);
+  }
+
+  const success = await warehouseDeps.assignPickerToOrder(orderId, pickerId);
+  if (!success) {
+    throw new WarehouseError("Pending order not found", 404);
+  }
+
+  return {
+    message: "Picker assigned successfully",
+    order: success,
+  };
+}
+
+export async function getPickerOrders(pickerId) {
+  const rows = await warehouseDeps.getPickerOrdersRows(pickerId);
   const ordersMap = new Map();
 
   for (const row of rows) {
