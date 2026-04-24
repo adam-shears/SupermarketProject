@@ -10,7 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { addShoppingListItem, getShoppingList, logCustomerIn, OrdersError, registerNewUser, removeShoppingListItem, updateShoppingListItem } from "./service.js";
+import { addShoppingListItem, getShoppingList, getStaffMembers, logCustomerIn, OrdersError, registerNewUser, removeShoppingListItem, updateShoppingListItem } from "./service.js";
 
 const router = Router();
 
@@ -22,6 +22,15 @@ function sendErrorResponse(res, error, fallbackMessage) {
   console.error(error);
   return res.status(500).json({ message: fallbackMessage });
 }
+
+router.get("/staff", async (req, res) => {
+  try {
+    const staff = await getStaffMembers();
+    res.status(200).json(staff);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get staff members.");
+  }
+});
 
 router.get("/customers/:customerId/shopping-list", async (req, res) => {
   try {
@@ -65,6 +74,15 @@ router.post("/auth/login", async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to log in.");
+  }
+});
+
+router.post("/auth/register-staff", async (req, res) => {
+  try {
+    const user = await registerNewUser({ ...req.body, isStaff: true });
+    res.status(201).json(user);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to register new staff user.");
   }
 });
 

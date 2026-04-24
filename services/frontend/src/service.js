@@ -33,7 +33,7 @@ export function updateHeaderCount() {
     const basket = getBasket();
     const total = basket.reduce((sum, item) => sum + item.quantity, 0);
     countElement.textContent = total;
-    
+
     if (total === 0) {
       countElement.style.backgroundColor = '#bbbbbb';
       countElement.style.color = '#666';

@@ -12,7 +12,9 @@ API failures to serve error pages.
 */
 
 import { Router } from "express";
+import { DateTime } from "luxon";
 import { api } from "./api.js";
+
 function getFallbackPickerOptions() {
   return [];
 }
@@ -21,6 +23,17 @@ function getFallbackAssignmentOrders() {
   return [];
 }
 const router = Router();
+
+// --- Helper Functions ---
+
+// function to convert london timestamps to UTC
+// containers run in UTC but user inputs for promos are local time, so we need to convert to UTC before they go to the db
+// ideally, this should be more robust and take actual timezone into account, but we're just assuming the staff member is in london for now
+function toUTC(londonDateTime) {
+  if (!londonDateTime) return null;
+  const dt = DateTime.fromFormat(londonDateTime, "yyyy-MM-dd'T'HH:mm", { zone: "Europe/London" });
+  return dt.toUTC().toISO();
+}
 
 // function to check if user is logged in for accessing certain endpoints
 function requireAuth(requiredAdminLevel = 1) {
@@ -71,6 +84,14 @@ router.get("/", async (req, res) => {
       user: req.session.user || null,
     });
   }
+});
+
+// Staff portal home page
+router.get("/staff-portal", requireAuth(1), (req, res) => {
+  res.render("staff-portal.njk", {
+    title: "Staff Portal",
+    user: req.session.user || null,
+  });
 });
 
 // Product details page
@@ -254,11 +275,15 @@ router.post("/login", async (req, res) => {
     });
 
     req.session.user = user;
-    res.redirect("/");
+    if(user.admin_level > 0) {
+      res.redirect("/staff-portal");
+    } else {
+      res.redirect("/");
+    }
   } catch (error) {
     res.status(401).render("login.njk", {
       title: "Login",
-      error: "Invalid email or password",
+      error: error.message || "Invalid email or password",
       user: req.session.user || null,
     });
   }
@@ -310,17 +335,11 @@ router.get("/management", requireAuth(2), async (req, res) => {
     const management = await api.getManagementView(scale, search);
 
     res.render("management.njk", {
-      title: "Management View",
+      title: "Sales Analytics",
       management,
       scale,
       search,
       user: req.session.user || null,
-      pickerOptions: getFallbackPickerOptions(),
-      assignmentOrders: getFallbackAssignmentOrders(),
-      staffRegisterSuccess: req.query.staffRegisterSuccess === "1",
-      assignSuccess: req.query.assignSuccess === "1",
-      promoSuccess: req.query.promoSuccess === "1",
-      discountSuccess: req.query.discountSuccess === "1",
       managementActionError: req.query.managementActionError || null,
     });
   } catch (error) {
@@ -356,6 +375,59 @@ router.get("/management", requireAuth(2), async (req, res) => {
   }
 });
 
+router.get("/manage-promotions", requireAuth(2), async (req, res) => {
+  try {
+    const allPromotions = await api.getAllPromotions();
+    const groupedProducts = await api.chunkProductsByCategory();
+    res.render("manage-promotions.njk", {
+      title: "Promotions Management",
+      groupedProducts: groupedProducts,
+      currentPromotions: allPromotions,
+      user: req.session.user || null,
+      promoSuccess: req.query.promoSuccess === "1",
+      discountSuccess: req.query.discountSuccess === "1",
+      managementActionError: req.query.managementActionError || null,
+    });
+  } catch (error) {
+    console.error("Failed to load promotions management view:", error);
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load promotions management view",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/staff-management", requireAuth(2), async (req, res) => {
+  try {
+    const staff = await api.getStaffMembers();
+    const assignmentOrders = await api.getPendingOrders();
+    const pickerOptions = staff.filter((member) => member.admin_level === 1).map((picker) => ({
+      value: picker.id,
+      label: `${picker.first_name} ${picker.last_name} (${picker.email})`,
+    }));
+
+    res.render("staff-management.njk", {
+      title: "Staff Management",
+      staff,
+      pickerOptions,
+      assignmentOrders,
+      staffRegisterSuccess: req.query.staffRegisterSuccess === "1",
+      assignSuccess: req.query.assignSuccess === "1",
+      user: req.session.user || null,
+      managementActionError: req.query.managementActionError || null,
+    });
+  } catch (error) {
+    console.error("Failed to load staff management view:", error);
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load staff management view",
+      user: req.session.user || null,
+    });
+  }
+});
 
 router.post("/management/staff/register", requireAuth(2), async (req, res) => {
   try {
@@ -364,15 +436,16 @@ router.post("/management/staff/register", requireAuth(2), async (req, res) => {
       lastName: req.body.last_name,
       email: req.body.email,
       password: req.body.password,
+      confirmPassword: req.body.confirm_password,
       phone: req.body.phone,
-      adminLevel: Number(req.body.admin_level || 2),
+      adminLevel: Number(req.body.admin_level || 1),
     });
 
-    res.redirect("/management?staffRegisterSuccess=1");
+    res.redirect("/staff-management?staffRegisterSuccess=1");
   } catch (error) {
     console.error("Staff registration error:", error);
     res.redirect(
-      `/management?managementActionError=${encodeURIComponent(
+      `/staff-management?managementActionError=${encodeURIComponent(
         error.message || "Failed to register staff member."
       )}`
     );
@@ -382,16 +455,24 @@ router.post("/management/staff/register", requireAuth(2), async (req, res) => {
 router.post("/management/orders/:orderId/assign", requireAuth(2), async (req, res) => {
   try {
     const { orderId } = req.params;
+    const pickerId = Number(req.body.picker_id);
+
+    const staff = await api.getStaffMembers();
+    const picker = staff.find((member) => member.id === pickerId && member.admin_level === 1);
+
+    if (!picker) {
+      throw new Error("Invalid picker selected.");
+    }
 
     await api.assignPickerToOrder(orderId, {
-      pickerEmail: req.body.picker_email,
+      pickerId,
     });
 
-    res.redirect("/management?assignSuccess=1");
+    res.redirect("/staff-management?assignSuccess=1");
   } catch (error) {
     console.error("Assign picker error:", error);
     res.redirect(
-      `/management?managementActionError=${encodeURIComponent(
+      `/staff-management?managementActionError=${encodeURIComponent(
         error.message || "Failed to assign picker."
       )}`
     );
@@ -400,21 +481,21 @@ router.post("/management/orders/:orderId/assign", requireAuth(2), async (req, re
 
 router.post("/management/promotions/promo-codes", requireAuth(2), async (req, res) => {
   try {
-    await api.createPromoCode({
+    await api.createDeal({
       code: req.body.code,
       name: req.body.name,
       type: req.body.type,
       value: Number(req.body.value),
-      startsAt: req.body.starts_at,
-      endsAt: req.body.ends_at,
-      active: req.body.active === "true",
+      startsAt: toUTC(req.body.starts_at),
+      endsAt: toUTC(req.body.ends_at),
+      products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
     });
 
-    res.redirect("/management?promoSuccess=1");
+    res.redirect("/manage-promotions?promoSuccess=1");
   } catch (error) {
     console.error("Promo code creation error:", error);
     res.redirect(
-      `/management?managementActionError=${encodeURIComponent(
+      `/manage-promotions?managementActionError=${encodeURIComponent(
         error.message || "Failed to create promo code."
       )}`
     );
@@ -423,21 +504,21 @@ router.post("/management/promotions/promo-codes", requireAuth(2), async (req, re
 
 router.post("/management/promotions/discounts", requireAuth(2), async (req, res) => {
   try {
-    await api.createDiscount({
+    await api.createDeal({
       code: req.body.code,
       name: req.body.name,
       type: req.body.type,
       value: Number(req.body.value),
-      startsAt: req.body.starts_at,
-      endsAt: req.body.ends_at,
-      active: req.body.active === "true",
+      startsAt: toUTC(req.body.starts_at),
+      endsAt: toUTC(req.body.ends_at),
+      products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
     });
 
-    res.redirect("/management?discountSuccess=1");
+    res.redirect("/manage-promotions?discountSuccess=1");
   } catch (error) {
     console.error("Discount creation error:", error);
     res.redirect(
-      `/management?managementActionError=${encodeURIComponent(
+      `/manage-promotions?managementActionError=${encodeURIComponent(
         error.message || "Failed to create discount."
       )}`
     );
@@ -544,9 +625,9 @@ router.delete("/api/shopping-list/items/:productId", requireAuth(0), async (req,
 Picker + stock/location synchronisation routes
 */
 
-router.get("/api/picker/orders", requireAuth(2), async (req, res) => {
+router.get("/api/picker/orders", requireAuth(1), async (req, res) => {
   try {
-    const orders = await api.getPickerOrders();
+    const orders = await api.getPickerOrders(req.session.user.id);
     res.json(orders);
   } catch (error) {
     console.error("Failed to proxy picker orders:", error);
@@ -554,9 +635,9 @@ router.get("/api/picker/orders", requireAuth(2), async (req, res) => {
   }
 });
 
-router.get("/picker", requireAuth(2), async (req, res) => {
+router.get("/picker", requireAuth(1), async (req, res) => {
   try {
-    const orders = await api.getPickerOrders();
+    const orders = await api.getPickerOrders(req.session.user.id);
 
     res.render("picker.njk", {
       title: "Picker View",
@@ -574,7 +655,7 @@ router.get("/picker", requireAuth(2), async (req, res) => {
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(2), async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(1), async (req, res) => {
   try {
     const { orderId, productId } = req.params;
     await api.completePickerItem(orderId, productId);
@@ -585,7 +666,7 @@ router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(2),
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(2), async (req, res) => {
+router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(1), async (req, res) => {
   try {
     const { orderId, productId } = req.params;
     const { substituteProductId, reason } = req.body;
@@ -602,7 +683,7 @@ router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(2), as
   }
 });
 
-router.post("/picker/issues/:issueId/resolve", requireAuth(2), async (req, res) => {
+router.post("/picker/issues/:issueId/resolve", requireAuth(1), async (req, res) => {
   try {
     const { issueId } = req.params;
     await api.resolvePickerIssue(issueId);
@@ -613,7 +694,7 @@ router.post("/picker/issues/:issueId/resolve", requireAuth(2), async (req, res) 
   }
 });
 
-router.post("/picker/orders/:orderId/finalise", requireAuth(2), async (req, res) => {
+router.post("/picker/orders/:orderId/finalise", requireAuth(1), async (req, res) => {
   try {
     const { orderId } = req.params;
     await api.finalisePickerOrder(orderId);

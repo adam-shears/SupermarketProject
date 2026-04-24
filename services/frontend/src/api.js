@@ -10,6 +10,7 @@ HTTP validation should be performed in those services' routes.js files and busin
 should be performed in those services' service.js files.
 */
 
+
 const CATALOGUE_URL = process.env.CATALOGUE_URL || "http://catalogue:3000";
 const ORDERS_URL = process.env.ORDERS_URL || "http://orders:3000";
 const WAREHOUSE_URL = process.env.WAREHOUSE_URL || "http://warehouse:3000";
@@ -76,6 +77,7 @@ async function deleteRequest(url) {
 
 export const api = {
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
+  chunkProductsByCategory: () => getJson(`${CATALOGUE_URL}/products?chunkByCategory=true`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
   searchProducts: (term) =>
     getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
@@ -106,7 +108,7 @@ export const api = {
     return `/management/export.csv?${params}`;
   },
 
-  getPickerOrders: () => getJson(`${WAREHOUSE_URL}/picker/orders`),
+  getPickerOrders: (pickerId) => getJson(`${WAREHOUSE_URL}/picker/orders?pickerId=${pickerId}`),
 
   completePickerItem: (orderId, productId) =>
     postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/complete`, {}),
@@ -126,10 +128,16 @@ export const api = {
   updateInventory: (productId, payload) =>
     patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),
 
-  // Frontend scaffolding for management flow.
   registerStaffMember: (payload) =>
-    postJson(`${ORDERS_URL}/management/staff`, payload),
+    postJson(`${ORDERS_URL}/auth/register-staff`, payload),
 
   assignPickerToOrder: (orderId, payload) =>
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
+
+  getPendingOrders: () => getJson(`${WAREHOUSE_URL}/management/orders/pending`),
+  getStaffMembers: () => getJson(`${ORDERS_URL}/staff`),
+
+  getCurrentPromotions: () => getJson(`${CATALOGUE_URL}/deals`),
+  getAllPromotions: () => getJson(`${CATALOGUE_URL}/deals?includeExpired=true`),
+  createDeal: (payload) => postJson(`${CATALOGUE_URL}/deals/create`, payload),
 };
