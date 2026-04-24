@@ -171,6 +171,25 @@ docker compose down -v
 > npm run reset = docker compose down -v
 > ```
 
+## Accessing Restricted Features
+To maintain security, some API endpoints and views require administrator access and will return a `403` error to a user without proper authorisation. To access these features for testing, we provide a seeded superuser account with access to everything:  
+Email: `root@supermarket.com`  
+Password: `Password1!`
+
+Upon logging in, you'll have access to the staff portal ([`/staff-portal`](http://localhost:3000/staff-portal)), where you can access restricted views:
+- [Analytics (`/management`)](http://localhost:3000/management)
+- [Staff Management (`/staff-management`)](http://localhost:3000/staff-management)
+- [Inventory Management (`/inventory`)](http://localhost:3000/inventory)
+- [Promotions Management (`/manage-promotions`)](http://localhost:3000/manage-promotions)
+
+If you wish to create a Manager or Warehouse Picker, navigate to [Staff Management](http://localhost:3000/staff-management) and fill in the details to register a new staff member (the email must end with `@supermarket.com`). There is a drop-down selector to choose between registering a Picker or a Manager. Once you've registered a new staff member, you can continue using the superuser for access to everything, or switch to the new account you registered. Keep in mind that Pickers will not have access to the above links, as they are for Managers only.
+
+The view for Warehouse Pickers is located at [`/picker`](http://localhost:3000/picker). Managers and the root superuser can access this view, but it isn't exposed on their UI since it isn't for their workflow - they will also be unable to see orders on this view.
+
+> [!IMPORTANT]
+> When on the picker view, you will only be shown orders assigned to you.
+
+Orders cannot be assigned to a Manager or above. To assign an order to your picker, head to [`/staff-management`](http://localhost:3000/staff-management) and pick any order in the "Assign Picker to Order" section. Use the drop down to assign it to a picker, and then that order will appear in the corresponding picker's personal picker view.
 
 ## Notes
 
