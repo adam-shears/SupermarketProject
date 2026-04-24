@@ -41,7 +41,17 @@ export class WarehouseError extends Error {
 }
 
 export async function getPendingOrders() {
-  return warehouseDeps.getPendingOrders();
+  const rows = await warehouseDeps.getPendingOrders();
+
+  return rows.map((row) => ({
+    id: row.id,
+    customer: row.customer,
+    pretty_status: row.assigned_picker_id ? "assigned" : row.status,
+    business_status: row.status,
+    assigned_picker_id: row.assigned_picker_id,
+    assigned_picker_name: row.assigned_picker_name,
+    assigned_at: row.assigned_at,
+  }));
 }
 
 export async function assignPicker(orderId, pickerId) {

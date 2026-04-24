@@ -30,9 +30,15 @@ export async function getPendingOrders() {
       o.id,
       o.status,
       o.assigned_picker_id,
-      COALESCE(c.first_name || ' ' || c.last_name, o.guest_name, 'Guest Customer') AS customer
+      o.assigned_at,
+      COALESCE(c.first_name || ' ' || c.last_name, o.guest_name, 'Guest Customer') AS customer,
+      CASE
+        WHEN p.id IS NOT NULL THEN p.first_name || ' ' || p.last_name
+        ELSE NULL
+      END AS assigned_picker_name
     FROM orders o
     LEFT JOIN customers c ON c.id = o.customer_id
+    LEFT JOIN staff p ON p.id = o.assigned_picker_id
     WHERE o.status = 'pending'
     ORDER BY o.created_at ASC
   `);

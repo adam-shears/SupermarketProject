@@ -33,7 +33,7 @@
 
   {% if assignSuccess %}
     <div class="success-message">
-      <p>Picker assignment to order successfully.</p>
+      <p>Picker assigned to order successfully.</p>
     </div>
   {% endif %}
 
@@ -107,7 +107,7 @@
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th>Registered At</th>
+                <th>Registered At (UTC)</th>
               </tr>
             </thead>
             <tbody>
@@ -151,6 +151,7 @@
                 <th>Order ID</th>
                 <th>Customer</th>
                 <th>Status</th>
+                <th>Assigned To</th>
                 <th>Assign Picker</th>
               </tr>
             </thead>
@@ -159,7 +160,12 @@
                 <tr>
                   <td>#{{ order.id }}</td>
                   <td>{{ order.customer }}</td>
-                  <td><span class="status-badge">{{ order.status }}</span></td>
+                  <td><span class="status-badge">{{ order.pretty_status }}</span></td>
+                  {% if order.assigned_picker_name %}
+                    <td>{{ order.assigned_picker_name }}</td>
+                  {% else %}
+                    <td>Unassigned</td>
+                  {% endif %}
                   <td>
                     <form action="/management/orders/{{ order.id }}/assign" method="post" class="assign-inline-form">
                       <label class="sr-only" for="picker-email-{{ order.id }}">Picker for order {{ order.id }}</label>
@@ -169,7 +175,11 @@
                           <option value="{{ picker.value }}">{{ picker.label }}</option>
                         {% endfor %}
                       </select>
-                      <button type="submit" class="management-button management-button--small">Assign</button>
+                      {% if order.assigned_picker_id %}
+                        <button type="submit" class="management-button management-button--small">Reassign</button>
+                      {% else %}
+                        <button type="submit" class="management-button management-button--small">Assign</button>
+                      {% endif %}
                     </form>
                   </td>
                 </tr>
