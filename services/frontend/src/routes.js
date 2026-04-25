@@ -22,6 +22,7 @@ function getFallbackPickerOptions() {
 function getFallbackAssignmentOrders() {
   return [];
 }
+
 const router = Router();
 
 // --- Helper Functions ---
@@ -53,6 +54,23 @@ function requireAuth(requiredAdminLevel = 1) {
 
     next();
   };
+}
+
+function requireCustomerLogin(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+
+  if ((req.session.user.admin_level || 0) !== 0) {
+    return res.status(403).render("4xx.njk", {
+      title: "Forbidden",
+      status: "403 - Forbidden",
+      message: "This page is only available to customer accounts.",
+      user: req.session.user || null,
+    });
+  }
+
+  next();
 }
 
 // not implemented pages
@@ -275,6 +293,7 @@ router.post("/login", async (req, res) => {
     });
 
     req.session.user = user;
+
     if(user.admin_level > 0) {
       res.redirect("/staff-portal");
     } else {
@@ -323,6 +342,116 @@ router.post("/logout", (req, res) => {
   req.session.destroy(() => {
     res.redirect("/");
   });
+});
+
+/*
+User Space / My Account routes
+*/
+
+router.get("/account", requireCustomerLogin, async (req, res) => {
+  try {
+    const account = await api.getCustomerAccount(req.session.user.id);
+
+    res.render("account.njk", {
+      title: "My Account",
+      account,
+      success: req.query.updated === "1",
+      error: null,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load account page:", error);
+
+    res.status(error.status || 500).render("account.njk", {
+      title: "My Account",
+      account: req.session.user,
+      success: false,
+      error: error.message || "Could not load your account details.",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.post("/account/update", requireCustomerLogin, async (req, res) => {
+  try {
+    const updatedAccount = await api.updateCustomerAccount(req.session.user.id, {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      phone: req.body.phone,
+    });
+
+    req.session.user = {
+      ...req.session.user,
+      first_name: updatedAccount.firstName,
+      last_name: updatedAccount.lastName,
+      phone: updatedAccount.phone,
+    };
+
+    res.redirect("/account?updated=1");
+  } catch (error) {
+    console.error("Failed to update account:", error);
+
+    res.status(error.status || 400).render("account.njk", {
+      title: "My Account",
+      account: {
+        ...req.session.user,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        phone: req.body.phone,
+      },
+      success: false,
+      error: error.message || "Could not update your account details.",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/account/orders", requireCustomerLogin, async (req, res) => {
+  try {
+    const data = await api.getCustomerOrders(req.session.user.id);
+
+    res.render("account-orders.njk", {
+      title: "Order History",
+      orders: data.orders || [],
+      error: null,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load order history:", error);
+
+    res.status(error.status || 500).render("account-orders.njk", {
+      title: "Order History",
+      orders: [],
+      error: error.message || "Could not load your order history.",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/account/delete", requireCustomerLogin, (req, res) => {
+  res.render("account-delete.njk", {
+    title: "Delete Account",
+    error: null,
+    user: req.session.user || null,
+  });
+});
+
+router.post("/account/delete", requireCustomerLogin, async (req, res) => {
+  try {
+    await api.deleteCustomerAccount(req.session.user.id);
+
+    req.session.destroy(() => {
+      res.redirect("/");
+    });
+  } catch (error) {
+    console.error("Failed to delete account:", error);
+
+    res.status(error.status || 500).render("account-delete.njk", {
+      title: "Delete Account",
+      error: error.message || "Could not delete your account. Please try again.",
+      user: req.session.user || null,
+    });
+  }
 });
 
 // Management view
@@ -379,6 +508,7 @@ router.get("/manage-promotions", requireAuth(2), async (req, res) => {
   try {
     const allPromotions = await api.getAllPromotions();
     const groupedProducts = await api.chunkProductsByCategory();
+
     res.render("manage-promotions.njk", {
       title: "Promotions Management",
       groupedProducts: groupedProducts,
@@ -488,7 +618,11 @@ router.post("/management/promotions/promo-codes", requireAuth(2), async (req, re
       value: Number(req.body.value),
       startsAt: toUTC(req.body.starts_at),
       endsAt: toUTC(req.body.ends_at),
-      products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
+      products: req.body.products
+        ? Array.isArray(req.body.products)
+          ? req.body.products
+          : [req.body.products]
+        : [],
     });
 
     res.redirect("/manage-promotions?promoSuccess=1");
@@ -511,7 +645,11 @@ router.post("/management/promotions/discounts", requireAuth(2), async (req, res)
       value: Number(req.body.value),
       startsAt: toUTC(req.body.starts_at),
       endsAt: toUTC(req.body.ends_at),
-      products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
+      products: req.body.products
+        ? Array.isArray(req.body.products)
+          ? req.body.products
+          : [req.body.products]
+        : [],
     });
 
     res.redirect("/manage-promotions?discountSuccess=1");

@@ -6,7 +6,8 @@ CREATE TABLE customers (
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     phone BIGINT,
-    created_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL,
+    deleted_at TIMESTAMP NULL
 );
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
