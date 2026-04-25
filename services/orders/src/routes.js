@@ -10,7 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { addShoppingListItem, getShoppingList, logCustomerIn, OrdersError, registerNewUser, removeShoppingListItem, updateShoppingListItem } from "./service.js";
+import { addShoppingListItem, getShoppingList, logCustomerIn, OrdersError, registerNewUser, removeShoppingListItem, updateShoppingListItem, getBasket,addItemToBasket,mergeBasket, removeItemFromBasket, placeOrder, placeGuestOrder, } from "./service.js";
 
 const router = Router();
 
@@ -84,5 +84,64 @@ router.get("/", async (req, res) => {
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "orders service is healthy." });
 });
+
+// ─── Basket routes ─────────────────────────────────────────────────────────
+
+router.get("/customers/:customerId/basket", async (req, res) => {
+  try {
+    const items = await getBasket(req.params.customerId);
+    res.status(200).json(items);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get basket.");
+  }
+});
+
+router.post("/customers/:customerId/basket/items", async (req, res) => {
+  try {
+    const item = await addItemToBasket(req.params.customerId, req.body);
+    res.status(201).json(item);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to add item to basket.");
+  }
+});
+
+router.post("/customers/:customerId/basket/merge", async (req, res) => {
+  try {
+    await mergeBasket(req.params.customerId, req.body.items);
+    res.status(204).send();
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to merge basket.");
+  }
+});
+
+router.delete("/customers/:customerId/basket/items/:productId", async (req, res) => {
+  try {
+    await removeItemFromBasket(req.params.customerId, req.params.productId);
+    res.status(204).send();
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to remove item from basket.");
+  }
+});
+
+// ─── Order routes ──────────────────────────────────────────────────────────
+
+router.post("/customers/:customerId/orders", async (req, res) => {
+  try {
+    const result = await placeOrder(req.params.customerId);
+    res.status(201).json(result);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to place order.");
+  }
+});
+
+router.post("/orders/guest", async (req, res) => {
+  try {
+    const result = await placeGuestOrder(req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to place guest order.");
+  }
+});
+
 
 export default router;

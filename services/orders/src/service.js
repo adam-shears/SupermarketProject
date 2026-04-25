@@ -23,6 +23,13 @@ import {
   selectShoppingListByCustomerID,
   selectStaffByEmail,
   updateShoppingList,
+  selectOrCreateBasket,
+  upsertBasketItem,
+  selectBasketWithDetails,
+  deleteBasketItem,
+  clearBasketItems,
+  insertOrder,
+  insertOrderItems,
 } from "./db.js";
 
 export const ordersDeps = {
@@ -35,6 +42,14 @@ export const ordersDeps = {
   updateShoppingList,
   hashPassword: bcrypt.hash,
   comparePassword: bcrypt.compare,
+  // basket
+  selectOrCreateBasket,
+  upsertBasketItem,
+  selectBasketWithDetails,
+  deleteBasketItem,
+  clearBasketItems,
+  insertOrder,
+  insertOrderItems,
 };
 
 export class OrdersError extends Error {
@@ -167,4 +182,86 @@ export async function logCustomerIn(input) {
     phone: user.phone,
     createdAt: user.created_at,
   };
+}
+
+// ─── Basket service ────────────────────────────────────────────────────────
+
+export async function getBasket(customerId) {
+  const basket = await ordersDeps.selectOrCreateBasket(customerId);
+  const items = await ordersDeps.selectBasketWithDetails(basket.id);
+  return items;
+}
+
+export async function addItemToBasket(customerId, input) {
+  const productId = input.productId;
+  const quantity = input.quantity ?? 1;
+
+  if (!productId) {
+    throw new OrdersError("productId is required", 400);
+  }
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new OrdersError("quantity must be a positive integer", 400);
+  }
+
+  const basket = await ordersDeps.selectOrCreateBasket(customerId);
+  const item = await ordersDeps.upsertBasketItem(basket.id, productId, quantity);
+  return item;
+}
+
+export async function mergeBasket(customerId, items) {
+  // Called on login — UPSERT all guest localStorage items into the DB basket
+  if (!Array.isArray(items) || items.length === 0) return;
+
+  const basket = await ordersDeps.selectOrCreateBasket(customerId);
+
+  for (const item of items) {
+    const productId = item.productId;
+    const quantity = item.quantity ?? 1;
+
+    if (!productId || !Number.isInteger(quantity) || quantity <= 0) continue;
+
+    await ordersDeps.upsertBasketItem(basket.id, productId, quantity);
+  }
+}
+
+export async function removeItemFromBasket(customerId, productId) {
+  const basket = await ordersDeps.selectOrCreateBasket(customerId);
+  await ordersDeps.deleteBasketItem(basket.id, productId);
+}
+
+// ─── Order placement ───────────────────────────────────────────────────────
+
+export async function placeOrder(customerId) {
+  const basket = await ordersDeps.selectOrCreateBasket(customerId);
+  const items = await ordersDeps.selectBasketWithDetails(basket.id);
+
+  if (items.length === 0) {
+    throw new OrdersError("Cannot place an order with an empty basket", 400);
+  }
+
+  const subtotalPence = items.reduce((sum, i) => sum + i.price_pence * i.quantity, 0);
+
+  const order = await ordersDeps.insertOrder(customerId, null, null, subtotalPence, subtotalPence);
+  await ordersDeps.insertOrderItems(order.id, items);
+  await ordersDeps.clearBasketItems(basket.id);
+
+  return { orderId: order.id, totalPence: subtotalPence };
+}
+
+export async function placeGuestOrder(input) {
+  const { guestEmail, guestName, items } = input;
+
+  if (!guestEmail || !guestName) {
+    throw new OrdersError("Name and email are required for guest checkout", 400);
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new OrdersError("Cannot place an order with an empty basket", 400);
+  }
+
+  const subtotalPence = items.reduce((sum, i) => sum + i.price_pence * i.quantity, 0);
+
+  const order = await ordersDeps.insertOrder(null, guestEmail, guestName, subtotalPence, subtotalPence);
+  await ordersDeps.insertOrderItems(order.id, items);
+
+  return { orderId: order.id, totalPence: subtotalPence };
 }

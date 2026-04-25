@@ -132,4 +132,22 @@ export const api = {
 
   assignPickerToOrder: (orderId, payload) =>
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
+
+  getBasket: (customerId) =>
+    getJson(`${ORDERS_URL}/customers/${customerId}/basket`),
+
+  addToBasket: (customerId, productId, quantity) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/basket/items`, { productId, quantity }),
+
+  mergeBasket: (customerId, items) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/basket/merge`, { items }),
+
+  removeFromBasket: (customerId, productId) =>
+    deleteRequest(`${ORDERS_URL}/customers/${customerId}/basket/items/${productId}`),
+
+  placeOrder: (customerId) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/orders`, {}),
+
+  placeGuestOrder: (payload) =>
+    postJson(`${ORDERS_URL}/orders/guest`, payload),
 };

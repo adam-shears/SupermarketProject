@@ -13,6 +13,7 @@ API failures to serve error pages.
 
 import { Router } from "express";
 import { api } from "./api.js";
+
 function getFallbackPickerOptions() {
   return [];
 }
@@ -184,49 +185,24 @@ router.get("/products", async (req, res) => {
   }
 });
 
-// Basket POST endpoint
-router.post("/basket/items", async (req, res) => {
-  try {
-    const { productId, quantity } = req.body;
-    console.log(`Adding product ${productId} with quantity ${quantity} to basket`);
-    res.status(200).json({ message: "Item added to basket" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to add item to basket" });
-  }
-});
+// ─── Basket Routes ─────────────────────────────────────────────────────────
 
-// Basket GET endpoint
 router.get("/basket", async (req, res) => {
   try {
-    const basket = {
-      items: [
-        {
-          name: "Cheese",
-          price_pence: 299,
-          quantity: 1,
-          image_url: "https://via.placeholder.com/100",
-        },
-        {
-          name: "Milk",
-          price_pence: 150,
-          quantity: 2,
-          image_url: "https://via.placeholder.com/100",
-        },
-      ],
-      subtotal: 599,
-      discounts: 100,
-      total: 499,
-    };
-
-    res.render("basket.njk", {
-      title: "Basket",
-      items: basket.items,
-      subtotal: basket.subtotal,
-      discounts: basket.discounts,
-      total: basket.total,
-      user: req.session.user || null,
-    });
+    if (req.session.user) {
+      const items = await api.getBasket(req.session.user.id);
+      res.render("basket.njk", {
+        title: "Basket",
+        dbItems: items,
+        user: req.session.user || null,
+      });
+    } else {
+      res.render("basket.njk", {
+        title: "Basket",
+        dbItems: null,
+        user: null,
+      });
+    }
   } catch (error) {
     console.error(error);
     res.status(500).render("5xx.njk", {
@@ -237,6 +213,87 @@ router.get("/basket", async (req, res) => {
     });
   }
 });
+
+router.get("/api/basket", requireAuth(0), async (req, res) => {
+  try {
+    const items = await api.getBasket(req.session.user.id);
+    res.json(items);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get basket" });
+  }
+});
+
+router.post("/api/basket/items", requireAuth(0), async (req, res) => {
+  try {
+    const item = await api.addToBasket(req.session.user.id, req.body.productId, req.body.quantity);
+    res.status(201).json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add item to basket" });
+  }
+});
+
+router.post("/api/basket/merge", requireAuth(0), async (req, res) => {
+  try {
+    await api.mergeBasket(req.session.user.id, req.body.items);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to merge basket" });
+  }
+});
+
+router.delete("/api/basket/items/:productId", requireAuth(0), async (req, res) => {
+  try {
+    await api.removeFromBasket(req.session.user.id, req.params.productId);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to remove item from basket" });
+  }
+});
+
+// ─── Checkout Routes ───────────────────────────────────────────────────────
+
+router.get("/checkout", (req, res) => {
+  res.render("checkout.njk", {
+    title: "Checkout",
+    user: req.session.user || null,
+  });
+});
+
+router.post("/checkout/place", async (req, res) => {
+  try {
+    if (req.session.user) {
+      const result = await api.placeOrder(req.session.user.id);
+      return res.redirect(`/checkout/confirmation?orderId=${result.orderId}`);
+    }
+
+    const items = JSON.parse(req.body.items || "[]");
+    const result = await api.placeGuestOrder({
+      guestEmail: req.body.guestEmail,
+      guestName: req.body.guestName,
+      items,
+    });
+
+    res.redirect(`/checkout/confirmation?orderId=${result.orderId}&guest=1`);
+  } catch (error) {
+    console.error(error);
+    res.redirect(`/checkout?error=${encodeURIComponent(error.message || "Failed to place order")}`);
+  }
+});
+
+router.get("/checkout/confirmation", (req, res) => {
+  res.render("checkout-confirmation.njk", {
+    title: "Order Confirmed",
+    orderId: req.query.orderId,
+    isGuest: req.query.guest === "1",
+    user: req.session.user || null,
+  });
+});
+
+// ─── Auth Routes ───────────────────────────────────────────────────────────
 
 router.get("/login", (req, res) => {
   res.render("login.njk", {
@@ -300,7 +357,8 @@ router.post("/logout", (req, res) => {
   });
 });
 
-// Management view
+// ─── Management Routes ─────────────────────────────────────────────────────
+
 router.get("/management", requireAuth(2), async (req, res) => {
   try {
     const allowedScales = ["day", "week", "month"];
@@ -355,7 +413,6 @@ router.get("/management", requireAuth(2), async (req, res) => {
     });
   }
 });
-
 
 router.post("/management/staff/register", requireAuth(2), async (req, res) => {
   try {
@@ -492,9 +549,7 @@ router.get("/api/products/search", async (req, res) => {
   }
 });
 
-/*
-Shopping list endpoints
-*/
+// ─── Shopping List Routes ──────────────────────────────────────────────────
 
 router.get("/api/shopping-list", requireAuth(0), async (req, res) => {
   try {
@@ -540,9 +595,7 @@ router.delete("/api/shopping-list/items/:productId", requireAuth(0), async (req,
   }
 });
 
-/*
-Picker + stock/location synchronisation routes
-*/
+// ─── Picker & Inventory Routes ─────────────────────────────────────────────
 
 router.get("/api/picker/orders", requireAuth(2), async (req, res) => {
   try {
