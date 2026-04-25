@@ -4,22 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }} | Supermarket</title>
+
   <link rel="stylesheet" href="/layout.css" />
+  <link rel="stylesheet" href="/account.css" />
+
   {% block styles %}
   {% endblock %}
 </head>
+
 <body
-  data-user-id="{{ user.id if user else '' }}"
-  data-user-first-name="{{ user.firstName if user else '' }}"
+  data-user-id="{% if user %}{{ user.id }}{% endif %}"
+  data-user-first-name="{% if user %}{{ user.first_name or user.firstName }}{% endif %}"
 >
-    <header class="header">
-        <div class="logo">
-          {% if user.admin_level > 0 %}
-            <a href="/staff-portal"><img src="/images/logo.png" alt="Group 44 Supermarket Logo"></a>
-          {% else %}
-            <a href="/"><img src="/images/logo.png" alt="Group 44 Supermarket Logo"></a>
-          {% endif %}
-        </div>
+  <header class="header">
+    <div class="logo">
+      {% if user and (user.admin_level | default(0)) > 0 %}
+        <a href="/staff-portal">
+          <img src="/images/logo.png" alt="Group 44 Supermarket Logo">
+        </a>
+      {% else %}
+        <a href="/">
+          <img src="/images/logo.png" alt="Group 44 Supermarket Logo">
+        </a>
+      {% endif %}
+    </div>
 
     <form action="/products" method="GET" role="search">
       <label for="site-search" class="visually-hidden">Search for products</label>
@@ -35,7 +43,12 @@
 
     <nav class="user-actions" aria-label="Primary navigation">
       {% if user %}
-        <span>Hello, {{ user.first_name }} {{ user.last_name }}</span>
+        <span>Hello, {{ user.first_name or user.firstName }} {{ user.last_name or user.lastName }}</span>
+
+        {% if (user.admin_level | default(0)) == 0 %}
+          <a href="/account" class="login-link">My Account</a>
+        {% endif %}
+
         <form action="/logout" method="POST" style="display:inline;">
           <button type="submit" class="logout-button">Logout</button>
         </form>
@@ -44,7 +57,7 @@
         <a href="/register" class="register-link">Register</a>
       {% endif %}
 
-      {% if user.admin_level > 0 %}
+      {% if user and (user.admin_level | default(0)) > 0 %}
         <a href="/staff-portal" class="login-link" aria-label="Staff Portal">Staff Portal</a>
       {% else %}
         <a href="/basket" class="basket-link" aria-label="Basket">

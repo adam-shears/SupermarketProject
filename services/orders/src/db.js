@@ -14,56 +14,103 @@ export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export async function selectCustomerByEmail(email) {
   const result = await pool.query(
-    `SELECT id, email, password_hash, first_name, last_name, phone, created_at FROM customers WHERE email = $1`,
+    `
+      SELECT
+        id,
+        email,
+        password_hash,
+        first_name,
+        last_name,
+        phone,
+        created_at,
+        deleted_at
+      FROM customers
+      WHERE email = $1
+        AND deleted_at IS NULL
+    `,
     [email]
   );
+
   return result.rows[0] || null;
 }
 
 export async function selectStaffByEmail(email) {
   const result = await pool.query(
-    `SELECT id, admin_level, email, password_hash, first_name, last_name, phone, created_at FROM staff WHERE email = $1`,
+    `
+      SELECT
+        id,
+        admin_level,
+        email,
+        password_hash,
+        first_name,
+        last_name,
+        phone,
+        created_at
+      FROM staff
+      WHERE email = $1
+    `,
     [email]
   );
+
   return result.rows[0] || null;
 }
-
 
 export async function insertNewCustomer(email, passwordHash, firstName, lastName, phone) {
   const result = await pool.query(
     `
-        INSERT INTO customers (email, password_hash, first_name, last_name, phone, created_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
-        RETURNING id, email, first_name, last_name, phone, created_at
+      INSERT INTO customers (email, password_hash, first_name, last_name, phone, created_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+      RETURNING id, email, first_name, last_name, phone, created_at
     `,
     [email, passwordHash, firstName, lastName, phone]
   );
+
   return result.rows[0];
 }
 
 export async function insertNewStaff(email, passwordHash, firstName, lastName, phone, adminLevel) {
   const result = await pool.query(
     `
-        INSERT INTO staff (email, password_hash, first_name, last_name, phone, admin_level, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW())
-        RETURNING id, email, first_name, last_name, phone, admin_level, created_at
+      INSERT INTO staff (email, password_hash, first_name, last_name, phone, admin_level, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      RETURNING id, email, first_name, last_name, phone, admin_level, created_at
     `,
     [email, passwordHash, firstName, lastName, phone, adminLevel]
   );
+
   return result.rows[0];
 }
 
 export async function selectAllStaff() {
   const result = await pool.query(
-    `SELECT id, admin_level, email, first_name, last_name, phone, created_at FROM staff ORDER BY admin_level DESC, created_at ASC`
+    `
+      SELECT
+        id,
+        admin_level,
+        email,
+        first_name,
+        last_name,
+        phone,
+        created_at
+      FROM staff
+      ORDER BY admin_level DESC, created_at ASC
+    `
   );
+
   return result.rows;
 }
 
 export async function selectShoppingListByCustomerID(customerID) {
   const result = await pool.query(
     `
-      SELECT sl.product_id, sl.quantity, sl.checked, p.name, p.description, c.name AS category_name, COALESCE(pr.price_pence, 0) AS price_pence
+      SELECT
+        sl.product_id,
+        sl.quantity,
+        sl.checked,
+        p.name,
+        p.description,
+        c.name AS category_name,
+        COALESCE(pr.price_pence, 0) AS price_pence
       FROM shopping_list_items sl
       JOIN products p ON p.id = sl.product_id
       LEFT JOIN categories c ON c.id = p.category_id
@@ -81,6 +128,7 @@ export async function selectShoppingListByCustomerID(customerID) {
     `,
     [customerID]
   );
+
   return result.rows;
 }
 
@@ -97,6 +145,7 @@ export async function insertShoppingListItem(customerID, productID, quantity) {
     `,
     [customerID, productID, quantity]
   );
+
   return result.rows[0];
 }
 
@@ -108,19 +157,120 @@ export async function updateShoppingList(customerID, productID, fields) {
         quantity = COALESCE($1, quantity),
         checked = COALESCE($2, checked),
         updated_at = NOW()
-      WHERE customer_id = $3 AND product_id = $4
+      WHERE customer_id = $3
+        AND product_id = $4
       RETURNING product_id, quantity, checked
     `,
     [fields.quantity ?? null, fields.checked ?? null, customerID, productID]
   );
+
   return result.rows[0] || null;
 }
 
 export async function deleteShoppingListItem(customerID, productID) {
   await pool.query(
     `
-      DELETE FROM shopping_list_items WHERE customer_id = $1 AND product_id = $2
+      DELETE FROM shopping_list_items
+      WHERE customer_id = $1
+        AND product_id = $2
     `,
     [customerID, productID]
   );
+}
+
+/*
+  User Space / My Account functions
+*/
+
+export async function selectCustomerAccountById(customerId) {
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        email,
+        first_name,
+        last_name,
+        phone,
+        created_at
+      FROM customers
+      WHERE id = $1
+        AND deleted_at IS NULL
+    `,
+    [customerId]
+  );
+
+  return result.rows[0] || null;
+}
+
+export async function updateCustomerAccountById(customerId, details) {
+  const result = await pool.query(
+    `
+      UPDATE customers
+      SET
+        first_name = $1,
+        last_name = $2,
+        phone = $3
+      WHERE id = $4
+        AND deleted_at IS NULL
+      RETURNING
+        id,
+        email,
+        first_name,
+        last_name,
+        phone,
+        created_at
+    `,
+    [details.firstName, details.lastName, details.phone || null, customerId]
+  );
+
+  return result.rows[0] || null;
+}
+
+export async function selectCustomerOrdersById(customerId) {
+  const result = await pool.query(
+    `
+      SELECT
+        o.id,
+        o.status,
+        o.subtotal_pence,
+        COALESCE(o.discount_pence, 0) AS discount_pence,
+        o.total_pence,
+        o.created_at,
+        COALESCE(SUM(oi.quantity), 0)::int AS item_count
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      WHERE o.customer_id = $1
+      GROUP BY
+        o.id,
+        o.status,
+        o.subtotal_pence,
+        o.discount_pence,
+        o.total_pence,
+        o.created_at
+      ORDER BY o.created_at DESC
+    `,
+    [customerId]
+  );
+
+  return result.rows;
+}
+
+export async function softDeleteCustomerById(customerId) {
+  const result = await pool.query(
+    `
+      UPDATE customers
+      SET
+        email = 'deleted_user_' || id || '@deleted.local',
+        first_name = 'Deleted',
+        last_name = 'User',
+        phone = NULL,
+        deleted_at = NOW()
+      WHERE id = $1
+        AND deleted_at IS NULL
+      RETURNING id
+    `,
+    [customerId]
+  );
+
+  return result.rows[0] || null;
 }
