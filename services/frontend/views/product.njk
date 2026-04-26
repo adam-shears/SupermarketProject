@@ -40,6 +40,10 @@
           <button type="submit" class="add-btn">Add to Basket</button>
         </form>
         <p id="add-success" style="display:none;color:green;">Added to basket!</p>
+        <p id="report-success" style="display:none;color:green;">Reported stock issue.</p>
+        <p id="report-failed" style="display:none;color:red;">Could not report stock issue.</p>
+
+        <button id="report-stock-issue" type="button" class="report-btn">Mark as Unavailable</button>
 
         {% if product.discounts and product.discounts.length > 0 %}
         <div class="offer">Offer Available</div>
@@ -102,6 +106,33 @@
     successMsg.style.display = "block";
     setTimeout(() => successMsg.style.display = "none", 2000);
   });
+
+  const reportButton = document.getElementById('report-stock-issue');
+  const reportSuccess = document.getElementById('report-success');
+  const reportFailed = document.getElementById('report-failed');
+
+  if (reportButton) {
+    reportButton.addEventListener('click', async () => {
+      const productId = Number(document.getElementById("product-id").value);
+
+      reportSuccess.style.display = 'none';
+      reportFailed.style.display = 'none';
+
+      try {
+        // reporterId is taken from session user on backend, but we still pass placeholder to satisfy API shape.
+        await service.reportStockIssue(productId, 0, 'Reported through UI');
+        reportSuccess.style.display = 'block';
+      } catch (error) {
+        console.error(error);
+        reportFailed.style.display = 'block';
+      }
+
+      setTimeout(() => {
+        reportSuccess.style.display = 'none';
+        reportFailed.style.display = 'none';
+      }, 3000);
+    });
+  }
 </script>
 
 {% endblock %}

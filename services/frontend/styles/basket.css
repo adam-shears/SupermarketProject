@@ -110,6 +110,112 @@
   background: #27ae60;
 }
 
-.proceed:hover {
-  background: #27ae60;
+/* Loyalty Section Styles */
+.loyalty-section {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.loyalty-section h4 {
+  margin: 0 0 10px 0;
+  color: #495057;
+}
+
+#loyalty-points-info {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.tier-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.tier-bronze { background: #cd7f32; color: white; }
+.tier-silver { background: #c0c0c0; color: #333; }
+.tier-gold { background: #ffd700; color: #333; }
+
+.points-redeem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  justify-content: space-between;
+}
+
+.points-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.points-toggle input {
+  width: auto;
+  cursor: pointer;
+}
+
+#points-value {
+  font-weight: bold;
+  color: #28a745;
+}
+
+.redeem-hint {
+  font-size: 12px;
+  color: #6c757d;
+  margin: 5px 0 0 0;
+}
+
+/* Coupon Section Styles */
+.coupon-section {
+  background: #fff3cd;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ffeeba;
+}
+
+.coupon-section h4 {
+  margin: 0 0 10px 0;
+  color: #856404;
+}
+
+.coupon-item {
+  background: white;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: box-shadow 0.2s;
+}
+
+.coupon-item:hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.coupon-code {
+  font-family: monospace;
+  font-weight: bold;
+  color: #495057;
+}
+
+.coupon-discount {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.coupon-min-spend {
+  font-size: 12px;
+  color: #6c757d;
 }

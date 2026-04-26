@@ -45,11 +45,28 @@
     </div>
   </div>
 
+  <div class="management-issues-card">
+    <h2>Unresolved Stock Issues: {{ unresolvedIssueCount or 0 }}</h2>
+    {% if stockIssues and stockIssues | length > 0 %}
+    <ul class="stock-issues-list">
+      {% for issue in stockIssues %}
+      <li data-id="{{ issue.id }}">
+        <strong>{{ issue.product_name or issue.product_id }}</strong> reported by {{ issue.reporter_first_name or 'N/A' }} {{ issue.reporter_last_name or '' }} at {{ issue.created_at }}
+        <button class="resolve-issue-btn" data-id="{{ issue.id }}">Resolve</button>
+        <p>{{ issue.notes }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p style="margin:0.5rem 0">No unresolved stock issues</p>
+    {% endif %}
+  </div>
+
   <div class="management-grid">
     <div class="management-card total-sales-card">
       <h2>Total Sales</h2>
       <p class="card-subtitle">Filtered by {{ scale }}</p>
-      <p class="total-sales-value">&pound;{{ (management.totalSalesPence / 100).toFixed(2) }}</p>
+      <p class="total-sales-value">&pound;{{ (management.totalSalesPence / 100) | toFixed(2) }}</p>
     </div>
 
     <div class="management-card">
@@ -77,7 +94,7 @@
         {% for item in management.salesPerCategory %}
         <div class="data-row">
           <span>{{ item.category }}</span>
-          <span>&pound;{{ (item.salesPence / 100).toFixed(2) }}</span>
+          <span>&pound;{{ (item.salesPence / 100) | toFixed(2) }}</span>
         </div>
         {% endfor %}
         {% if management.salesPerCategory.length == 0 %}
@@ -104,5 +121,27 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.resolve-issue-btn').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        const id = event.currentTarget.dataset.id;
+        try {
+          const res = await fetch(`/api/stock-issues/${id}/resolve`, { method: 'PATCH' });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            alert(body.message || 'Unable to resolve issue');
+            return;
+          }
+          window.location.reload();
+        } catch (error) {
+          console.error(error);
+          alert('Failed to resolve stock issue.');
+        }
+      });
+    });
+  });
+</script>
 
 {% endblock %}

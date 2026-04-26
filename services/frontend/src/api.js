@@ -73,9 +73,24 @@ export const api = {
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 
   getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  getLoyaltyAccount: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/loyalty`),
+  getLoyaltyAccountForCheckout: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/loyalty/checkout`),
+  redeemLoyaltyPoints: (customerId, points, orderTotal) => 
+    postJson(`${ORDERS_URL}/customers/${customerId}/loyalty/redeem`, { points, orderTotal }),
+  applyLoyaltyCoupon: (customerId, couponCode, orderTotal) => 
+    postJson(`${ORDERS_URL}/customers/${customerId}/loyalty/coupon/apply`, { couponCode, orderTotal }),
+  getLoyaltyTiers: () => getJson(`${ORDERS_URL}/loyalty/tiers`),
+  calculateLoyaltyPoints: (amount, tier) => getJson(`${ORDERS_URL}/loyalty/calculate-points?amount=${amount}&tier=${encodeURIComponent(tier)}`),
   addShoppingListItem: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
   updateShoppingListItem: (customerId, productId, payload) => patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
   deleteShoppingListItem: (customerId, productId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
+  reportStockIssue: (productId, reporterId, notes) =>
+    postJson(`${WAREHOUSE_URL}/stock-issues`, { productId, reporterId, notes }),
+  getStockIssues: (status) => {
+    const params = status ? `?status=${encodeURIComponent(status)}` : "";
+    return getJson(`${WAREHOUSE_URL}/stock-issues${params}`);
+  },
+  resolveStockIssue: (issueId) => patchJson(`${WAREHOUSE_URL}/stock-issues/${issueId}/resolve`),
   
   getManagementView: async (scale = "week", search = "") => {
     const mockData = {

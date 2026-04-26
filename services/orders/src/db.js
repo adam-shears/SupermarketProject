@@ -41,6 +41,65 @@ export async function insertNewCustomer(email, passwordHash, firstName, lastName
   return result.rows[0];
 }
 
+export async function selectLoyaltyAccountByCustomerId(customerId) {
+  const result = await pool.query(
+    `SELECT id, points, tier, created_at FROM loyalty_accounts WHERE customer_id = $1`,
+    [customerId]
+  );
+  return result.rows[0] || null;
+}
+
+export async function insertLoyaltyAccount(customerId, tier, points) {
+  const result = await pool.query(
+    `
+      INSERT INTO loyalty_accounts (customer_id, points, tier, created_at)
+      VALUES ($1, $2, $3, NOW())
+      RETURNING id, customer_id, points, tier, created_at
+    `,
+    [customerId, points, tier]
+  );
+  return result.rows[0];
+}
+
+export async function updateLoyaltyAccountPoints(loyaltyAccountId, points, tier) {
+  const result = await pool.query(
+    `
+      UPDATE loyalty_accounts
+      SET points = $1, tier = $2
+      WHERE id = $3
+      RETURNING id, customer_id, points, tier, created_at
+    `,
+    [points, tier, loyaltyAccountId]
+  );
+  return result.rows[0];
+}
+
+export async function insertLoyaltyTransaction(loyaltyAccountId, orderId, type, pointChange) {
+  const result = await pool.query(
+    `
+      INSERT INTO loyalty_transactions (loyalty_account_id, order_id, type, point_change, timestamp)
+      VALUES ($1, $2, $3, $4, NOW())
+      RETURNING id, loyalty_account_id, order_id, type, point_change, timestamp
+    `,
+    [loyaltyAccountId, orderId, type, pointChange]
+  );
+  return result.rows[0];
+}
+
+export async function selectLoyaltyTransactionsByAccountId(loyaltyAccountId) {
+  const result = await pool.query(
+    `
+      SELECT id, order_id, type, point_change, timestamp
+      FROM loyalty_transactions
+      WHERE loyalty_account_id = $1
+      ORDER BY timestamp DESC
+      LIMIT 20
+    `,
+    [loyaltyAccountId]
+  );
+  return result.rows;
+}
+
 export async function selectShoppingListByCustomerID(customerID) {
   const result = await pool.query(
     `
@@ -104,4 +163,84 @@ export async function deleteShoppingListItem(customerID, productID) {
     `,
     [customerID, productID]
   );
+}
+
+// --- Loyalty Enhancement Functions ---
+
+export async function selectLoyaltyTierBenefits(tier) {
+  const result = await pool.query(
+    `SELECT * FROM loyalty_tier_benefits WHERE tier = $1`,
+    [tier]
+  );
+  return result.rows[0] || null;
+}
+
+export async function selectAllLoyaltyTierBenefits() {
+  const result = await pool.query(
+    `SELECT * FROM loyalty_tier_benefits ORDER BY points_per_pound DESC`
+  );
+  return result.rows;
+}
+
+export async function insertLoyaltyCoupon(loyaltyAccountId, code, discountPercent, minSpendPence, expiresAt) {
+  const result = await pool.query(
+    `
+      INSERT INTO loyalty_coupons (loyalty_account_id, code, discount_percent, min_spend_pence, expires_at)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, loyalty_account_id, code, discount_percent, min_spend_pence, expires_at, used_at, created_at
+    `,
+    [loyaltyAccountId, code, discountPercent, minSpendPence, expiresAt]
+  );
+  return result.rows[0];
+}
+
+export async function selectLoyaltyCouponsByAccountId(loyaltyAccountId) {
+  const result = await pool.query(
+    `
+      SELECT id, code, discount_percent, min_spend_pence, expires_at, used_at, created_at
+      FROM loyalty_coupons
+      WHERE loyalty_account_id = $1
+      ORDER BY created_at DESC
+    `,
+    [loyaltyAccountId]
+  );
+  return result.rows;
+}
+
+export async function selectUnusedLoyaltyCouponsByAccountId(loyaltyAccountId) {
+  const result = await pool.query(
+    `
+      SELECT id, code, discount_percent, min_spend_pence, expires_at, created_at
+      FROM loyalty_coupons
+      WHERE loyalty_account_id = $1 AND used_at IS NULL AND expires_at > NOW()
+      ORDER BY created_at DESC
+    `,
+    [loyaltyAccountId]
+  );
+  return result.rows;
+}
+
+export async function markLoyaltyCouponAsUsed(couponId) {
+  const result = await pool.query(
+    `
+      UPDATE loyalty_coupons
+      SET used_at = NOW()
+      WHERE id = $1 AND used_at IS NULL
+      RETURNING id, code, discount_percent
+    `,
+    [couponId]
+  );
+  return result.rows[0] || null;
+}
+
+export async function selectLoyaltyCouponByCode(code) {
+  const result = await pool.query(
+    `
+      SELECT id, loyalty_account_id, code, discount_percent, min_spend_pence, expires_at, used_at, created_at
+      FROM loyalty_coupons
+      WHERE code = $1
+    `,
+    [code]
+  );
+  return result.rows[0] || null;
 }

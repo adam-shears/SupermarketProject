@@ -19,12 +19,34 @@
         <div class="subtotal" id="subtotal-div">
             <h3>Subtotal &pound;0.00</h3>
         </div>
+        
+        <!-- Loyalty Points Redemption Section -->
+        <div class="loyalty-section" id="loyalty-section" style="display: none;">
+            <h4>Loyalty Points</h4>
+            <p id="loyalty-points-info">You have <strong>0</strong> points</p>
+            <p id="loyalty-tier-info" class="tier-badge"></p>
+            <div class="points-redeem">
+                <label class="points-toggle">
+                    <input type="checkbox" id="use-loyalty-points">
+                    <span>Use points at checkout</span>
+                </label>
+                <span id="points-value">&pound;0.00 off</span>
+            </div>
+            <p class="redeem-hint">100 points = &pound;1.00 off</p>
+        </div>
+
+        <!-- Coupon Section -->
+        <div class="coupon-section" id="coupon-section" style="display: none;">
+            <h4>Available Coupons</h4>
+            <div id="available-coupons"></div>
+        </div>
+
         <div class="discount" id="discount-div" style="display: none;">
             <h3 id="discount-text">Discount -&pound;0.00</h3>
         </div>
         <div class="promo">
-            <input type="text" placeholder="Promo">
-            <button>Add</button>
+            <input type="text" id="promo-code" placeholder="Coupon code">
+            <button id="apply-promo-btn">Apply</button>
         </div>
         <div class="total">
             <h3 id="total-text">Total &pound;0.00</h3>
@@ -37,16 +59,123 @@
 <script type="module">
   import * as service from '/service.js';
 
+  let loyaltyAccount = null;
+  let pointsDiscountPence = 0;
+  let pointsToRedeem = 0;
+  let couponDiscountPence = 0;
+  let appliedCouponCode = null;
+  const currencySymbol = '\u00A3';
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Request failed');
+    }
+    return data;
+  }
+
+  // Get user ID from the page
+  function getUserId() {
+    return document.body.dataset.userId || null;
+  }
+
+  // Load loyalty account for logged-in users
+  async function loadLoyaltyAccount() {
+    const userId = getUserId();
+    if (!userId) {
+      return;
+    }
+
+    try {
+      loyaltyAccount = await fetchJson('/api/loyalty/checkout');
+      showLoyaltySection();
+    } catch (error) {
+      console.log('No loyalty account or not logged in');
+    }
+  }
+
+  // Show loyalty section if user is logged in
+  function showLoyaltySection() {
+    if (!loyaltyAccount) return;
+
+    const section = document.getElementById('loyalty-section');
+    const couponSection = document.getElementById('coupon-section');
+    
+    section.style.display = 'block';
+    
+    // Show points info
+    document.getElementById('loyalty-points-info').innerHTML = 
+        `You have <strong>${loyaltyAccount.points}</strong> points`;
+
+    const usePoints = document.getElementById('use-loyalty-points');
+    usePoints.disabled = loyaltyAccount.points < 100;
+    
+    // Show tier badge
+    const tierInfo = document.getElementById('loyalty-tier-info');
+    tierInfo.textContent = `${loyaltyAccount.tier} Member`;
+    tierInfo.className = `tier-badge tier-${loyaltyAccount.tier.toLowerCase()}`;
+
+    // Show available coupons
+    if (loyaltyAccount.unusedCoupons && loyaltyAccount.unusedCoupons.length > 0) {
+      couponSection.style.display = 'block';
+      const couponsContainer = document.getElementById('available-coupons');
+      couponsContainer.innerHTML = loyaltyAccount.unusedCoupons.map(coupon => `
+        <div class="coupon-item" data-code="${coupon.code}">
+            <span class="coupon-code">${coupon.code}</span>
+            <span class="coupon-discount">${coupon.discount_percent}% off</span>
+            <span class="coupon-min-spend">Min &pound;${(coupon.min_spend_pence / 100).toFixed(2)}</span>
+        </div>
+      `).join('');
+      
+      // Add click handlers for coupons
+      document.querySelectorAll('.coupon-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const code = item.dataset.code;
+          document.getElementById('promo-code').value = code;
+        });
+      });
+    }
+
+    // Add points redemption handler
+    document.getElementById('use-loyalty-points').addEventListener('change', updateTotals);
+  }
+
+  function updatePointsDiscount(subtotal) {
+    const usePoints = document.getElementById('use-loyalty-points');
+
+    if (!loyaltyAccount || !usePoints || !usePoints.checked) {
+      pointsDiscountPence = 0;
+      pointsToRedeem = 0;
+      document.getElementById('points-value').textContent = `${currencySymbol}0.00 off`;
+      return;
+    }
+
+    const availableDiscountPence = Math.floor(loyaltyAccount.points / 100) * 100;
+    const remainingTotal = Math.max(0, subtotal - couponDiscountPence);
+    pointsDiscountPence = Math.min(availableDiscountPence, remainingTotal);
+    pointsToRedeem = pointsDiscountPence;
+
+    document.getElementById('points-value').textContent =
+        `${currencySymbol}${(pointsDiscountPence / 100).toFixed(2)} off`;
+  }
+
   // Update subtotal, discount, and total in the summary
   function updateTotals() {
     const totals = service.calculateTotals();
+    const subtotal = totals.subtotal;
+    updatePointsDiscount(subtotal);
+    
+    // Calculate total discount
+    const totalDiscount = pointsDiscountPence + couponDiscountPence;
+    const finalTotal = Math.max(0, subtotal - totalDiscount);
 
-    document.getElementById('subtotal-div').innerHTML = `<h3>Subtotal &pound;${(totals.subtotal / 100).toFixed(2)}</h3>`;
-    document.getElementById('total-text').textContent = `Total £${(totals.total / 100).toFixed(2)}`;
+    document.getElementById('subtotal-div').innerHTML = `<h3>Subtotal &pound;${(subtotal / 100).toFixed(2)}</h3>`;
+    document.getElementById('total-text').textContent = `Total ${currencySymbol}${(finalTotal / 100).toFixed(2)}`;
 
-    if (totals.discounts > 0) {
+    if (totalDiscount > 0) {
       document.getElementById('discount-div').style.display = 'block';
-      document.getElementById('discount-text').textContent = `Discount -£${(totals.discounts / 100).toFixed(2)}`;
+      document.getElementById('discount-text').textContent = `Discount -${currencySymbol}${(totalDiscount / 100).toFixed(2)}`;
     } else {
       document.getElementById('discount-div').style.display = 'none';
     }
@@ -127,8 +256,83 @@
     });
   }
 
+  // Apply promo/coupon code
+  document.getElementById('apply-promo-btn').addEventListener('click', async () => {
+    const code = document.getElementById('promo-code').value.trim();
+    if (!code) {
+      alert('Please enter a coupon code');
+      return;
+    }
+
+    const userId = getUserId();
+    if (!userId) {
+      alert('Please log in to use coupons');
+      return;
+    }
+
+    const totals = service.calculateTotals();
+    
+    try {
+      const result = await fetchJson('/api/loyalty/coupon/apply', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ couponCode: code, orderTotal: totals.total }),
+      });
+      couponDiscountPence = result.discountPence;
+      appliedCouponCode = code;
+      alert(`Coupon applied! You save ${currencySymbol}${(result.discountPence / 100).toFixed(2)}`);
+      updateTotals();
+    } catch (error) {
+      alert(error.message || 'Failed to apply coupon');
+    }
+  });
+
+  // check unresolved stock issues before proceeding
+  async function checkUnresolvedIssues() {
+    try {
+      const response = await fetch('/api/stock-issues?status=unresolved');
+      if (!response.ok) {
+        return 0;
+      }
+      const issues = await response.json();
+      return Array.isArray(issues) ? issues.length : 0;
+    } catch (error) {
+      console.error('Failed to fetch unresolved issues', error);
+      return 0;
+    }
+  }
+
+  document.querySelector('.proceed').addEventListener('click', async () => {
+    const unresolved = await checkUnresolvedIssues();
+
+    if (unresolved > 0) {
+      alert(`Cannot finalize order while ${unresolved} unresolved stock issue(s) exist. Please ask management to resolve them.`);
+      return;
+    }
+
+    // If user is logged in and has points to redeem, process them
+    const userId = getUserId();
+    if (userId && loyaltyAccount && pointsDiscountPence > 0) {
+      try {
+        if (pointsToRedeem > 0) {
+          const totals = service.calculateTotals();
+          await fetchJson('/api/loyalty/redeem', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ points: pointsToRedeem, orderTotal: totals.total }),
+          });
+        }
+      } catch (error) {
+        console.error('Failed to redeem points:', error);
+      }
+    }
+
+    alert('Proceeding to checkout...');
+  });
+
   // Initial render on page load
   renderBasket();
+  loadLoyaltyAccount();
 </script>
 
 {% endblock %}

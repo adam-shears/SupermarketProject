@@ -23,9 +23,15 @@
             <div class="action-card">
                 <div class="placeholder-icon"></div> <div>Saved Baskets</div>
             </div>
-            <div class="action-card">
+            {% if user %}
+            <a href="/loyalty" class="action-card">
                 <div class="placeholder-icon"></div> <div>Loyalty Card</div>
-            </div>
+            </a>
+            {% else %}
+            <a href="/login" class="action-card">
+                <div class="placeholder-icon"></div> <div>Loyalty Card</div>
+            </a>
+            {% endif %}
         </div>
 
         <div class="category-area">

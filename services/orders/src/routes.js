@@ -10,7 +10,7 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { addShoppingListItem, getShoppingList, logCustomerIn, OrdersError, registerNewUser, removeShoppingListItem, updateShoppingListItem } from "./service.js";
+import { addShoppingListItem, addLoyaltyPoints, applyCoupon, calculatePointsFromPurchase, getAllTierBenefits, getLoyaltyAccount, getLoyaltyAccountWithPoints, getShoppingList, logCustomerIn, OrdersError, redeemPoints, registerNewUser, removeShoppingListItem, updateShoppingListItem, createOrder } from "./service.js";
 
 const router = Router();
 
@@ -38,6 +38,77 @@ router.post("/customers/:customerId/shopping-list/items", async (req, res) => {
     res.status(201).json(item);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to add item to shopping list.");
+  }
+});
+
+router.get("/customers/:customerId/loyalty", async (req, res) => {
+  try {
+    const account = await getLoyaltyAccount(req.params.customerId);
+    res.status(200).json(account);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get loyalty account.");
+  }
+});
+
+router.post("/customers/:customerId/loyalty/transactions", async (req, res) => {
+  try {
+    const transaction = await addLoyaltyPoints(req.params.customerId, req.body);
+    res.status(201).json(transaction);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to add loyalty points.");
+  }
+});
+
+// Get loyalty account with points and unused coupons (for checkout)
+router.get("/customers/:customerId/loyalty/checkout", async (req, res) => {
+  try {
+    const account = await getLoyaltyAccountWithPoints(req.params.customerId);
+    res.status(200).json(account);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get loyalty account for checkout.");
+  }
+});
+
+// Redeem points for discount
+router.post("/customers/:customerId/loyalty/redeem", async (req, res) => {
+  try {
+    const { points, orderTotal } = req.body;
+    const result = await redeemPoints(req.params.customerId, points, orderTotal);
+    res.status(200).json(result);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to redeem points.");
+  }
+});
+
+// Apply a coupon to order
+router.post("/customers/:customerId/loyalty/coupon/apply", async (req, res) => {
+  try {
+    const { couponCode, orderTotal } = req.body;
+    const result = await applyCoupon(req.params.customerId, couponCode, orderTotal);
+    res.status(200).json(result);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to apply coupon.");
+  }
+});
+
+// Get all tier benefits
+router.get("/loyalty/tiers", async (req, res) => {
+  try {
+    const tiers = await getAllTierBenefits();
+    res.status(200).json(tiers);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get tier benefits.");
+  }
+});
+
+// Calculate points from purchase amount
+router.get("/loyalty/calculate-points", async (req, res) => {
+  try {
+    const { amount, tier } = req.query;
+    const points = calculatePointsFromPurchase(Number(amount), tier);
+    res.status(200).json({ points });
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to calculate points.");
   }
 });
 
@@ -79,6 +150,17 @@ router.post("/auth/register", async (req, res) => {
 
 router.get("/", async (req, res) => {
   res.json({ message: "orders service" });
+});
+
+// Create a new order with loyalty points integration
+router.post("/orders", async (req, res) => {
+  try {
+    const { customerId, items, pointsToRedeem, couponCode } = req.body;
+    const order = await createOrder(customerId, items, pointsToRedeem, couponCode);
+    res.status(201).json(order);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to create order.");
+  }
 });
 
 router.get("/health", async (req, res) => {

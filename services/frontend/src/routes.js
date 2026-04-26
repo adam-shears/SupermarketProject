@@ -29,6 +29,13 @@ function requireAuth(requiredAdminLevel) {
   };
 }
 
+function ensureLoggedIn(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+  next();
+}
+
 // Home page (optional, can list featured products)
 router.get("/", async (req, res) => {
   try {
@@ -116,6 +123,20 @@ router.get("/products", async (req, res) => {
   }
 });
 
+// Loyalty card page
+router.get("/loyalty", ensureLoggedIn, async (req, res) => {
+  try {
+    const account = await api.getLoyaltyAccount(req.session.user.id);
+    res.render("loyalty.njk", {
+      title: "Loyalty Card",
+      account,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Failed to load loyalty information");
+  }
+});
+
 // Basket POST endpoint (temporary)
 router.post("/basket/items", async (req, res) => {
   try {
@@ -180,7 +201,7 @@ router.post("/login", async (req, res) => {
 
     req.session.user = user;
     res.redirect("/");
-  } catch (error) {
+  } catch {
     res.status(401).render("login.njk", { title: "Login", error: "Invalid email or password" });
   }
 });
@@ -222,12 +243,21 @@ router.get("/management", requireAuth(2), async (req, res) => {
     const search = req.query.search || "";
 
     const management = await api.getManagementView(scale, search);
+    let stockIssues = [];
+
+    try {
+      stockIssues = await api.getStockIssues('unresolved');
+    } catch (e) {
+      console.warn('Failed to load stock issues for management:', e.message);
+    }
 
     res.render("management.njk", {
       title: "Management View",
       management,
       scale,
       search,
+      stockIssues,
+      unresolvedIssueCount: stockIssues.length,
     });
   } catch (error) {
     console.error("Management view error:", error);
@@ -294,6 +324,38 @@ router.get("/api/products/search", async (req, res) => {
   }
 });
 
+router.get("/api/loyalty/checkout", ensureLoggedIn, async (req, res) => {
+  try {
+    const account = await api.getLoyaltyAccountForCheckout(req.session.user.id);
+    res.json(account);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message || "Failed to load loyalty account" });
+  }
+});
+
+router.post("/api/loyalty/redeem", ensureLoggedIn, async (req, res) => {
+  try {
+    const { points, orderTotal } = req.body;
+    const result = await api.redeemLoyaltyPoints(req.session.user.id, points, orderTotal);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message || "Failed to redeem loyalty points" });
+  }
+});
+
+router.post("/api/loyalty/coupon/apply", ensureLoggedIn, async (req, res) => {
+  try {
+    const { couponCode, orderTotal } = req.body;
+    const result = await api.applyLoyaltyCoupon(req.session.user.id, couponCode, orderTotal);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message || "Failed to apply coupon" });
+  }
+});
+
 /*
 Shopping list endpoints
 All of these endpoints require user to be logged in to their account
@@ -340,6 +402,40 @@ router.delete("/api/shopping-list/items/:productId", requireAuth, async (req, re
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to remove item from shopping list"});
+  }
+});
+
+// Stock issue API for warehouse picker + management
+router.post("/api/stock-issues", requireAuth(1), async (req, res) => {
+  try {
+    const productId = Number(req.body.productId);
+    const notes = req.body.notes || "Marked unavailable";
+    const issue = await api.reportStockIssue(productId, req.session.user.id, notes);
+    res.status(201).json(issue);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message || "Failed to report stock issue" });
+  }
+});
+
+router.get("/api/stock-issues", requireAuth(2), async (req, res) => {
+  try {
+    const status = req.query.status || null;
+    const issues = await api.getStockIssues(status);
+    res.json(issues);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message || "Failed to fetch stock issues" });
+  }
+});
+
+router.patch("/api/stock-issues/:id/resolve", requireAuth(2), async (req, res) => {
+  try {
+    const issue = await api.resolveStockIssue(req.params.id);
+    res.json(issue);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message || "Failed to resolve stock issue" });
   }
 });
 

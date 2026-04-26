@@ -199,3 +199,37 @@ export async function searchProducts(term) {
   }
   return res.json();
 }
+
+export async function reportStockIssue(productId, reporterId, notes = "Marked unavailable by staff") {
+  const res = await fetch(`/api/stock-issues`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ productId, reporterId, notes }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to report stock issue");
+  }
+  return res.json();
+}
+
+export async function getUnresolvedStockIssues() {
+  const res = await fetch(`/api/stock-issues?status=unresolved`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to load issues");
+  }
+  return res.json();
+}
+
+export async function resolveStockIssue(issueId) {
+  const res = await fetch(`/api/stock-issues/${issueId}/resolve`, { method: "PATCH" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to resolve stock issue");
+  }
+  return res.json();
+}
