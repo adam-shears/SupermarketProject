@@ -13,7 +13,7 @@ const { Pool } = pg;
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export async function getTotalSales(scale) {
-  const interval = scale === 'day' ? '1 day' : scale === 'week' ? '1 week' : '1 month';
+  const interval = scale === "day" ? "1 day" : scale === "week" ? "1 week" : "1 month";
   const query = `
     SELECT COALESCE(SUM(total_pence), 0) as total_sales_pence
     FROM orders
@@ -24,7 +24,7 @@ export async function getTotalSales(scale) {
 }
 
 export async function getBestSellers(scale) {
-  const interval = scale === 'day' ? '1 day' : scale === 'week' ? '1 week' : '1 month';
+  const interval = scale === "day" ? "1 day" : scale === "week" ? "1 week" : "1 month";
   const query = `
     SELECT p.id, p.name, SUM(oi.quantity) as units_sold
     FROM order_items oi
@@ -40,7 +40,7 @@ export async function getBestSellers(scale) {
 }
 
 export async function getSalesPerCategory(scale) {
-  const interval = scale === 'day' ? '1 day' : scale === 'week' ? '1 week' : '1 month';
+  const interval = scale === "day" ? "1 day" : scale === "week" ? "1 week" : "1 month";
   const query = `
     SELECT c.name as category, COALESCE(SUM(oi.line_total_pence), 0) as sales_pence
     FROM categories c
@@ -57,13 +57,13 @@ export async function getSalesPerCategory(scale) {
 
 export async function getTrendingItems(scale) {
   const intervals = {
-    day: { current: '1 day', previous: '2 day' },
-    week: { current: '7 day', previous: '14 day' },
-    month: { current: '30 day', previous: '60 day' }
+    day: { current: "1 day", previous: "2 day" },
+    week: { current: "7 day", previous: "14 day" },
+    month: { current: "30 day", previous: "60 day" },
   };
-  
+
   const interval = intervals[scale] || intervals.week;
-  
+
   const query = `
     WITH current_period AS (
       SELECT p.id, p.name, SUM(oi.quantity) as current_units
@@ -82,9 +82,9 @@ export async function getTrendingItems(scale) {
         AND o.created_at < NOW() - INTERVAL '${interval.current}'
       GROUP BY p.id, p.name
     )
-    SELECT 
-      cp.id, 
-      cp.name, 
+    SELECT
+      cp.id,
+      cp.name,
       cp.current_units as units_sold,
       COALESCE(
         ROUND(
@@ -99,7 +99,75 @@ export async function getTrendingItems(scale) {
     ORDER BY growth_rate DESC, units_sold DESC
     LIMIT 3
   `;
-  
+
   const result = await pool.query(query);
   return result.rows;
+}
+
+export async function getProductContext(productId) {
+  const result = await pool.query(
+    `
+    SELECT id, category_id, listed
+    FROM products
+    WHERE id = $1
+    `,
+    [productId]
+  );
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+  return result.rows[0];
+}
+
+export async function getListedProductsInStock() {
+  const result = await pool.query(`
+    SELECT p.id
+    FROM products p
+    JOIN stock s ON s.product_id = p.id
+    WHERE p.listed = TRUE
+      AND (s.quantity_on_hand - s.quantity_reserved) > 0
+    `);
+
+  return result.rows.map((row) => row.id);
+}
+
+export async function getRecommendationsFromOrderHistory(customerId, currentProductId, limit = 4) {
+  // where currentProductId is the product the customer is CURRENTLY viewing, i couldnt think of a better name
+  const result = await pool.query(
+    `
+    SELECT oi.product_id AS id, SUM(oi.quantity) AS units_ordered
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    WHERE o.customer_id = $1
+      AND oi.product_id != $2
+    GROUP BY oi.product_id
+    ORDER BY units_ordered DESC
+    LIMIT $3
+  `,
+    [customerId, currentProductId, limit]
+  );
+
+  return result.rows.map((row) => row.id);
+}
+
+export async function getFrequentlyBoughtTogether(currentProductId, limit = 4) {
+  // not implemented yet
+  return [];
+}
+
+export async function getPopularProducts(limit = 4) {
+  // fallback to just get the most popular products overall per HLD in #70
+  const result = await pool.query(
+    `
+    SELECT oi.product_id AS id, SUM(oi.quantity) AS units_ordered
+    FROM order_items oi
+    GROUP BY oi.product_id
+    ORDER BY units_ordered DESC
+    LIMIT $1
+  `,
+    [limit]
+  );
+
+  return result.rows.map((row) => row.id);
 }
