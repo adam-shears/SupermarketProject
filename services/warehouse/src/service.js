@@ -28,10 +28,50 @@ export const warehouseDeps = {
   countUnresolvedIssuesForOrder: db.countUnresolvedIssuesForOrder,
   countUnpickedItemsForOrder: db.countUnpickedItemsForOrder,
   finalisePickerOrder: db.finalisePickerOrder,
+  assignPickerToOrder: db.assignPickerToOrder,
+  getPendingOrders: db.getPendingOrders,
 };
 
-export async function getPickerOrders() {
-  const rows = await warehouseDeps.getPickerOrdersRows();
+export class WarehouseError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.name = "WarehouseError";
+    this.statusCode = statusCode;
+  }
+}
+
+export async function getPendingOrders() {
+  const rows = await warehouseDeps.getPendingOrders();
+
+  return rows.map((row) => ({
+    id: row.id,
+    customer: row.customer,
+    pretty_status: row.assigned_picker_id ? "assigned" : row.status,
+    business_status: row.status,
+    assigned_picker_id: row.assigned_picker_id,
+    assigned_picker_name: row.assigned_picker_name,
+    assigned_at: row.assigned_at,
+  }));
+}
+
+export async function assignPicker(orderId, pickerId) {
+  if (!orderId || !pickerId) {
+    throw new WarehouseError("orderId and pickerId are required", 400);
+  }
+
+  const success = await warehouseDeps.assignPickerToOrder(orderId, pickerId);
+  if (!success) {
+    throw new WarehouseError("Pending order not found", 404);
+  }
+
+  return {
+    message: "Picker assigned successfully",
+    order: success,
+  };
+}
+
+export async function getPickerOrders(pickerId) {
+  const rows = await warehouseDeps.getPickerOrdersRows(pickerId);
   const ordersMap = new Map();
 
   for (const row of rows) {

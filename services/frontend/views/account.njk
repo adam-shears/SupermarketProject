@@ -1,0 +1,63 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<section class="account-page">
+  <div class="account-card">
+    <h1>My Account</h1>
+
+    {% if success %}
+      <p class="success-message">Your account details have been updated.</p>
+    {% endif %}
+
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+
+    <div class="account-summary">
+      <h2>Account Details</h2>
+
+      <p><strong>Email:</strong> {{ account.email }}</p>
+      <p><strong>First name:</strong> {{ account.firstName or account.first_name }}</p>
+      <p><strong>Last name:</strong> {{ account.lastName or account.last_name }}</p>
+      <p><strong>Phone:</strong> {{ account.phone or "Not provided" }}</p>
+    </div>
+
+    <form class="account-form" method="POST" action="/account/update">
+      <h2>Change Details</h2>
+
+      <label for="firstName">First name</label>
+      <input
+        id="firstName"
+        name="firstName"
+        type="text"
+        value="{{ account.firstName or account.first_name }}"
+        required
+      >
+
+      <label for="lastName">Last name</label>
+      <input
+        id="lastName"
+        name="lastName"
+        type="text"
+        value="{{ account.lastName or account.last_name }}"
+        required
+      >
+
+      <label for="phone">Phone</label>
+      <input
+        id="phone"
+        name="phone"
+        type="tel"
+        value="{{ account.phone or '' }}"
+      >
+
+      <button type="submit" class="primary-button">Save changes</button>
+    </form>
+
+    <div class="account-actions">
+      <a class="secondary-button" href="/account/orders">View order history</a>
+      <a class="danger-link" href="/account/delete">Delete account</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -93,6 +93,71 @@ describe("Orders Service", () => {
             expect(service.ordersDeps.insertNewCustomer.calledOnce).to.be.true;
             expect(service.ordersDeps.hashPassword.calledOnce).to.be.true;
         });
+
+        it("should reject users registering a staff email", async () => {
+            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+            sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
+
+            await expect(service.registerNewUser({
+                email: "whatever@supermarket.com",
+                password: "Password1!",
+                confirmPassword: "Password1!",
+                firstName: "Test",
+                lastName: "User",
+                phone: "1234567890",
+            })).to.be.rejectedWith(service.OrdersError, "You cannot register with a staff email. If you are a staff member, contact your administrator to register you.");
+        });
+
+        it("should register a new staff user", async () => {
+            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+            sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
+            sinon.stub(service.ordersDeps, "insertNewStaff").resolves({id: 1, email: "test@supermarket.com"});
+            sinon.stub(service.ordersDeps, "hashPassword").resolves("hashedpassword");
+
+            const result = await service.registerNewUser({
+                email: "whatever@supermarket.com",
+                password: "Password1!",
+                confirmPassword: "Password1!",
+                firstName: "Test",
+                lastName: "Staff",
+                phone: "1234567890",
+                isStaff: true
+            });
+
+            expect(result).to.deep.equal({id: 1, email: "test@supermarket.com"});
+            expect(service.ordersDeps.insertNewStaff.calledOnce).to.be.true;
+            expect(service.ordersDeps.hashPassword.calledOnce).to.be.true;
+        });
+
+        it("should reject staff registration if email doesn't end with @supermarket.com", async () => {
+            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+            sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
+
+            await expect(service.registerNewUser({
+                email: "whatever@rivalsupermarket.com",
+                password: "Password1!",
+                confirmPassword: "Password1!",
+                firstName: "Test",
+                lastName: "Staff",
+                phone: "1234567890",
+                isStaff: true
+            })).to.be.rejectedWith(service.OrdersError, "Staff email must end with @supermarket.com");
+        });
+
+        it("should reject staff registration if email is already in use by another staff member", async () => {
+            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+            sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves({id: 1});
+
+            await expect(service.registerNewUser({
+                email: "ialreadyexist@supermarket.com",
+                password: "Password1!",
+                confirmPassword: "Password1!",
+                firstName: "Test",
+                lastName: "Staff",
+                phone: "1234567890",
+                isStaff: true
+            })).to.be.rejectedWith(service.OrdersError, "Email is already in use");
+        });
     });
 
     describe("logCustomerIn", () => {

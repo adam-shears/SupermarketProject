@@ -5,10 +5,12 @@
 {% endblock %}
 
 {% block content %}
-  <div class="picker-page">
-    <div class="picker-header-row">
-      <h1>Inventory Management</h1>
-      <a class="inventory-link" href="/picker">Back to Picker View</a>
+  <div class="picker-page inventory-page">
+    <div class="picker-header-row inventory-header-row">
+      <div>
+        <p class="page-kicker">Warehouse Admin</p>
+        <h1>Inventory Management</h1>
+      </div>
     </div>
 
     {% if updated %}
@@ -19,15 +21,15 @@
       <p class="error-message">{{ error }}</p>
     {% endif %}
 
-    <section class="management-issues-panel">
+    <section class="management-issues-panel inventory-panel">
       <h2>Management Issue Portal</h2>
 
       {% if managementIssues.length === 0 %}
-        <p>No stock issues currently reported.</p>
+        <p class="empty-state">No stock issues currently reported.</p>
       {% else %}
         <div class="issue-list">
           {% for issue in managementIssues %}
-            <div class="management-issue-card {% if issue.resolved %}resolved{% endif %}">
+            <article class="management-issue-card {% if issue.resolved %}resolved{% endif %}">
               <div><strong>Order:</strong> {{ issue.order_id }}</div>
               <div><strong>Customer:</strong> {{ issue.customer_name }}</div>
               <div><strong>Product:</strong> {{ issue.product_name }}</div>
@@ -42,45 +44,72 @@
                   Open
                 {% endif %}
               </div>
-            </div>
+            </article>
           {% endfor %}
         </div>
       {% endif %}
     </section>
 
-    <div class="inventory-table-wrap">
-      <table class="inventory-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Description</th>
-            <th>Quantity</th>
-            <th>Location</th>
-            <th>Update</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in inventory %}
+    <section class="inventory-panel">
+      <h2>Current Inventory</h2>
+
+      <div class="inventory-table-wrap">
+        <table class="inventory-table">
+          <thead>
             <tr>
-              <td>{{ item.id }}</td>
-              <td>{{ item.name }}</td>
-              <td>{{ item.category_name }}</td>
-              <td>{{ item.description }}</td>
-              <td>{{ item.quantity }}</td>
-              <td>{{ item.location_code }}</td>
-              <td>
-                <form method="POST" action="/inventory/{{ item.id }}" class="inventory-form">
-                  <input type="number" name="quantity" value="{{ item.quantity }}" min="0" required />
-                  <input type="text" name="locationCode" value="{{ item.location_code }}" required />
-                  <button type="submit">Save</button>
-                </form>
-              </td>
+              <th scope="col">ID</th>
+              <th scope="col">Name</th>
+              <th scope="col">Category</th>
+              <th scope="col">Description</th>
+              <th scope="col">Quantity</th>
+              <th scope="col">Location</th>
+              <th scope="col">Update</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {% for item in inventory %}
+              <tr>
+                <td>{{ item.id }}</td>
+                <td class="inventory-name">{{ item.name }}</td>
+                <td>{{ item.category_name }}</td>
+                <td class="inventory-description">{{ item.description }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.location_code }}</td>
+                <td>
+                  <form method="POST" action="/inventory/{{ item.id }}" class="inventory-form">
+                    <label for="quantity-{{ item.id }}" class="visually-hidden">
+                      Quantity for {{ item.name }}
+                    </label>
+                    <input
+                      id="quantity-{{ item.id }}"
+                      class="inventory-input inventory-qty"
+                      type="number"
+                      name="quantity"
+                      value="{{ item.quantity }}"
+                      min="0"
+                      required
+                    />
+
+                    <label for="location-{{ item.id }}" class="visually-hidden">
+                      Location code for {{ item.name }}
+                    </label>
+                    <input
+                      id="location-{{ item.id }}"
+                      class="inventory-input inventory-location"
+                      type="text"
+                      name="locationCode"
+                      value="{{ item.location_code }}"
+                      required
+                    />
+
+                    <button type="submit" class="inventory-save-btn">Save</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 {% endblock %}

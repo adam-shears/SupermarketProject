@@ -63,7 +63,7 @@ export async function selectListedProductByIdWithDiscountRows(productId) {
   return result.rows;
 }
 
-export async function selectActiveDealRows() {
+export async function selectDealRows() {
   const result = await pool.query(`
     SELECT
       d.id AS discount_id,
@@ -71,6 +71,8 @@ export async function selectActiveDealRows() {
       d.name AS discount_name,
       d.type,
       d.value,
+      d.starts_at,
+      d.ends_at,
       p.id AS product_id,
       p.name AS product_name
     FROM discounts d
@@ -79,13 +81,37 @@ export async function selectActiveDealRows() {
     JOIN products p
       ON pd.product_id = p.id
     WHERE d.active = true
-      AND d.starts_at <= NOW()
-      AND (d.ends_at IS NULL OR d.ends_at > NOW())
       AND p.listed = true
     ORDER BY d.id, p.id
   `);
 
   return result.rows;
+}
+
+export async function insertNewDeal(code, name, type, value, startsAt, endsAt, products) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const discount = await client.query(`
+      INSERT INTO discounts (code, name, type, value, starts_at, ends_at, active)
+      VALUES ($1, $2, $3, $4, $5, $6, true)
+      RETURNING id
+    `, [code, name, type, value, startsAt, endsAt]);
+
+    for (const productId of products) {
+      await client.query(`
+        INSERT INTO product_discounts (product_id, discount_id)
+        VALUES ($1, $2)
+      `, [productId, discount.rows[0].id]);
+    }
+    await client.query("COMMIT");
+    return discount.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    await client.release();
+  }
 }
 
 export async function selectProductsBySearchTerm(term) {

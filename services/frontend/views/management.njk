@@ -5,23 +5,19 @@
 {% endblock %}
 
 {% block content %}
-
 <div class="management-page">
   <div class="management-header">
-    <h1>Management View</h1>
-
-    {% if error %}
-    <div class="error-message">
-      <p>{{ error }}</p>
+    <div class="management-title-block">
+      <h1>Analytics</h1>
+      <p class="management-page-subtitle">Monitor store performance</p>
     </div>
-    {% endif %}
 
     <div class="management-controls">
-      <form action="/management" method="get" class="management-filter-form">
+      <form action="/management" method="get" class="management-filter-form" id="management-filter-form">
         <div class="filter-row">
           <div class="filter-group">
             <label for="scale">Time Scale</label>
-            <select name="scale" id="scale" onchange="this.form.submit()">
+            <select name="scale" id="scale">
               <option value="day" {% if scale == "day" %}selected{% endif %}>Day</option>
               <option value="week" {% if scale == "week" %}selected{% endif %}>Week</option>
               <option value="month" {% if scale == "month" %}selected{% endif %}>Month</option>
@@ -30,10 +26,16 @@
 
           <div class="filter-group">
             <label for="search">Search</label>
-            <input type="text" name="search" id="search" placeholder="Search by name or category..." value="{{ search }}">
+            <input
+              type="text"
+              name="search"
+              id="search"
+              placeholder="Search by name or category"
+              value="{{ search }}"
+            >
           </div>
 
-          <button type="submit" class="filter-button">Search</button>
+          <button type="submit" class="filter-button">Apply Filters</button>
         </div>
       </form>
 
@@ -45,64 +47,222 @@
     </div>
   </div>
 
+  {% if error %}
+    <div class="error-message">
+      <p>{{ error }}</p>
+    </div>
+  {% endif %}
+
+  {% if managementActionError %}
+    <div class="error-message">
+      <p>{{ managementActionError }}</p>
+    </div>
+  {% endif %}
+
   <div class="management-grid">
-    <div class="management-card total-sales-card">
-      <h2>Total Sales</h2>
-      <p class="card-subtitle">Filtered by {{ scale }}</p>
+    <section class="management-card total-sales-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Total Sales</h2>
+          <p class="card-subtitle">View sales totals for the selected reporting period.</p>
+        </div>
+        <span class="card-chip">{{ scale | upper }}</span>
+      </div>
+
       <p class="total-sales-value">&pound;{{ (management.totalSalesPence / 100).toFixed(2) }}</p>
-    </div>
+    </section>
 
-    <div class="management-card">
-      <h2>Best Sellers</h2>
-      <p class="card-subtitle">Top-selling products for this {{ scale }}</p>
-
-      <div class="best-sellers-list">
-        {% for item in management.bestSellers %}
-        <div class="best-seller-item">
-          <div class="best-seller-placeholder">{{ item.name }}</div>
-          <p>{{ item.name }}</p>
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Best Sellers</h2>
+          <p class="card-subtitle">See which products are performing best during the selected period.</p>
         </div>
-        {% endfor %}
-        {% if management.bestSellers.length == 0 %}
-        <p class="no-data">No results found</p>
-        {% endif %}
+        <span class="card-chip">Top {{ management.bestSellers.length }}</span>
       </div>
-    </div>
 
-    <div class="management-card">
-      <h2>Sales by Category</h2>
-      <p class="card-subtitle">Revenue grouped by category</p>
-
-      <div class="data-list">
-        {% for item in management.salesPerCategory %}
-        <div class="data-row">
-          <span>{{ item.category }}</span>
-          <span>&pound;{{ (item.salesPence / 100).toFixed(2) }}</span>
+      {% if management.bestSellers.length > 0 %}
+        <div class="best-sellers-list">
+          {% for item in management.bestSellers %}
+            <div class="best-seller-item">
+              <div class="best-seller-rank">#{{ loop.index }}</div>
+              <div class="best-seller-name">{{ item.name }}</div>
+            </div>
+          {% endfor %}
         </div>
-        {% endfor %}
-        {% if management.salesPerCategory.length == 0 %}
-        <p class="no-data">No results found</p>
-        {% endif %}
-      </div>
-    </div>
+      {% else %}
+        <p class="no-data">No best seller data available.</p>
+      {% endif %}
+    </section>
 
-    <div class="management-card">
-      <h2>Trending Items</h2>
-      <p class="card-subtitle">Items with higher than usual sales for {{ scale }}</p>
-
-      <div class="data-list">
-        {% for item in management.trendingItems %}
-        <div class="data-row">
-          <span>#{{ item.rank }} {{ item.name }}</span>
-          <span>{{ item.unitsSold }} units</span>
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Sales by Category</h2>
+          <p class="card-subtitle">Compare revenue across product categories.</p>
         </div>
-        {% endfor %}
-        {% if management.trendingItems.length == 0 %}
-        <p class="no-data">No trending items found</p>
-        {% endif %}
       </div>
-    </div>
+
+      {% if management.salesPerCategory.length > 0 %}
+        <div class="data-list">
+          {% for item in management.salesPerCategory %}
+            <div class="data-row">
+              <span>{{ item.category }}</span>
+              <span>&pound;{{ (item.salesPence / 100).toFixed(2) }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-data">No category sales available.</p>
+      {% endif %}
+    </section>
+
+    <section class="management-card">
+      <div class="card-header-row">
+        <div>
+          <h2>Trending Items</h2>
+          <p class="card-subtitle">Identify products with stronger-than-usual demand.</p>
+        </div>
+      </div>
+
+      {% if management.trendingItems.length > 0 %}
+        <div class="data-list">
+          {% for item in management.trendingItems %}
+            <div class="data-row">
+              <span>#{{ item.rank }} {{ item.name }}</span>
+              <span>{{ item.unitsSold }} units</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="no-data">No trending items found.</p>
+      {% endif %}
+    </section>
   </div>
-</div>
 
+<script>
+  function getStorageKey(containerId) {
+    return "managementHiddenProducts:" + containerId;
+  }
+
+  function readHiddenProducts(containerId) {
+    try {
+      const raw = localStorage.getItem(getStorageKey(containerId));
+      return raw ? JSON.parse(raw) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writeHiddenProducts(containerId, products) {
+    localStorage.setItem(getStorageKey(containerId), JSON.stringify(products));
+  }
+
+  function addHiddenProducts(containerId, productsToAdd) {
+    const existing = readHiddenProducts(containerId);
+    const merged = [...new Set([...existing, ...productsToAdd])];
+    writeHiddenProducts(containerId, merged);
+  }
+
+  function applyHiddenProducts(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const hiddenProducts = new Set(readHiddenProducts(containerId));
+    const items = container.querySelectorAll(".product-checkbox-item");
+
+    items.forEach((item) => {
+      const productName = item.dataset.product || "";
+      if (hiddenProducts.has(productName)) {
+        item.remove();
+      }
+    });
+
+    cleanupEmptyCategories(containerId);
+  }
+
+  function cleanupEmptyCategories(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const groups = container.querySelectorAll(".product-category-group");
+    groups.forEach((group) => {
+      const remainingItems = group.querySelectorAll(".product-checkbox-item");
+      group.style.display = remainingItems.length > 0 ? "block" : "none";
+    });
+  }
+
+  function filterProductOptions(containerId, query) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const value = (query || "").toLowerCase();
+    const groups = container.querySelectorAll(".product-category-group");
+
+    groups.forEach((group) => {
+      const items = group.querySelectorAll(".product-checkbox-item");
+      let visibleCount = 0;
+
+      items.forEach((item) => {
+        const text = item.textContent.toLowerCase();
+        const matched = text.includes(value);
+        item.style.display = matched ? "flex" : "none";
+        if (matched) visibleCount += 1;
+      });
+
+      const stillHasItems = group.querySelectorAll(".product-checkbox-item").length > 0;
+      group.style.display = visibleCount > 0 && stillHasItems ? "block" : "none";
+    });
+  }
+
+  function setCategoryChecked(button, checked) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkboxes = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = checked;
+    });
+
+    return false;
+  }
+
+  function removeCheckedProducts(button, containerId) {
+    const categoryGroup = button.closest(".product-category-group");
+    if (!categoryGroup) return false;
+
+    const checkedItems = categoryGroup.querySelectorAll('.product-checkbox-item input[type="checkbox"]:checked');
+    const removedNames = [];
+
+    checkedItems.forEach((checkbox) => {
+      const item = checkbox.closest(".product-checkbox-item");
+      if (!item) return;
+
+      const productName = item.dataset.product || "";
+      if (productName) {
+        removedNames.push(productName);
+      }
+      item.remove();
+    });
+
+    if (removedNames.length > 0) {
+      addHiddenProducts(containerId, removedNames);
+    }
+
+    cleanupEmptyCategories(containerId);
+    return false;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const scaleSelect = document.getElementById("scale");
+    if (scaleSelect && scaleSelect.form) {
+      scaleSelect.addEventListener("change", () => {
+        scaleSelect.form.requestSubmit();
+      });
+    }
+
+    applyHiddenProducts("promo-products-list");
+    applyHiddenProducts("discount-products-list");
+  });
+</script>
 {% endblock %}

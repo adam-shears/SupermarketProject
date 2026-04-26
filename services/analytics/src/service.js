@@ -25,6 +25,7 @@ import {
   getTotalSales,
   getTrendingItems,
 } from "./db.js";
+
 import { mergeRecommendations } from "./recommendations.js";
 
 export const analyticsDeps = {
@@ -133,7 +134,6 @@ export async function getManagementData(scale = "week", search = "") {
     "category"
   );
 
-  // trendingItems: rank them and include unitsSold
   let trendingItemsFormatted = trendingItems.map((item, index) => ({
     rank: index + 1,
     name: item.name,
@@ -142,7 +142,7 @@ export async function getManagementData(scale = "week", search = "") {
   trendingItemsFormatted = analyticsDeps.filterBySearch(trendingItemsFormatted, search, "name");
 
   return {
-    totalSalesPence,
+    totalSalesPence: Number(totalSalesPence || 0),
     bestSellers: bestSellersFormatted,
     salesPerCategory: salesPerCategoryFormatted,
     trendingItems: trendingItemsFormatted,

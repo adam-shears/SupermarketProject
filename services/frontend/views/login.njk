@@ -1,27 +1,47 @@
 {% extends "layout.njk" %}
 
 {% block styles %}
-<link rel="stylesheet" href="/auth.css" />
+  <link rel="stylesheet" href="/auth.css" />
 {% endblock %}
 
 {% block content %}
-  <div class="auth-page">
-    <div class="auth-card">
-      <h1>Login</h1>
+<main id="main-content" class="auth-page">
+  <div class="auth-card">
+    <h1>Login</h1>
 
-      {% if error %}
-        <p class="auth-error">{{ error }}</p>
-      {% endif %}
+    {% if error %}
+      <div class="auth-error" role="alert">
+        {{ error }}
+      </div>
+    {% endif %}
 
-      <form action="/login" method="POST" class="auth-form">
-        <label>Email</label>
-        <input id="email" type="email" name="email" required />
+    <form action="/login" method="POST" class="auth-form">
+      <div>
+        <label for="email" style="display: block; margin-bottom: 6px;">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          autocomplete="email"
+          placeholder="e.g. user@example.com"
+        >
+      </div>
 
-        <label>Password</label>
-        <input id="password" type="password" name="password" required />
+      <div>
+        <label for="password" style="display: block; margin-bottom: 6px;">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          autocomplete="current-password"
+          placeholder="Enter your password"
+        >
+      </div>
 
-        <button type="submit">Login</button>
-      </form>
-    </div>
+      <button type="submit">Login</button>
+    </form>
   </div>
+</main>
 {% endblock %}

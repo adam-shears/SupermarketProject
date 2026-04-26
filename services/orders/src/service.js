@@ -15,7 +15,21 @@ This file should not be responsible for:
 */
 
 import bcrypt from "bcrypt";
-import { deleteShoppingListItem, insertNewCustomer, insertShoppingListItem, selectCustomerByEmail, selectShoppingListByCustomerID, selectStaffByEmail, updateShoppingList } from "./db.js";
+import {
+  deleteShoppingListItem,
+  insertNewCustomer,
+  insertNewStaff,
+  insertShoppingListItem,
+  selectAllStaff,
+  selectCustomerByEmail,
+  selectShoppingListByCustomerID,
+  selectStaffByEmail,
+  updateShoppingList,
+  selectCustomerAccountById,
+  updateCustomerAccountById,
+  selectCustomerOrdersById,
+  softDeleteCustomerById,
+} from "./db.js";
 
 export const ordersDeps = {
   deleteShoppingListItem,
@@ -27,6 +41,14 @@ export const ordersDeps = {
   updateShoppingList,
   hashPassword: bcrypt.hash,
   comparePassword: bcrypt.compare,
+  insertNewStaff,
+  selectAllStaff,
+
+  // User Space / My Account dependencies
+  selectCustomerAccountById,
+  updateCustomerAccountById,
+  selectCustomerOrdersById,
+  softDeleteCustomerById,
 };
 
 export class OrdersError extends Error {
@@ -45,7 +67,7 @@ export async function addShoppingListItem(customerId, input) {
   const productId = input.productId;
   const quantity = input.quantity ?? 1;
 
-  if(!Number.isInteger(quantity) || quantity <= 0) {
+  if (!Number.isInteger(quantity) || quantity <= 0) {
     // basic check to make sure a valid quantity was provided
     throw new OrdersError("quantity must be a positive integer", 400);
   }
@@ -57,11 +79,14 @@ export async function updateShoppingListItem(customerId, productId, input) {
   const quantity = input.quantity;
   const checked = input.checked;
 
-  //if(!Number.isInteger(quantity) || quantity <= 0) {
-  //  throw new OrdersError("quantity must be a positive integer", 400);
-  //}
+  // if(!Number.isInteger(quantity) || quantity <= 0) {
+  //   throw new OrdersError("quantity must be a positive integer", 400);
+  // }
 
-  const result = await ordersDeps.updateShoppingList(customerId, productId, {quantity, checked});
+  const result = await ordersDeps.updateShoppingList(customerId, productId, {
+    quantity,
+    checked,
+  });
 
   if (!result) {
     // if there's no result then that item doesn't exist in the shopping list so we can't update
@@ -73,6 +98,10 @@ export async function updateShoppingListItem(customerId, productId, input) {
 
 export async function removeShoppingListItem(customerId, productId) {
   await ordersDeps.deleteShoppingListItem(customerId, productId);
+}
+
+export async function getStaffMembers() {
+  return ordersDeps.selectAllStaff();
 }
 
 export async function registerNewUser(input) {
@@ -93,7 +122,8 @@ export async function registerNewUser(input) {
       /[A-Z]/.test(password) &&
       /[a-z]/.test(password) &&
       /[0-9]/.test(password) &&
-      /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      /[@$!%*?&]/.test(password);
+
     if (!arrayTest) {
       throw new OrdersError(
         "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
@@ -118,10 +148,48 @@ export async function registerNewUser(input) {
     throw new OrdersError("Email is already in use", 409);
   }
 
+  if (input.isStaff) {
+    // if this is a staff registration, also check the staff table for existing email and make sure it ends with @supermarket.com
+    if (!email.endsWith("@supermarket.com")) {
+      throw new OrdersError("Staff email must end with @supermarket.com", 400);
+    }
+
+    const existingStaff = await ordersDeps.selectStaffByEmail(email);
+    if (existingStaff) {
+      throw new OrdersError("Email is already in use", 409);
+    }
+
+    const adminLevel = input.adminLevel || 1; // default to lowest staff level if not provided
+    const passwordHash = await ordersDeps.hashPassword(password, 12);
+
+    return ordersDeps.insertNewStaff(
+      email,
+      passwordHash,
+      firstName,
+      lastName,
+      phone,
+      adminLevel
+    );
+  }
+
+  // if the user is not a staff member, proceed with normal registration unless they try to provide a staff email
+  if (email.endsWith("@supermarket.com")) {
+    throw new OrdersError(
+      "You cannot register with a staff email. If you are a staff member, contact your administrator to register you.",
+      403
+    );
+  }
+
   // at this point, the user's input is valid so we can register
   const passwordHash = await ordersDeps.hashPassword(password, 12);
 
-  return ordersDeps.insertNewCustomer(email, passwordHash, firstName, lastName, phone);
+  return ordersDeps.insertNewCustomer(
+    email,
+    passwordHash,
+    firstName,
+    lastName,
+    phone
+  );
 }
 
 export async function logCustomerIn(input) {
@@ -136,8 +204,7 @@ export async function logCustomerIn(input) {
   if (email.endsWith("@supermarket.com")) {
     // then user is a staff member and in a different table
     user = await ordersDeps.selectStaffByEmail(email);
-  }
-  else {
+  } else {
     user = await ordersDeps.selectCustomerByEmail(email);
   }
 
@@ -145,7 +212,17 @@ export async function logCustomerIn(input) {
     throw new OrdersError("Invalid email or password", 401);
   }
 
-  const passwordMatch = await ordersDeps.comparePassword(password, user.password_hash);
+  // Extra safety check for soft-deleted customer accounts.
+  // selectCustomerByEmail already filters deleted accounts, but this keeps the service safe.
+  if (user.deleted_at) {
+    throw new OrdersError("Invalid email or password", 401);
+  }
+
+  const passwordMatch = await ordersDeps.comparePassword(
+    password,
+    user.password_hash
+  );
+
   if (!passwordMatch) {
     throw new OrdersError("Invalid email or password", 401);
   }
@@ -159,5 +236,81 @@ export async function logCustomerIn(input) {
     last_name: user.last_name,
     phone: user.phone,
     createdAt: user.created_at,
+  };
+}
+
+/*
+  User Space / My Account service functions
+*/
+
+export async function getCustomerAccount(customerId) {
+  const customer = await ordersDeps.selectCustomerAccountById(customerId);
+
+  if (!customer) {
+    throw new OrdersError("Customer account not found", 404);
+  }
+
+  return {
+    id: customer.id,
+    email: customer.email,
+    firstName: customer.first_name,
+    lastName: customer.last_name,
+    phone: customer.phone,
+    createdAt: customer.created_at,
+  };
+}
+
+export async function updateCustomerAccount(customerId, input) {
+  const firstName = input.firstName ? String(input.firstName).trim() : "";
+  const lastName = input.lastName ? String(input.lastName).trim() : "";
+  const phone = input.phone ? String(input.phone).trim() : null;
+
+  if (!firstName || !lastName) {
+    throw new OrdersError("First name and last name are required", 400);
+  }
+
+  const updatedCustomer = await ordersDeps.updateCustomerAccountById(customerId, {
+    firstName,
+    lastName,
+    phone,
+  });
+
+  if (!updatedCustomer) {
+    throw new OrdersError("Customer account not found", 404);
+  }
+
+  return {
+    id: updatedCustomer.id,
+    email: updatedCustomer.email,
+    firstName: updatedCustomer.first_name,
+    lastName: updatedCustomer.last_name,
+    phone: updatedCustomer.phone,
+    createdAt: updatedCustomer.created_at,
+  };
+}
+
+export async function getCustomerOrderHistory(customerId) {
+  const orders = await ordersDeps.selectCustomerOrdersById(customerId);
+
+  return orders.map((order) => ({
+    id: order.id,
+    status: order.status,
+    subtotalPence: order.subtotal_pence,
+    discountPence: order.discount_pence,
+    totalPence: order.total_pence,
+    createdAt: order.created_at,
+    itemCount: order.item_count,
+  }));
+}
+
+export async function deleteCustomerAccount(customerId) {
+  const deletedCustomer = await ordersDeps.softDeleteCustomerById(customerId);
+
+  if (!deletedCustomer) {
+    throw new OrdersError("Customer account not found", 404);
+  }
+
+  return {
+    id: deletedCustomer.id,
   };
 }
