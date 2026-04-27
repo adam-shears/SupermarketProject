@@ -109,7 +109,7 @@ export async function getRecommendations(input) {
 
 export async function getManagementData(scale = "week", search = "") {
   if (!["day", "week", "month"].includes(scale)) {
-    throw new Error("Invalid scale. Must be day, week, or month.");
+    throw new AnalyticsError("Invalid scale. Must be day, week, or month.", 400);
   }
 
   const [totalSalesPence, bestSellers, salesPerCategory, trendingItems] = await Promise.all([

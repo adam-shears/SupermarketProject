@@ -38,8 +38,7 @@ router.get("/management", async (req, res) => {
     const data = await getManagementData(scale, search);
     res.json(data);
   } catch (error) {
-    console.error("management route error:", error);
-    res.status(400).json({ message: error.message || "unknown error" });
+    sendErrorResponse(res, error, "Failed to get management data");
   }
 });
 
