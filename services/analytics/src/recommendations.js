@@ -12,7 +12,7 @@ This file should not be responsible for:
 - Any logic that is not directly related to the recommendation algorithms
 */
 
-function filterRecommendations(recommendations, constraints) {
+export function filterRecommendations(recommendations, constraints) {
   const basket = new Set(constraints.productsInBasket || []);
   const available = new Set(constraints.availableProducts || []);
   const currentlyViewing = constraints.currentlyViewing;
