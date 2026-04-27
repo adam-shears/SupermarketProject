@@ -173,7 +173,7 @@ export async function getFrequentlyBoughtTogether(currentProductId, limit = 4) {
   `,
     [currentProductId, limit]
   );
-  return [];
+  return result;
 }
 
 export async function getPopularProducts(limit = 4) {
