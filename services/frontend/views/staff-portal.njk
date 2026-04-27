@@ -1,0 +1,49 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/home.css" />
+{% endblock %}
+
+{% block content %}
+<div class="home-wrapper">
+
+    <section class="banner-box" aria-labelledby="home-banner-title">
+        <div class="banner-text">
+            <h1 id="home-banner-title">Staff Portal</h1>
+            <p>Welcome to the 44Mart Staff Portal</p>
+            <a href="/" class="shop-link">Go to Customer Landing Page</a>
+        </div>
+    </section>
+
+    <div class="content-area">
+        <div class="button-row">
+          {% if user.admin_level > 1 %}
+            <a href="/management" class="action-card" aria-label="View sales analytics data">
+                <div class="placeholder-icon" aria-hidden="true"></div>
+                <div>Analytics</div>
+            </a>
+
+            <a href="/staff-management" class="action-card" aria-label="Manage staff members">
+                <div class="placeholder-icon" aria-hidden="true"></div>
+                <div>Staff Management</div>
+            </a>
+
+            <a href="/inventory" class="action-card" aria-label="View warehouse inventory">
+                <div class="placeholder-icon" aria-hidden="true"></div>
+                <div>Manage Inventory</div>
+            </a>
+
+            <a href="/manage-promotions" class="action-card" aria-label="Manage product promotions">
+                <div class="placeholder-icon" aria-hidden="true"></div>
+                <div>Manage Promotions</div>
+            </a>
+          {% else %}
+            <a href="/picker" class="action-card" aria-label="View your assigned orders">
+                <div class="placeholder-icon" aria-hidden="true"></div>
+                <div>My Picker View</div>
+            </a>
+          {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

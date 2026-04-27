@@ -6,208 +6,118 @@
 
 {% block content %}
 
-<div class="basket-page">
-    <div class="items-column">
-        <h2>Your Items</h2>
-        <div id="basket-items">
-            <!-- Items will be rendered by JavaScript from LocalStorage -->
-        </div>
-    </div>
+<div class="basket-wrapper">
+  <h1 class="basket-title">Your Basket</h1>
 
-    <div class="summary-column">
-        <h2>Summary</h2>
-        <div class="subtotal" id="subtotal-div">
-            <h3>Subtotal &pound;0.00</h3>
-        </div>
-        
-        <!-- Loyalty Points Redemption Section -->
-        <div class="loyalty-section" id="loyalty-section" style="display: none;">
-            <h4>Loyalty Points</h4>
-            <p id="loyalty-points-info">You have <strong>0</strong> points</p>
-            <p id="loyalty-tier-info" class="tier-badge"></p>
-            <div class="points-redeem">
-                <label class="points-toggle">
-                    <input type="checkbox" id="use-loyalty-points">
-                    <span>Use points at checkout</span>
-                </label>
-                <span id="points-value">&pound;0.00 off</span>
-            </div>
-            <p class="redeem-hint">100 points = &pound;1.00 off</p>
-        </div>
+  <div class="basket-page">
+    <section class="items-column" aria-labelledby="basket-items-title">
+      <h2 id="basket-items-title">Your Items</h2>
+      <div id="basket-items">
+        <!-- Items will be rendered by JavaScript from LocalStorage -->
+      </div>
+    </section>
 
-        <!-- Coupon Section -->
-        <div class="coupon-section" id="coupon-section" style="display: none;">
-            <h4>Available Coupons</h4>
-            <div id="available-coupons"></div>
-        </div>
+    <aside class="summary-column" aria-labelledby="basket-summary-title">
+      <h2 id="basket-summary-title">Summary</h2>
 
-        <div class="discount" id="discount-div" style="display: none;">
-            <h3 id="discount-text">Discount -&pound;0.00</h3>
-        </div>
-        <div class="promo">
-            <input type="text" id="promo-code" placeholder="Coupon code">
-            <button id="apply-promo-btn">Apply</button>
-        </div>
-        <div class="total">
-            <h3 id="total-text">Total &pound;0.00</h3>
-        </div>
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span id="subtotal-text">&pound;0.00</span>
+      </div>
 
-        <button class="proceed">Proceed &rarr;</button>
-    </div>
+      <div class="summary-row discount-row" id="discount-div" hidden>
+        <span>Discount</span>
+        <span id="discount-text">-&pound;0.00</span>
+      </div>
+
+      <div class="promo">
+        <label for="promo-code" class="visually-hidden">Promo code</label>
+        <input id="promo-code" type="text" placeholder="Promo code">
+        <button type="button" class="promo-btn">Add</button>
+      </div>
+
+      <div class="summary-row total-row">
+        <span>Total</span>
+        <span id="total-text">&pound;0.00</span>
+      </div>
+
+      <button type="button" class="proceed">Proceed &rarr;</button>
+    </aside>
+  </div>
 </div>
 
 <script type="module">
   import * as service from '/service.js';
 
-  let loyaltyAccount = null;
-  let pointsDiscountPence = 0;
-  let pointsToRedeem = 0;
-  let couponDiscountPence = 0;
-  let appliedCouponCode = null;
-  const currencySymbol = '\u00A3';
-
-  async function fetchJson(url, options = {}) {
-    const response = await fetch(url, options);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.message || 'Request failed');
-    }
-    return data;
+  function formatPrice(pence) {
+    return `£${(pence / 100).toFixed(2)}`;
   }
 
-  // Get user ID from the page
-  function getUserId() {
-    return document.body.dataset.userId || null;
-  }
-
-  // Load loyalty account for logged-in users
-  async function loadLoyaltyAccount() {
-    const userId = getUserId();
-    if (!userId) {
-      return;
-    }
-
-    try {
-      loyaltyAccount = await fetchJson('/api/loyalty/checkout');
-      showLoyaltySection();
-    } catch (error) {
-      console.log('No loyalty account or not logged in');
-    }
-  }
-
-  // Show loyalty section if user is logged in
-  function showLoyaltySection() {
-    if (!loyaltyAccount) return;
-
-    const section = document.getElementById('loyalty-section');
-    const couponSection = document.getElementById('coupon-section');
-    
-    section.style.display = 'block';
-    
-    // Show points info
-    document.getElementById('loyalty-points-info').innerHTML = 
-        `You have <strong>${loyaltyAccount.points}</strong> points`;
-
-    const usePoints = document.getElementById('use-loyalty-points');
-    usePoints.disabled = loyaltyAccount.points < 100;
-    
-    // Show tier badge
-    const tierInfo = document.getElementById('loyalty-tier-info');
-    tierInfo.textContent = `${loyaltyAccount.tier} Member`;
-    tierInfo.className = `tier-badge tier-${loyaltyAccount.tier.toLowerCase()}`;
-
-    // Show available coupons
-    if (loyaltyAccount.unusedCoupons && loyaltyAccount.unusedCoupons.length > 0) {
-      couponSection.style.display = 'block';
-      const couponsContainer = document.getElementById('available-coupons');
-      couponsContainer.innerHTML = loyaltyAccount.unusedCoupons.map(coupon => `
-        <div class="coupon-item" data-code="${coupon.code}">
-            <span class="coupon-code">${coupon.code}</span>
-            <span class="coupon-discount">${coupon.discount_percent}% off</span>
-            <span class="coupon-min-spend">Min &pound;${(coupon.min_spend_pence / 100).toFixed(2)}</span>
-        </div>
-      `).join('');
-      
-      // Add click handlers for coupons
-      document.querySelectorAll('.coupon-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const code = item.dataset.code;
-          document.getElementById('promo-code').value = code;
-        });
-      });
-    }
-
-    // Add points redemption handler
-    document.getElementById('use-loyalty-points').addEventListener('change', updateTotals);
-  }
-
-  function updatePointsDiscount(subtotal) {
-    const usePoints = document.getElementById('use-loyalty-points');
-
-    if (!loyaltyAccount || !usePoints || !usePoints.checked) {
-      pointsDiscountPence = 0;
-      pointsToRedeem = 0;
-      document.getElementById('points-value').textContent = `${currencySymbol}0.00 off`;
-      return;
-    }
-
-    const availableDiscountPence = Math.floor(loyaltyAccount.points / 100) * 100;
-    const remainingTotal = Math.max(0, subtotal - couponDiscountPence);
-    pointsDiscountPence = Math.min(availableDiscountPence, remainingTotal);
-    pointsToRedeem = pointsDiscountPence;
-
-    document.getElementById('points-value').textContent =
-        `${currencySymbol}${(pointsDiscountPence / 100).toFixed(2)} off`;
-  }
-
-  // Update subtotal, discount, and total in the summary
   function updateTotals() {
     const totals = service.calculateTotals();
-    const subtotal = totals.subtotal;
-    updatePointsDiscount(subtotal);
-    
-    // Calculate total discount
-    const totalDiscount = pointsDiscountPence + couponDiscountPence;
-    const finalTotal = Math.max(0, subtotal - totalDiscount);
 
-    document.getElementById('subtotal-div').innerHTML = `<h3>Subtotal &pound;${(subtotal / 100).toFixed(2)}</h3>`;
-    document.getElementById('total-text').textContent = `Total ${currencySymbol}${(finalTotal / 100).toFixed(2)}`;
+    document.getElementById('subtotal-text').textContent = formatPrice(totals.subtotal);
+    document.getElementById('total-text').textContent = formatPrice(totals.total);
 
-    if (totalDiscount > 0) {
-      document.getElementById('discount-div').style.display = 'block';
-      document.getElementById('discount-text').textContent = `Discount -${currencySymbol}${(totalDiscount / 100).toFixed(2)}`;
+    const discountDiv = document.getElementById('discount-div');
+    const discountText = document.getElementById('discount-text');
+
+    if (totals.discounts > 0) {
+      discountDiv.hidden = false;
+      discountText.textContent = `-${formatPrice(totals.discounts)}`;
     } else {
-      document.getElementById('discount-div').style.display = 'none';
+      discountDiv.hidden = true;
+      discountText.textContent = '-£0.00';
     }
   }
 
-  // Render all basket items
   function renderBasket() {
     const items = service.getBasket();
     const itemsColumn = document.getElementById('basket-items');
     itemsColumn.innerHTML = '';
 
     if (items.length === 0) {
-      itemsColumn.innerHTML = '<p>Your basket is empty</p>';
+      itemsColumn.innerHTML = `
+        <p class="empty-basket">Your basket is empty.</p>
+      `;
       updateTotals();
       return;
     }
 
-    items.forEach(item => {
+    items.forEach((item) => {
       itemsColumn.innerHTML += `
-        <div class="item-card">
-          <a href="/products/${item.productId}?from=basket">
+        <article class="item-card">
+          <a href="/products/${item.productId}?from=basket" class="item-link">
             <img src="${item.image_url}" alt="${item.name}" class="product-thumbnail">
             <div class="item-details">
-              <h3>${item.name}</h3>
-              <p>&pound;${(item.price_pence / 100).toFixed(2)}</p>
+              <h3 class="item-name">${item.name}</h3>
+              <p class="item-price">${formatPrice(item.price_pence)}</p>
             </div>
           </a>
+
           <div class="item-actions">
-            <input type="number" value="${item.quantity}" class="quantity-input" data-id="${item.productId}" min="1">
-            <button class="delete-button" data-id="${item.productId}">X</button>
+            <label for="qty-${item.productId}" class="visually-hidden">
+              Quantity for ${item.name}
+            </label>
+            <input
+              id="qty-${item.productId}"
+              type="number"
+              value="${item.quantity}"
+              class="quantity-input"
+              data-id="${item.productId}"
+              min="1"
+            >
+
+            <button
+              type="button"
+              class="delete-button"
+              data-id="${item.productId}"
+              aria-label="Remove ${item.name} from basket"
+            >
+              Remove
+            </button>
           </div>
-        </div>
+        </article>
       `;
     });
 
@@ -215,22 +125,19 @@
     updateTotals();
   }
 
-  // Attach event listeners to delete buttons and quantity inputs
   function attachEventListeners() {
-    // Delete item
-    document.querySelectorAll('.delete-button').forEach(btn => {
+    document.querySelectorAll('.delete-button').forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        const productId = Number(e.target.dataset.id);
+        const productId = Number(e.currentTarget.dataset.id);
         service.removeFromBasket(productId);
         renderBasket();
       });
     });
 
-    // Quantity change
-    document.querySelectorAll('.quantity-input').forEach(input => {
-      input.addEventListener('input', (e) => {
+    document.querySelectorAll('.quantity-input').forEach((input) => {
+      const update = (e) => {
         const productId = Number(e.target.dataset.id);
-        let quantity = parseInt(e.target.value) || 1;
+        let quantity = parseInt(e.target.value, 10) || 1;
 
         if (quantity < 1) {
           quantity = 1;
@@ -239,100 +146,14 @@
 
         service.updateQuantity(productId, quantity);
         updateTotals();
-      });
+      };
 
-      input.addEventListener('change', (e) => {
-        const productId = Number(e.target.dataset.id);
-        let quantity = parseInt(e.target.value) || 1;
-
-        if (quantity < 1) {
-          quantity = 1;
-          e.target.value = 1;
-        }
-
-        service.updateQuantity(productId, quantity);
-        updateTotals();
-      });
+      input.addEventListener('input', update);
+      input.addEventListener('change', update);
     });
   }
 
-  // Apply promo/coupon code
-  document.getElementById('apply-promo-btn').addEventListener('click', async () => {
-    const code = document.getElementById('promo-code').value.trim();
-    if (!code) {
-      alert('Please enter a coupon code');
-      return;
-    }
-
-    const userId = getUserId();
-    if (!userId) {
-      alert('Please log in to use coupons');
-      return;
-    }
-
-    const totals = service.calculateTotals();
-    
-    try {
-      const result = await fetchJson('/api/loyalty/coupon/apply', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ couponCode: code, orderTotal: totals.total }),
-      });
-      couponDiscountPence = result.discountPence;
-      appliedCouponCode = code;
-      alert(`Coupon applied! You save ${currencySymbol}${(result.discountPence / 100).toFixed(2)}`);
-      updateTotals();
-    } catch (error) {
-      alert(error.message || 'Failed to apply coupon');
-    }
-  });
-
-  // check unresolved stock issues before proceeding
-  async function checkUnresolvedIssues() {
-    try {
-      const response = await fetch('/api/stock-issues?status=unresolved');
-      if (!response.ok) {
-        return 0;
-      }
-      const issues = await response.json();
-      return Array.isArray(issues) ? issues.length : 0;
-    } catch (error) {
-      console.error('Failed to fetch unresolved issues', error);
-      return 0;
-    }
-  }
-
-  document.querySelector('.proceed').addEventListener('click', async () => {
-    const unresolved = await checkUnresolvedIssues();
-
-    if (unresolved > 0) {
-      alert(`Cannot finalize order while ${unresolved} unresolved stock issue(s) exist. Please ask management to resolve them.`);
-      return;
-    }
-
-    // If user is logged in and has points to redeem, process them
-    const userId = getUserId();
-    if (userId && loyaltyAccount && pointsDiscountPence > 0) {
-      try {
-        if (pointsToRedeem > 0) {
-          const totals = service.calculateTotals();
-          await fetchJson('/api/loyalty/redeem', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ points: pointsToRedeem, orderTotal: totals.total }),
-          });
-        }
-      } catch (error) {
-        console.error('Failed to redeem points:', error);
-      }
-    }
-
-    alert('Proceeding to checkout...');
-  });
-
-  // Initial render on page load
   renderBasket();
-  loadLoyaltyAccount();
 </script>
 
 {% endblock %}

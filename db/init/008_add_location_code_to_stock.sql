@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE stock
+ADD COLUMN IF NOT EXISTS location_code VARCHAR(50);
+
+COMMIT;

@@ -1,19 +1,31 @@
 {
   "private": true,
+  "workspaces": [
+    "services/*"
+  ],
   "scripts": {
     "up": "docker compose up --build",
-    "up:cs": "DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose up --build",
+    "up:cs": "DOCKER_API_VERSION=1.43 DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose up --build",
     "down": "docker compose down",
+    "down:cs": "DOCKER_API_VERSION=1.43 DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose down",
     "reset": "docker compose down -v",
+    "reset:cs": "DOCKER_API_VERSION=1.43 DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose down -v",
     "logs": "docker compose logs -f",
+    "logs:cs": "DOCKER_API_VERSION=1.43 DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose logs -f",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "mocha --file services/*/test/setup.js \"services/*/test/**/*.test.js\""
   },
   "devDependencies": {
+    "chai": "^6.2.2",
+    "chai-as-promised": "^8.0.2",
     "eslint": "^10.0.0",
     "globals": "^17.4.0",
-    "prettier": "^3.8.1"
+    "mocha": "^11.7.5",
+    "prettier": "^3.8.1",
+    "sinon": "^21.0.3",
+    "supertest": "^7.2.2"
   }
 }

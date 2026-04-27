@@ -1,11 +1,14 @@
+/* Used Gemini to assist with explaining css scaling (rem/vw)
+https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-4284785701 */
+
 .product-list-page {
-  padding: 60px;
+  padding: clamp(15px, 5vw, 60px);
   padding-top: 20px;
 }
 
 .hero-banner {
   background: #e3f2fd;
-  padding: 40px;
+  padding: clamp(20px, 4vw, 40px);
   border-radius: 8px;
   margin-bottom: 40px;
   text-align: center;
@@ -25,7 +28,7 @@
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
@@ -34,7 +37,7 @@
   transform: scale(1.05);
 }
 
-.product-card a {
+.product-card-link {
   text-decoration: none;
   color: inherit;
   flex-grow: 1;
@@ -42,20 +45,32 @@
   flex-direction: column;
 }
 
-.product-card h3 {
-  margin: 10px 0;
-  font-size: 1.1rem;
-  color: #333;
-  min-height: 2.4em;
+.product-details {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
 }
 
-.product-card a:hover h3 {
+.product-name {
+  display: block;
+  margin: 10px 0 8px;
+  min-height: 2.4em;
+  line-height: 1.35;
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+  font-weight: 700;
+  color: #333;
+}
+
+.product-card-link:hover .product-name {
   text-decoration: underline;
   color: #007bff;
 }
 
 .offer {
-  color: #E74C3C;
+  color: #e74c3c;
   font-weight: bold;
   margin-bottom: 10px;
   min-height: 1.2em;
@@ -75,7 +90,8 @@
   justify-content: center;
   align-items: center;
   gap: 5px;
-  height: 40px;
+  height: 44px;
+  flex-shrink: 0;
 }
 
 .quantity-input {
@@ -87,24 +103,26 @@
   font-size: 1rem;
 }
 
-.quantity-minus, .quantity-plus {
+.quantity-minus,
+.quantity-plus {
   background-color: #007bff;
   color: white;
   border: none;
   cursor: pointer;
   border-radius: 4px;
-  width: 40px; 
+  width: 40px;
   height: 100%;
   font-size: 1.5rem;
   line-height: 1;
 }
 
-.quantity-minus:hover, .quantity-plus:hover {
+.quantity-minus:hover,
+.quantity-plus:hover {
   background-color: #0056b3;
 }
 
 .add-btn {
-  background-color: #28a745;
+  background-color: #1f7a3d;
   color: white;
   border: none;
   padding: 8px 12px;
@@ -116,34 +134,21 @@
 }
 
 .add-btn:hover {
-  background-color: #218838;
+  background-color: #176130;
 }
 
 .add-btn:active {
-  transform: scale(0.9);
-}
-
-.product-details {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 15px;
+  transform: scale(0.97);
 }
 
 .product-price {
-  margin-top: auto;
-  margin-bottom: 0;
-  padding: 10px 0;
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #525252;
-}
-
-.product-name {
-  font-size: 1rem;
-  color: #1A1F36;
+  display: inline-block;
+  margin: 2px 0 0;
+  padding: 0;
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #333333;
+  line-height: 1.3;
 }
 
 .product-image {
@@ -153,4 +158,19 @@
   aspect-ratio: 1 / 1;
   object-fit: contain;
   background-color: #f7f7f7;
+}
+
+.product-card-link:focus-visible,
+.quantity-minus:focus-visible,
+.quantity-plus:focus-visible,
+.quantity-input:focus-visible,
+.add-btn:focus-visible {
+  outline: 3px solid #005fcc;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .basket-controls {
+    flex-direction: column;
+  }
 }

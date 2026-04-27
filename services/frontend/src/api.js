@@ -6,9 +6,10 @@ Never put logic in this file beyond HTTP-specific concerns or very light normali
 The only changes that should be made to this file are adding new functions in the api object
 that make requests to the other services.
 
-HTTP validation should be performed in thos services' routes.js files and business logic
+HTTP validation should be performed in those services' routes.js files and business logic
 should be performed in those services' service.js files.
 */
+
 
 const CATALOGUE_URL = process.env.CATALOGUE_URL || "http://catalogue:3000";
 const ORDERS_URL = process.env.ORDERS_URL || "http://orders:3000";
@@ -18,7 +19,11 @@ const ANALYTICS_URL = process.env.ANALYTICS_URL || "http://analytics:3000";
 async function getJson(url) {
   const res = await fetch(url);
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  if (!res.ok) {
+    const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
+    error.status = res.status;
+    throw error;
+  }
   return data;
 }
 
@@ -31,7 +36,11 @@ async function postJson(url, body) {
 
   const data = await res.json();
 
-  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  if (!res.ok) {
+    const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
+    error.status = res.status;
+    throw error;
+  }
   return data;
 }
 
@@ -45,15 +54,21 @@ async function patchJson(url, body) {
   if (res.status === 204) {
     return null;
   }
+
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `Request failed ${res.status}: ${url}`);
+  if (!res.ok) {
+    const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
+    error.status = res.status;
+    throw error;
+  }
   return data;
 }
 
 async function deleteRequest(url) {
   const res = await fetch(url, {
-    method: "DELETE"
+    method: "DELETE",
   });
+
   if (res.status !== 204 && !res.ok) {
     const data = await res.json();
     throw new Error(data.message || `Request failed ${res.status}: ${url}`);
@@ -62,8 +77,10 @@ async function deleteRequest(url) {
 
 export const api = {
   listProducts: () => getJson(`${CATALOGUE_URL}/products`),
+  chunkProductsByCategory: () => getJson(`${CATALOGUE_URL}/products?chunkByCategory=true`),
   getProduct: (id) => getJson(`${CATALOGUE_URL}/products/${id}`),
-  searchProducts: (term) => getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
+  searchProducts: (term) =>
+    getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
 
   getBasket: () => getJson(`${ORDERS_URL}/basket`),
   addToBasket: (productId, quantity) =>
@@ -72,103 +89,90 @@ export const api = {
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 
-  getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
-  getLoyaltyAccount: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/loyalty`),
-  getLoyaltyAccountForCheckout: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/loyalty/checkout`),
-  redeemLoyaltyPoints: (customerId, points, orderTotal) => 
-    postJson(`${ORDERS_URL}/customers/${customerId}/loyalty/redeem`, { points, orderTotal }),
-  applyLoyaltyCoupon: (customerId, couponCode, orderTotal) => 
-    postJson(`${ORDERS_URL}/customers/${customerId}/loyalty/coupon/apply`, { couponCode, orderTotal }),
+  getCustomerAccount: (customerId) =>
+    getJson(`${ORDERS_URL}/customers/${customerId}/account`),
+
+  updateCustomerAccount: (customerId, payload) =>
+    patchJson(`${ORDERS_URL}/customers/${customerId}/account`, payload),
+
+  getCustomerOrders: (customerId) =>
+    getJson(`${ORDERS_URL}/customers/${customerId}/orders`),
+
+  deleteCustomerAccount: (customerId) =>
+    deleteRequest(`${ORDERS_URL}/customers/${customerId}/account`),
+
+  getShoppingList: (customerId) =>
+    getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  getLoyaltyAccount: (customerId) =>
+    getJson(`${ORDERS_URL}/customers/${customerId}/loyalty`),
+  getLoyaltyAccountForCheckout: (customerId) =>
+    getJson(`${ORDERS_URL}/customers/${customerId}/loyalty/checkout`),
+  redeemLoyaltyPoints: (customerId, points, orderTotal) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/loyalty/redeem`, {
+      points,
+      orderTotal,
+    }),
+  applyLoyaltyCoupon: (customerId, couponCode, orderTotal) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/loyalty/coupon/apply`, {
+      couponCode,
+      orderTotal,
+    }),
   getLoyaltyTiers: () => getJson(`${ORDERS_URL}/loyalty/tiers`),
-  calculateLoyaltyPoints: (amount, tier) => getJson(`${ORDERS_URL}/loyalty/calculate-points?amount=${amount}&tier=${encodeURIComponent(tier)}`),
-  addShoppingListItem: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
-  updateShoppingListItem: (customerId, productId, payload) => patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
-  deleteShoppingListItem: (customerId, productId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
-  reportStockIssue: (productId, reporterId, notes) =>
-    postJson(`${WAREHOUSE_URL}/stock-issues`, { productId, reporterId, notes }),
-  getStockIssues: (status) => {
-    const params = status ? `?status=${encodeURIComponent(status)}` : "";
-    return getJson(`${WAREHOUSE_URL}/stock-issues${params}`);
-  },
-  resolveStockIssue: (issueId) => patchJson(`${WAREHOUSE_URL}/stock-issues/${issueId}/resolve`),
-  
+  addShoppingListItem: (customerId, payload) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
+  updateShoppingListItem: (customerId, productId, payload) =>
+    patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
+  deleteShoppingListItem: (customerId, productId) =>
+    deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
+
   getManagementView: async (scale = "week", search = "") => {
-    const mockData = {
-      day: {
-        totalSalesPence: 48230,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Bread" },
-          { id: 3, name: "Eggs" },
-        ],
-        salesPerCategory: [
-          { category: "Fruit", salesPence: 9200 },
-          { category: "Bakery", salesPence: 8400 },
-          { category: "Drinks", salesPence: 11300 },
-          { category: "Snacks", salesPence: 7600 },
-          { category: "Dairy", salesPence: 11730 },
-        ],
-        trendingItems: [
-          { rank: 1, name: "Milk", unitsSold: 28 },
-          { rank: 2, name: "Bread", unitsSold: 24 },
-          { rank: 3, name: "Eggs", unitsSold: 20 },
-        ],
-      },
-
-      week: {
-        totalSalesPence: 284560,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Bread" },
-          { id: 3, name: "Eggs" },
-        ],
-        salesPerCategory: [
-          { category: "Fruit", salesPence: 72400 },
-          { category: "Bakery", salesPence: 53100 },
-          { category: "Drinks", salesPence: 64800 },
-          { category: "Snacks", salesPence: 40300 },
-          { category: "Dairy", salesPence: 53960 },
-        ],
-        trendingItems: [
-          { rank: 1, name: "Milk", unitsSold: 142 },
-          { rank: 2, name: "Bread", unitsSold: 127 },
-          { rank: 3, name: "Eggs", unitsSold: 111 },
-        ],
-      },
-
-      month: {
-        totalSalesPence: 1123780,
-        bestSellers: [
-          { id: 1, name: "Milk" },
-          { id: 2, name: "Eggs" },
-          { id: 3, name: "Bread" },
-        ],
-        salesPerCategory: [
-          { category: "Fruit", salesPence: 264000 },
-          { category: "Bakery", salesPence: 211500 },
-          { category: "Drinks", salesPence: 248400 },
-          { category: "Snacks", salesPence: 178200 },
-          { category: "Dairy", salesPence: 221680 },
-        ],
-        trendingItems: [
-          { rank: 1, name: "Milk", unitsSold: 530 },
-          { rank: 2, name: "Eggs", unitsSold: 488 },
-          { rank: 3, name: "Bread", unitsSold: 455 },
-        ],
-      },
-    };
-
-    try {
-      const params = new URLSearchParams({ scale, search }).toString();
-      return await getJson(`${ANALYTICS_URL}/management?${params}`);
-    } catch (error) {
-      console.warn("Using mock management data:", error.message);
-      return mockData[scale] || mockData.week;
-    }
+    const params = new URLSearchParams({ scale, search }).toString();
+    return await getJson(`${ANALYTICS_URL}/management?${params}`);
   },
 
   getSalesByCategoryCsvUrl: (scale = "week", search = "") => {
     const params = new URLSearchParams({ scale, search }).toString();
     return `/management/export.csv?${params}`;
   },
+
+  getPickerOrders: (pickerId) => getJson(`${WAREHOUSE_URL}/picker/orders?pickerId=${pickerId}`),
+
+  completePickerItem: (orderId, productId) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/complete`, {}),
+
+  reportPickerIssue: (orderId, productId, payload) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/issue`, payload),
+
+  resolvePickerIssue: (issueId) =>
+    postJson(`${WAREHOUSE_URL}/picker/issues/${issueId}/resolve`, {}),
+
+  finalisePickerOrder: (orderId) =>
+    postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/finalise`, {}),
+
+  getManagementIssues: () => getJson(`${WAREHOUSE_URL}/management/issues`),
+  reportStockIssue: (productId, reporterId, notes) =>
+    postJson(`${WAREHOUSE_URL}/stock-issues`, { productId, reporterId, notes }),
+  getStockIssues: (status) => {
+    const params = status ? `?status=${encodeURIComponent(status)}` : "";
+    return getJson(`${WAREHOUSE_URL}/stock-issues${params}`);
+  },
+  resolveStockIssue: (issueId) =>
+    patchJson(`${WAREHOUSE_URL}/stock-issues/${issueId}/resolve`),
+  getInventory: () => getJson(`${WAREHOUSE_URL}/inventory`),
+
+  updateInventory: (productId, payload) =>
+    patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),
+
+  registerStaffMember: (payload) =>
+    postJson(`${ORDERS_URL}/auth/register-staff`, payload),
+
+  assignPickerToOrder: (orderId, payload) =>
+    postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
+
+  getPendingOrders: () => getJson(`${WAREHOUSE_URL}/management/orders/pending`),
+  getStaffMembers: () => getJson(`${ORDERS_URL}/staff`),
+
+  getCurrentPromotions: () => getJson(`${CATALOGUE_URL}/deals`),
+  getAllPromotions: () => getJson(`${CATALOGUE_URL}/deals?includeExpired=true`),
+  createDeal: (payload) => postJson(`${CATALOGUE_URL}/deals/create`, payload),
 };

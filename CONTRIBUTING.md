@@ -213,28 +213,54 @@ Stories and issues are considered **done** when **all** of the following are tru
 > If you encounter a setup issue or some other problem with the repo that you fix, add it here so that other teammates can benefit from it.
 
 ### SELinux DB Issues
-On Fedora and other SELinux distros, you may encounter permission issues while binding the database. To fix this, create a docker override:
+On Fedora and other SELinux distros, it is known that **older** versions of the project may encounter permission issues while binding the database. To fix this, use the dedicated `override` script:
 ```bash
-cp docker-compose.yml docker-compose.override.yml
+scripts/override.sh
 ```
-In the `db:` section, add `:Z` to the bind mount:
-```yaml
-db:
-  ...
-  volumes:
-    - pgdata:/var/lib/postgresql/data
-    - ./db/migrations:/docker-entrypoint-initdb.d:ro,Z
-```
+This is **NOT NECESSARY NOR RECOMMENDED** if the version of the project you're running has a `Dockerfile` in `db/`.
 
 ### Docker Client Version Too New (Codespaces)
 In Codespaces, the Docker client is too new for the Docker daemon and `docker compose up --build` fails. If you receive an error like:
 ```bash
 Error response from daemon: client version X is too new. Maximum supported API version is Y: driver not connecting
 ```
-Please use the provided npm wrapper in place of `docker compose up --build`:
+Please use the provided npm wrappers
 ```
 npm run up:cs
+npm run down:cs
+npm run reset:cs
+npm run logs:cs
 ```
+
+### Docker Elevated Account Issues During Install (Windows)
+On some versions of Windows, installing Docker Desktop will fail with an error:  
+> For security reasons C:\ProgramData\DockerDesktop must be owned by an elevated account
+
+First, ensure that the account you're logged in on has Administrator privileges. If it does, try running the installer as an Administrator or refer to Docker's own troubleshooting guidance first.  
+Only if nothing on Docker's website works, should you try the following:
+1. Attempt to install Docker Desktop and wait for it to fail
+2. Press the windows key
+3. Search for cmd
+4. Open cmd as Administrator
+5. Execute the following commands
+```cmd
+icacls "C:\ProgramData\DockerDesktop" /setowner "NT AUTHORITY\SYSTEM" /t /c
+icacls "C:\ProgramData\DockerDesktop" /grant SYSTEM:F /t /c
+icacls "C:\ProgramData\DockerDesktop" /grant Administrators:F /t
+```
+6. Attempt the install again
+
+### localhost Refused to connect.
+First, make sure the services are definitely running:
+```bash
+docker compose ps
+```
+You should see six entries beginning with `supermarketproject`. If you don't, start the containers:
+```bash
+docker compose up --build
+```
+If the containers are running and you still cannot get a response from `localhost`, you may be on a Remote setup where you need to forward a port.  
+In VS Code, head to the "Ports" section of the integrated terminal, and manually forward port `3000`. This is especially relevant when using Codespaces.
 
 ## Notes
 
