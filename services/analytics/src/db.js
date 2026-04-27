@@ -152,7 +152,27 @@ export async function getRecommendationsFromOrderHistory(customerId, currentProd
 }
 
 export async function getFrequentlyBoughtTogether(currentProductId, limit = 4) {
-  // not implemented yet
+  /* count the occurrences of other products being bought in the same order
+  this is per order, so does not take quantity into account,
+  just whether it was bought in the same order or not */
+  const result = await pool.query(
+    `
+    SELECT oi.product_id AS id, COUNT(*) AS times_bought_together
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    WHERE o.id IN (
+      SELECT o.id
+      FROM orders o
+      JOIN order_items oi ON o.id = oi.order_id
+      WHERE oi.product_id = $1
+    )
+    AND oi.product_id != $1
+    GROUP BY oi.product_id
+    ORDER BY times_bought_together DESC
+    LIMIT $2
+  `,
+    [currentProductId, limit]
+  );
   return [];
 }
 
