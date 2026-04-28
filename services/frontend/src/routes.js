@@ -56,6 +56,14 @@ function requireAuth(requiredAdminLevel = 1) {
   };
 }
 
+// cookie parser
+// see comment in service.js function syncGuestBasketIdsCookie() for context on this
+function getCookie(req, name) {
+  const cookies = req.headers.cookie || "";
+  const match = cookies.split(";").map((cookie) => cookie.trim()).find((cookie) => cookie.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
+}
+
 function requireCustomerLogin(req, res, next) {
   if (!req.session.user) {
     return res.redirect("/login");
@@ -144,13 +152,17 @@ router.get("/products/:id", async (req, res) => {
     const [product, products] = await Promise.all([api.getProduct(productId), api.listProducts()]);
 
     const customerId = req.session.user ? req.session.user.id : null;
-    // TODO: const productsInBasket = something when checkout and basket handling is fully done
-    // initial thoughts are making a call to a function in ./service.js that gets the basket
-    // checks if the user is logged in and if so, gets the basket from the db, or if not, gets
-    // from local storage.
+    let productsInBasket = [];
+    if (customerId) {
+      productsInBasket = await api.getBasket(customerId);
+      productsInBasket = productsInBasket.map((item) => Number(item.product_id)).filter(Number.isInteger);
+    } else {
+      productsInBasket = getCookie(req, "guest_basket_ids").split(",").map(Number).filter(Number.isInteger);
+    }
+
     const recommendedProductIds = await api.getProductRecommendations(productId, {
       customerId,
-      productsInBasket: [], // TODO: see above
+      productsInBasket,
       limit: req.query.limit || 4,
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
