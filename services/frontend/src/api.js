@@ -10,7 +10,6 @@ HTTP validation should be performed in those services' routes.js files and busin
 should be performed in those services' service.js files.
 */
 
-
 const CATALOGUE_URL = process.env.CATALOGUE_URL || "http://catalogue:3000";
 const ORDERS_URL = process.env.ORDERS_URL || "http://orders:3000";
 const WAREHOUSE_URL = process.env.WAREHOUSE_URL || "http://warehouse:3000";
@@ -89,20 +88,17 @@ export const api = {
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 
-  getCustomerAccount: (customerId) =>
-    getJson(`${ORDERS_URL}/customers/${customerId}/account`),
+  getCustomerAccount: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/account`),
 
   updateCustomerAccount: (customerId, payload) =>
     patchJson(`${ORDERS_URL}/customers/${customerId}/account`, payload),
 
-  getCustomerOrders: (customerId) =>
-    getJson(`${ORDERS_URL}/customers/${customerId}/orders`),
+  getCustomerOrders: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/orders`),
 
   deleteCustomerAccount: (customerId) =>
     deleteRequest(`${ORDERS_URL}/customers/${customerId}/account`),
 
-  getShoppingList: (customerId) =>
-    getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
   addShoppingListItem: (customerId, payload) =>
     postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
   updateShoppingListItem: (customerId, productId, payload) =>
@@ -140,8 +136,7 @@ export const api = {
   updateInventory: (productId, payload) =>
     patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),
 
-  registerStaffMember: (payload) =>
-    postJson(`${ORDERS_URL}/auth/register-staff`, payload),
+  registerStaffMember: (payload) => postJson(`${ORDERS_URL}/auth/register-staff`, payload),
 
   assignPickerToOrder: (orderId, payload) =>
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
@@ -152,4 +147,13 @@ export const api = {
   getCurrentPromotions: () => getJson(`${CATALOGUE_URL}/deals`),
   getAllPromotions: () => getJson(`${CATALOGUE_URL}/deals?includeExpired=true`),
   createDeal: (payload) => postJson(`${CATALOGUE_URL}/deals/create`, payload),
+
+  getProductRecommendations: (productId, { customerId, productsInBasket, limit }) => {
+    const params = new URLSearchParams({
+      customerId: customerId || "",
+      productsInBasket: productsInBasket ? productsInBasket.join(",") : "",
+      limit: limit || "",
+    }).toString();
+    return getJson(`${ANALYTICS_URL}/recommendations/products/${productId}?${params}`);
+  },
 };
