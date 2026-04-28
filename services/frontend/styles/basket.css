@@ -76,6 +76,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 .delete-button:focus-visible,
 .proceed:focus-visible,
 .promo-btn:focus-visible,
+.loyalty-toggle input:focus-visible,
 .promo input:focus-visible {
   outline: 3px solid #005fcc;
   outline-offset: 2px;
@@ -201,6 +202,131 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 .promo-btn:hover {
   background: #004799;
   border-color: #004799;
+}
+
+.loyalty-summary {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid #d8e5dc;
+  border-radius: 8px;
+  background: #f7fbf8;
+}
+
+.loyalty-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.loyalty-summary h3 {
+  margin: 0;
+  color: #1f1f1f;
+  font-size: 1.05rem;
+}
+
+.loyalty-points-line {
+  margin: 0 0 10px;
+  color: #1f1f1f;
+  font-weight: 700;
+}
+
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e8ecef;
+  color: #333333;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tier-bronze {
+  background: #cd7f32;
+  color: #ffffff;
+}
+
+.tier-silver {
+  background: #c9d0d6;
+  color: #1f1f1f;
+}
+
+.tier-gold {
+  background: #ffd43b;
+  color: #1f1f1f;
+}
+
+.loyalty-progress {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dce7df;
+}
+
+.loyalty-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: #176130;
+  transition: width 0.2s ease;
+}
+
+.loyalty-checkout {
+  margin: 18px 0;
+  padding: 14px 0;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.loyalty-checkout h3 {
+  margin: 0 0 10px;
+  color: #1f1f1f;
+  font-size: 1.05rem;
+}
+
+.loyalty-intro {
+  margin: 0 0 10px;
+  color: #555555;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.loyalty-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #1f1f1f;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loyalty-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: #176130;
+  cursor: pointer;
+}
+
+.loyalty-toggle:has(input:disabled) {
+  color: #777777;
+  cursor: not-allowed;
+}
+
+.loyalty-toggle input:disabled {
+  cursor: not-allowed;
+}
+
+.loyalty-help {
+  margin: 8px 0 0;
+  color: #555555;
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
 .proceed {

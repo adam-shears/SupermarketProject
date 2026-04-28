@@ -36,6 +36,42 @@
         <button type="button" class="promo-btn">Add</button>
       </div>
 
+      <div class="loyalty-summary" id="loyalty-summary" hidden>
+        <div class="loyalty-summary-header">
+          <h3>Loyalty Progress</h3>
+          <span class="tier-badge" id="loyalty-tier-badge">Bronze</span>
+        </div>
+        <p class="loyalty-points-line" id="loyalty-points-line">0 points</p>
+        <div class="loyalty-progress" aria-hidden="true">
+          <span id="loyalty-progress-fill"></span>
+        </div>
+        <p class="loyalty-help" id="loyalty-progress-help"></p>
+      </div>
+
+      <div class="loyalty-checkout" id="coupon-checkout" hidden>
+        <h3>Loyalty Coupons</h3>
+        <p class="loyalty-intro">
+          Apply your best eligible loyalty coupon before using points.
+        </p>
+        <label class="loyalty-toggle">
+          <input id="use-loyalty-coupon" type="checkbox">
+          <span>Apply best coupon</span>
+        </label>
+        <p id="loyalty-coupon-help" class="loyalty-help"></p>
+      </div>
+
+      <div class="loyalty-checkout" id="loyalty-checkout" hidden>
+        <h3>Loyalty Points</h3>
+        <p class="loyalty-intro">
+          Every 100 points gives &pound;1 off. We will use the maximum valid amount automatically.
+        </p>
+        <label class="loyalty-toggle">
+          <input id="use-loyalty-points" type="checkbox">
+          <span>Use points at checkout</span>
+        </label>
+        <p id="loyalty-points-help" class="loyalty-help"></p>
+      </div>
+
       <div class="summary-row total-row">
         <span>Total</span>
         <span id="total-text">&pound;0.00</span>
@@ -49,25 +85,185 @@
 <script type="module">
   import * as service from '/service.js';
 
+  const checkoutState = {
+    loyaltyAccount: null,
+    useCoupon: false,
+    usePoints: false,
+  };
+
   function formatPrice(pence) {
-    return `£${(pence / 100).toFixed(2)}`;
+    return `\u00a3${(pence / 100).toFixed(2)}`;
+  }
+
+  function getCouponDiscount(coupon, orderTotalPence) {
+    if (!coupon || Number(orderTotalPence) < Number(coupon.min_spend_pence || 0)) {
+      return 0;
+    }
+
+    return Math.floor(Number(orderTotalPence || 0) * (Number(coupon.discount_percent || 0) / 100));
+  }
+
+  function getBestEligibleCoupon(orderTotalPence) {
+    const coupons = checkoutState.loyaltyAccount?.unusedCoupons || [];
+    let coupon = null;
+    let discount = 0;
+
+    coupons.forEach((item) => {
+      const itemDiscount = getCouponDiscount(item, orderTotalPence);
+      if (itemDiscount > discount) {
+        coupon = item;
+        discount = itemDiscount;
+      }
+    });
+
+    return { coupon, discount };
+  }
+
+  function getMaxLoyaltyDiscount(orderTotalPence) {
+    const points = Number(checkoutState.loyaltyAccount?.points || 0);
+    const usablePoints = Math.floor(points / 100) * 100;
+    const redeemableOrderValue = Math.floor(orderTotalPence / 100) * 100;
+
+    return Math.max(0, Math.min(usablePoints, redeemableOrderValue));
+  }
+
+  function getNextTierInfo(tier, points) {
+    if (tier === 'Bronze') {
+      return { name: 'Silver', target: 2000, progress: Math.min(100, Math.round((points / 2000) * 100)) };
+    }
+
+    if (tier === 'Silver') {
+      return { name: 'Gold', target: 5000, progress: Math.min(100, Math.round((points / 5000) * 100)) };
+    }
+
+    return { name: null, target: points, progress: 100 };
+  }
+
+  function showLoyaltySummary(message) {
+    const summary = document.getElementById('loyalty-summary');
+    const badge = document.getElementById('loyalty-tier-badge');
+    const pointsLine = document.getElementById('loyalty-points-line');
+    const progressFill = document.getElementById('loyalty-progress-fill');
+    const progressHelp = document.getElementById('loyalty-progress-help');
+
+    summary.hidden = false;
+
+    if (!checkoutState.loyaltyAccount) {
+      badge.textContent = 'Loyalty';
+      badge.className = 'tier-badge';
+      pointsLine.textContent = 'Sign in to view your points and tier progress.';
+      progressFill.style.width = '0%';
+      progressHelp.textContent = message || 'Your loyalty status will appear here when you are logged in.';
+      return;
+    }
+
+    const tier = checkoutState.loyaltyAccount.tier || 'Bronze';
+    const points = Number(checkoutState.loyaltyAccount.points || 0);
+    const nextTier = getNextTierInfo(tier, points);
+
+    badge.textContent = tier;
+    badge.className = `tier-badge tier-${tier.toLowerCase()}`;
+    pointsLine.textContent = `${points} loyalty points`;
+    progressFill.style.width = `${nextTier.progress}%`;
+
+    if (nextTier.name) {
+      const remaining = Math.max(0, nextTier.target - points);
+      progressHelp.textContent =
+        `${points} / ${nextTier.target} points. ${remaining} more points to reach ${nextTier.name}.`;
+    } else {
+      progressHelp.textContent = 'You have reached the top loyalty tier.';
+    }
+  }
+
+  function updateCouponControls(orderTotalPence) {
+    const section = document.getElementById('coupon-checkout');
+    const checkbox = document.getElementById('use-loyalty-coupon');
+    const help = document.getElementById('loyalty-coupon-help');
+
+    if (!checkoutState.loyaltyAccount) {
+      section.hidden = true;
+      return;
+    }
+
+    const coupons = checkoutState.loyaltyAccount.unusedCoupons || [];
+    const bestCoupon = getBestEligibleCoupon(orderTotalPence);
+
+    section.hidden = false;
+    checkbox.disabled = coupons.length === 0 || !bestCoupon.coupon;
+    checkbox.checked = checkoutState.useCoupon && !checkbox.disabled;
+
+    if (coupons.length === 0) {
+      checkoutState.useCoupon = false;
+      help.textContent = 'You do not have any unused loyalty coupons right now.';
+    } else if (!bestCoupon.coupon) {
+      checkoutState.useCoupon = false;
+      help.textContent = 'Your coupons need a higher basket total before they can be used.';
+    } else if (checkoutState.useCoupon) {
+      help.textContent = `${bestCoupon.coupon.code} gives ${bestCoupon.coupon.discount_percent}% off (${formatPrice(bestCoupon.discount)}).`;
+    } else {
+      help.textContent = `Best available coupon: ${bestCoupon.coupon.code} for ${formatPrice(bestCoupon.discount)} off.`;
+    }
+  }
+
+  function updateLoyaltyControls(orderTotalPence) {
+    const section = document.getElementById('loyalty-checkout');
+    const checkbox = document.getElementById('use-loyalty-points');
+    const help = document.getElementById('loyalty-points-help');
+
+    if (!checkoutState.loyaltyAccount) {
+      section.hidden = true;
+      return;
+    }
+
+    const points = Number(checkoutState.loyaltyAccount.points || 0);
+    const maxDiscount = getMaxLoyaltyDiscount(orderTotalPence);
+
+    section.hidden = false;
+    checkbox.disabled = points < 100;
+    checkbox.checked = checkoutState.usePoints && !checkbox.disabled;
+
+    if (points < 100) {
+      checkoutState.usePoints = false;
+      help.textContent = `You have ${points} points. You need at least 100 points to use them at checkout.`;
+    } else if (maxDiscount <= 0) {
+      help.textContent = `You have ${points} points. Add at least \u00a31.00 of items to use points.`;
+    } else if (checkoutState.usePoints) {
+      help.textContent = `${maxDiscount} points will be used for ${formatPrice(maxDiscount)} off.`;
+    } else {
+      help.textContent = `You have ${points} points. Available discount: ${formatPrice(maxDiscount)}.`;
+    }
   }
 
   function updateTotals() {
     const totals = service.calculateTotals();
+    let remainingTotal = Math.max(0, totals.subtotal - totals.discounts);
+    updateCouponControls(remainingTotal);
+
+    const couponDiscount = checkoutState.useCoupon
+      ? getBestEligibleCoupon(remainingTotal).discount
+      : 0;
+
+    remainingTotal = Math.max(0, remainingTotal - couponDiscount);
+    updateLoyaltyControls(remainingTotal);
+
+    const loyaltyDiscount = checkoutState.usePoints
+      ? getMaxLoyaltyDiscount(remainingTotal)
+      : 0;
+    const discounts = totals.discounts + couponDiscount + loyaltyDiscount;
+    const total = Math.max(0, totals.subtotal - discounts);
 
     document.getElementById('subtotal-text').textContent = formatPrice(totals.subtotal);
-    document.getElementById('total-text').textContent = formatPrice(totals.total);
+    document.getElementById('total-text').textContent = formatPrice(total);
 
     const discountDiv = document.getElementById('discount-div');
     const discountText = document.getElementById('discount-text');
 
-    if (totals.discounts > 0) {
+    if (discounts > 0) {
       discountDiv.hidden = false;
-      discountText.textContent = `-${formatPrice(totals.discounts)}`;
+      discountText.textContent = `-${formatPrice(discounts)}`;
     } else {
       discountDiv.hidden = true;
-      discountText.textContent = '-£0.00';
+      discountText.textContent = '-\u00a30.00';
     }
   }
 
@@ -153,6 +349,57 @@
     });
   }
 
+  function showGuestLoyaltyControls() {
+    const couponSection = document.getElementById('coupon-checkout');
+    const couponCheckbox = document.getElementById('use-loyalty-coupon');
+    const couponHelp = document.getElementById('loyalty-coupon-help');
+    const pointsSection = document.getElementById('loyalty-checkout');
+    const pointsCheckbox = document.getElementById('use-loyalty-points');
+    const pointsHelp = document.getElementById('loyalty-points-help');
+
+    showLoyaltySummary();
+
+    couponSection.hidden = false;
+    couponCheckbox.disabled = true;
+    couponHelp.textContent = 'Log in to see and apply your loyalty coupons.';
+
+    pointsSection.hidden = false;
+    pointsCheckbox.disabled = true;
+    pointsHelp.textContent = 'Log in to use loyalty points at checkout.';
+  }
+
+  async function loadLoyaltyCheckout() {
+    if (!document.body.dataset.userId) {
+      showGuestLoyaltyControls();
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/loyalty/checkout', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Failed to load loyalty checkout details');
+      }
+
+      checkoutState.loyaltyAccount = await response.json();
+      showLoyaltySummary();
+      updateTotals();
+    } catch (error) {
+      console.error(error);
+      showLoyaltySummary('We could not load your loyalty details right now.');
+    }
+  }
+
+  document.getElementById('use-loyalty-points').addEventListener('change', (event) => {
+    checkoutState.usePoints = event.target.checked;
+    updateTotals();
+  });
+
+  document.getElementById('use-loyalty-coupon').addEventListener('change', (event) => {
+    checkoutState.useCoupon = event.target.checked;
+    updateTotals();
+  });
+
+  loadLoyaltyCheckout();
   renderBasket();
 </script>
 

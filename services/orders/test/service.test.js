@@ -29,6 +29,48 @@ describe("Orders Service", () => {
         });
     });
 
+    describe("loyalty redemption", () => {
+        it("should calculate the maximum redeemable points in 100 point chunks", () => {
+            expect(service.calculateRedeemablePoints(3450, 3391)).to.equal(3300);
+            expect(service.calculateRedeemablePoints(90, 5000)).to.equal(0);
+            expect(service.calculateRedeemablePoints(1000, 99)).to.equal(0);
+        });
+
+        it("should automatically redeem the maximum available points when points are not provided", async () => {
+            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+                id: 10,
+                points: 3450,
+                tier: "Silver",
+            });
+            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
+                id: 10,
+                points: 150,
+                tier: "Bronze",
+            });
+            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+
+            const result = await service.redeemPoints(1, NaN, 3391);
+
+            expect(result).to.deep.equal({
+                pointsRedeemed: 3300,
+                discountPence: 3300,
+                remainingPoints: 150,
+            });
+            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 150, "Bronze")).to.be.true;
+            expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, null, "redemption", -3300)).to.be.true;
+        });
+
+        it("should reject redemption when fewer than 100 points can be used", async () => {
+            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+                id: 10,
+                points: 90,
+                tier: "Bronze",
+            });
+
+            await expect(service.redeemPoints(1, NaN, 5000)).to.be.rejectedWith(service.OrdersError, "At least 100 points are required to redeem");
+        });
+    });
+
     describe("registerNewUser", () => {
         it("should reject duplicated emails", async () => {
             sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves({id: 1});

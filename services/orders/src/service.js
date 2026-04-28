@@ -212,6 +212,13 @@ export function calculateDiscountFromPoints(points) {
   return Math.floor(points / 100) * 100;
 }
 
+export function calculateRedeemablePoints(accountPoints, orderTotalPence) {
+  const usablePoints = Math.floor(Number(accountPoints || 0) / 100) * 100;
+  const redeemableOrderValue = Math.floor(Number(orderTotalPence || 0) / 100) * 100;
+
+  return Math.max(0, Math.min(usablePoints, redeemableOrderValue));
+}
+
 export async function addLoyaltyPoints(customerId, input) {
   const amount = Number(input.amount);
   const type = input.type || "purchase";
@@ -241,22 +248,28 @@ export async function addLoyaltyPoints(customerId, input) {
 }
 
 export async function redeemPoints(customerId, pointsToRedeem, orderTotalPence) {
-  if (!Number.isInteger(pointsToRedeem) || pointsToRedeem <= 0) {
-    throw new OrdersError("Points to redeem must be a positive integer", 400);
-  }
-
   let account = await ordersDeps.selectLoyaltyAccountByCustomerId(customerId);
   if (!account) {
     throw new OrdersError("Loyalty account not found", 404);
   }
 
-  if (account.points < pointsToRedeem) {
+  const requestedPoints = Number.isInteger(pointsToRedeem)
+    ? Math.floor(pointsToRedeem / 100) * 100
+    : calculateRedeemablePoints(account.points, orderTotalPence);
+
+  if (requestedPoints <= 0) {
+    throw new OrdersError("At least 100 points are required to redeem", 400);
+  }
+
+  if (account.points < requestedPoints) {
     throw new OrdersError("Insufficient points", 400);
   }
 
-  const discountPence = calculateDiscountFromPoints(pointsToRedeem);
-  const actualDiscount = Math.min(discountPence, Number(orderTotalPence || 0));
-  const actualPointsUsed = Math.floor(actualDiscount);
+  const actualPointsUsed = calculateRedeemablePoints(requestedPoints, orderTotalPence);
+  if (actualPointsUsed <= 0) {
+    throw new OrdersError("Order total must be at least GBP 1.00 to redeem points", 400);
+  }
+
   const nextPoints = Math.max(0, account.points - actualPointsUsed);
   const newTier = getLoyaltyTier(nextPoints);
 
@@ -265,7 +278,7 @@ export async function redeemPoints(customerId, pointsToRedeem, orderTotalPence) 
 
   return {
     pointsRedeemed: actualPointsUsed,
-    discountPence: actualDiscount,
+    discountPence: actualPointsUsed,
     remainingPoints: nextPoints,
   };
 }

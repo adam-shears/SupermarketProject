@@ -107,6 +107,11 @@ export function getRecommendations(productId) {
 
 
 // --- Shopping list logic ---
+function getProductId(item) {
+  const productId = Number(item?.product_id ?? item?.productId ?? item?.id);
+  return Number.isInteger(productId) && productId > 0 ? productId : null;
+}
+
 function getUserId() {
   return document.body.dataset.userId || null;
 }
@@ -138,12 +143,17 @@ export async function getShoppingList() {
 }
 
 export async function addShoppingListItem(item) {
+  const productId = getProductId(item);
+  if (!productId) {
+    throw new Error("Product id is missing");
+  }
+
   if (getUserId()) {
     const res = await fetch(`/api/shopping-list/items`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        productId: item.id,
+        productId,
         quantity: 1,
       }),
     });
@@ -153,13 +163,13 @@ export async function addShoppingListItem(item) {
   }
 
   const items = getGuestList();
-  const existing = items.find((i) => i.product_id === item.id);
+  const existing = items.find((i) => i.product_id === productId);
 
   if (existing) {
     existing.quantity += 1;
   } else {
     items.push({
-      product_id: item.id,
+      product_id: productId,
       name: item.name,
       category_name: item.category_name,
       price_pence: item.price_pence,
@@ -173,11 +183,16 @@ export async function addShoppingListItem(item) {
 export async function checkShoppingListItem(productId, checked) {
   // mark an item as checked off
   if (getUserId()) {
-    await fetch(`/api/shopping-list/items/${productId}`, {
+    const res = await fetch(`/api/shopping-list/items/${productId}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ checked }),
     });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || "Failed to update shopping list item");
+    }
     return;
   }
 
@@ -204,6 +219,14 @@ export async function deleteShoppingListItem(productId) {
 
 export async function autoCheck(productId) {
   try {
+    const productIdNumber = Number(productId);
+    const items = await getShoppingList();
+    const itemExists = items.some((item) => getProductId(item) === productIdNumber);
+
+    if (!itemExists) {
+      return;
+    }
+
     await checkShoppingListItem(productId, true);
 
     window.dispatchEvent(new CustomEvent("shopping-list-updated", {
