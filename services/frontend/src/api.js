@@ -10,7 +10,6 @@ HTTP validation should be performed in those services' routes.js files and busin
 should be performed in those services' service.js files.
 */
 
-
 const CATALOGUE_URL = process.env.CATALOGUE_URL || "http://catalogue:3000";
 const ORDERS_URL = process.env.ORDERS_URL || "http://orders:3000";
 const WAREHOUSE_URL = process.env.WAREHOUSE_URL || "http://warehouse:3000";
@@ -19,11 +18,13 @@ const ANALYTICS_URL = process.env.ANALYTICS_URL || "http://analytics:3000";
 async function getJson(url) {
   const res = await fetch(url);
   const data = await res.json();
+
   if (!res.ok) {
     const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
     error.status = res.status;
     throw error;
   }
+
   return data;
 }
 
@@ -41,6 +42,7 @@ async function postJson(url, body) {
     error.status = res.status;
     throw error;
   }
+
   return data;
 }
 
@@ -56,11 +58,13 @@ async function patchJson(url, body) {
   }
 
   const data = await res.json();
+
   if (!res.ok) {
     const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
     error.status = res.status;
     throw error;
   }
+
   return data;
 }
 
@@ -103,25 +107,33 @@ export const api = {
 
   getShoppingList: (customerId) =>
     getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+
   getLoyaltyAccount: (customerId) =>
     getJson(`${ORDERS_URL}/customers/${customerId}/loyalty`),
+
   getLoyaltyAccountForCheckout: (customerId) =>
     getJson(`${ORDERS_URL}/customers/${customerId}/loyalty/checkout`),
+
   redeemLoyaltyPoints: (customerId, points, orderTotal) =>
     postJson(`${ORDERS_URL}/customers/${customerId}/loyalty/redeem`, {
       points,
       orderTotal,
     }),
+
   applyLoyaltyCoupon: (customerId, couponCode, orderTotal) =>
     postJson(`${ORDERS_URL}/customers/${customerId}/loyalty/coupon/apply`, {
       couponCode,
       orderTotal,
     }),
+
   getLoyaltyTiers: () => getJson(`${ORDERS_URL}/loyalty/tiers`),
+
   addShoppingListItem: (customerId, payload) =>
     postJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items`, payload),
+
   updateShoppingListItem: (customerId, productId, payload) =>
     patchJson(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`, payload),
+
   deleteShoppingListItem: (customerId, productId) =>
     deleteRequest(`${ORDERS_URL}/customers/${customerId}/shopping-list/items/${productId}`),
 
@@ -135,7 +147,8 @@ export const api = {
     return `/management/export.csv?${params}`;
   },
 
-  getPickerOrders: (pickerId) => getJson(`${WAREHOUSE_URL}/picker/orders?pickerId=${pickerId}`),
+  getPickerOrders: (pickerId) =>
+    getJson(`${WAREHOUSE_URL}/picker/orders?pickerId=${pickerId}`),
 
   completePickerItem: (orderId, productId) =>
     postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/complete`, {}),
@@ -150,14 +163,18 @@ export const api = {
     postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/finalise`, {}),
 
   getManagementIssues: () => getJson(`${WAREHOUSE_URL}/management/issues`),
+
   reportStockIssue: (productId, reporterId, notes) =>
     postJson(`${WAREHOUSE_URL}/stock-issues`, { productId, reporterId, notes }),
+
   getStockIssues: (status) => {
     const params = status ? `?status=${encodeURIComponent(status)}` : "";
     return getJson(`${WAREHOUSE_URL}/stock-issues${params}`);
   },
+
   resolveStockIssue: (issueId) =>
     patchJson(`${WAREHOUSE_URL}/stock-issues/${issueId}/resolve`),
+
   getInventory: () => getJson(`${WAREHOUSE_URL}/inventory`),
 
   updateInventory: (productId, payload) =>
@@ -169,10 +186,28 @@ export const api = {
   assignPickerToOrder: (orderId, payload) =>
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
 
-  getPendingOrders: () => getJson(`${WAREHOUSE_URL}/management/orders/pending`),
-  getStaffMembers: () => getJson(`${ORDERS_URL}/staff`),
+  getPendingOrders: () =>
+    getJson(`${WAREHOUSE_URL}/management/orders/pending`),
 
-  getCurrentPromotions: () => getJson(`${CATALOGUE_URL}/deals`),
-  getAllPromotions: () => getJson(`${CATALOGUE_URL}/deals?includeExpired=true`),
-  createDeal: (payload) => postJson(`${CATALOGUE_URL}/deals/create`, payload),
+  getStaffMembers: () =>
+    getJson(`${ORDERS_URL}/staff`),
+
+  getCurrentPromotions: () =>
+    getJson(`${CATALOGUE_URL}/deals`),
+
+  getAllPromotions: () =>
+    getJson(`${CATALOGUE_URL}/deals?includeExpired=true`),
+
+  createDeal: (payload) =>
+    postJson(`${CATALOGUE_URL}/deals/create`, payload),
+
+  getProductRecommendations: (productId, { customerId, productsInBasket, limit }) => {
+    const params = new URLSearchParams({
+      customerId: customerId || "",
+      productsInBasket: productsInBasket ? productsInBasket.join(",") : "",
+      limit: limit || "",
+    }).toString();
+
+    return getJson(`${ANALYTICS_URL}/recommendations/products/${productId}?${params}`);
+  },
 };
