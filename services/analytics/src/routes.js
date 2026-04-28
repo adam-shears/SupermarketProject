@@ -10,9 +10,18 @@ Actual validation should be done in service.js.
 */
 
 import { Router } from "express";
-import { getManagementData } from "./service.js";
+import { AnalyticsError, getManagementData, getRecommendations } from "./service.js";
 
 const router = Router();
+
+function sendErrorResponse(res, error, fallbackMessage) {
+  if (error instanceof AnalyticsError) {
+    return res.status(error.statusCode).json({ message: error.message });
+  }
+
+  console.error(error);
+  return res.status(500).json({ message: fallbackMessage });
+}
 
 router.get("/", async (req, res) => {
   res.json({ message: "analytics service" });
@@ -29,8 +38,23 @@ router.get("/management", async (req, res) => {
     const data = await getManagementData(scale, search);
     res.json(data);
   } catch (error) {
-    console.error("management route error:", error);
-    res.status(400).json({ message: error.message || "unknown error" });
+    sendErrorResponse(res, error, "Failed to get management data");
+  }
+});
+
+router.get("/recommendations/products/:productId", async (req, res) => {
+  try {
+    const productId = req.params.productId;
+    const customerId = req.query.customerId;
+    const productsInBasket = req.query.productsInBasket;
+    const recommendations = await getRecommendations({
+      productId,
+      customerId,
+      productsInBasket: productsInBasket ? productsInBasket.split(",") : [],
+    });
+    res.status(200).json(recommendations);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get product recommendations");
   }
 });
 
