@@ -82,7 +82,7 @@ function requireCustomerLogin(req, res, next) {
 }
 
 // not implemented pages
-router.get(["/orders/repeat", "/baskets/saved", "/loyalty"], (req, res) => {
+router.get(["/orders/repeat", "/loyalty"], (req, res) => {
   res.status(501).render("5xx.njk", {
     title: "Coming Soon",
     status: "501 - Not Implemented",
@@ -255,32 +255,8 @@ router.post("/basket/items", async (req, res) => {
 // Basket GET endpoint
 router.get("/basket", async (req, res) => {
   try {
-    const basket = {
-      items: [
-        {
-          name: "Cheese",
-          price_pence: 299,
-          quantity: 1,
-          image_url: "https://via.placeholder.com/100",
-        },
-        {
-          name: "Milk",
-          price_pence: 150,
-          quantity: 2,
-          image_url: "https://via.placeholder.com/100",
-        },
-      ],
-      subtotal: 599,
-      discounts: 100,
-      total: 499,
-    };
-
     res.render("basket.njk", {
       title: "Basket",
-      items: basket.items,
-      subtotal: basket.subtotal,
-      discounts: basket.discounts,
-      total: basket.total,
       user: req.session.user || null,
     });
   } catch (error) {
@@ -289,6 +265,26 @@ router.get("/basket", async (req, res) => {
       title: "Internal Server Error",
       status: "500 - Internal Server Error",
       message: "Failed to load basket",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/baskets/saved", requireAuth(0), async (req, res) => {
+  try {
+    const savedBaskets = await api.getSavedBaskets(req.session.user.id);
+
+    res.render("saved-baskets.njk", {
+      title: "Saved Baskets",
+      savedBaskets,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load saved baskets",
       user: req.session.user || null,
     });
   }
@@ -822,6 +818,16 @@ router.delete("/api/basket/items/:productId", requireAuth(0), async (req, res) =
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to remove item from basket" });
+  }
+});
+
+router.post("/api/basket/save", requireAuth(0), async (req, res) => {
+  try {
+    const savedBasket = await api.saveBasket(req.session.user.id, req.body);
+    res.status(201).json(savedBasket);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to save basket" });
   }
 });
 

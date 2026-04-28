@@ -350,3 +350,69 @@ export async function deleteBasketItem(customerId, productId) {
       AND bi.product_id = $2
   `, [customerId, productId]);
 }
+
+export async function copyActiveBasketToSaved(customerId, name = null) {
+  const result = await pool.query(`
+    WITH active_basket AS (
+      SELECT id FROM baskets
+      WHERE customer_id = $1
+        AND saved = FALSE
+      LIMIT 1
+    ),
+    saved_basket AS (
+      INSERT INTO baskets (customer_id, name, saved, created_at, updated_at)
+      SELECT $1, $2, TRUE, NOW(), NOW()
+      FROM active_basket
+      WHERE EXISTS (SELECT 1 FROM basket_items bi WHERE bi.basket_id = active_basket.id)
+      RETURNING id, customer_id, name, saved, created_at, updated_at
+    ),
+    copied_items AS (
+      INSERT INTO basket_items (basket_id, product_id, quantity)
+      SELECT
+        saved_basket.id,
+        bi.product_id,
+        bi.quantity
+      FROM saved_basket
+      JOIN active_basket ON true
+      JOIN basket_items bi ON bi.basket_id = active_basket.id
+      RETURNING product_id, quantity
+    )
+    SELECT sb.id, sb.name, sb.saved, sb.created_at, sb.updated_at, COUNT(ci.product_id) AS item_count
+    FROM saved_basket sb
+    LEFT JOIN copied_items ci ON TRUE
+    GROUP BY sb.id, sb.name, sb.saved, sb.created_at, sb.updated_at
+  `, [customerId, name]);
+
+  return result.rows[0] || null;
+}
+
+export async function selectSavedBasketsByCustomerId(customerId) {
+  const result = await pool.query(`
+    SELECT
+      b.id AS basket_id,
+      b.name AS basket_name,
+      b.created_at,
+      b.updated_at,
+      bi.product_id,
+      bi.quantity,
+      p.name AS product_name,
+      COALESCE(pr.price_pence, 0) AS price_pence
+    FROM baskets b
+    LEFT JOIN basket_items bi ON bi.basket_id = b.id
+    LEFT JOIN products p ON p.id = bi.product_id
+    LEFT JOIN LATERAL (
+      SELECT price_pence
+      FROM prices
+      WHERE product_id = bi.product_id
+        AND starts_at <= NOW()
+        AND (ends_at IS NULL OR ends_at > NOW())
+      ORDER BY starts_at DESC
+      LIMIT 1
+    ) pr ON true
+    WHERE b.customer_id = $1
+      AND b.saved = TRUE
+    ORDER BY b.updated_at DESC
+  `, [customerId]);
+
+  return result.rows;
+}

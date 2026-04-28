@@ -17,6 +17,7 @@ import {
   getBasket,
   getCustomerAccount,
   getCustomerOrderHistory,
+  getSavedBaskets,
   getShoppingList,
   getStaffMembers,
   logCustomerIn,
@@ -24,6 +25,7 @@ import {
   registerNewUser,
   removeBasketItem,
   removeShoppingListItem,
+  saveBasket,
   updateBasket,
   updateCustomerAccount,
   updateShoppingListItem,
@@ -234,6 +236,24 @@ router.delete("/customers/:customerId/basket/items/:productId", async (req, res)
     res.status(204).send();
   } catch (error) {
     sendErrorResponse(res, error, "Failed to remove basket item.");
+  }
+});
+
+router.get("/customers/:customerId/baskets/saved", async (req, res) => {
+  try {
+    const savedBaskets = await getSavedBaskets(req.params.customerId);
+    res.status(200).json(savedBaskets);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get saved baskets.");
+  }
+});
+
+router.post("/customers/:customerId/basket/save", async (req, res) => {
+  try {
+    const savedBasket = await saveBasket(req.params.customerId, req.body);
+    res.status(201).json(savedBasket);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to save basket.");
   }
 });
 

@@ -42,18 +42,78 @@
       </div>
 
       <button type="button" class="proceed">Proceed &rarr;</button>
+
+      {% if user %}
+        <button type="button" id="open-save-basket-modal" class="proceed">Save this basket</button>
+      {% endif %}
+      <dialog id="save-basket-modal" class="save-basket-modal">
+        <form id="save-basket-form" method="dialog">
+          <h2>Save Basket</h2>
+          <label for="saved-basket-name">Basket name</label>
+          <input id="saved-basket-name" name="name" type="text" maxlength="255" placeholder="Enter basket name here..." required>
+          <p id="save-basket-status" role="status" aria-live="polite" hidden></p>
+          <div class="modal-actions">
+            <button type="button" id="cancel-save-basket">Cancel</button>
+            <button type="submit" class="proceed">Save</button>
+          </div>
+        </form>
+      </dialog>
     </aside>
   </div>
 </div>
 
 <script type="module">
   import * as service from '/service.js';
+  const saveBasketModal = document.getElementById("save-basket-modal");
+  const openSaveBasketModal = document.getElementById("open-save-basket-modal");
+  const cancelSaveBasketButton = document.getElementById("cancel-save-basket");
+  const saveBasketForm = document.getElementById("save-basket-form");
+  const saveBasketStatus = document.getElementById("save-basket-status");
+
+  openSaveBasketModal?.addEventListener("click", () => {
+    saveBasketStatus.hidden = true;
+    saveBasketStatus.textContent = "";
+    saveBasketModal.showModal();
+  });
+
+  cancelSaveBasketButton?.addEventListener("click", () => {
+    saveBasketModal.close();
+  });
+
+  saveBasketForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const data = new FormData(saveBasketForm);
+    const name = String(data.get("name") || "").trim();
+    if (!name) return;
+
+    try {
+      const res = await fetch("/api/basket/save", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save basket");
+
+      saveBasketStatus.textContent = "Basket saved successfully";
+      saveBasketStatus.hidden = false;
+
+      setTimeout(() => {
+        saveBasketModal.close();
+        saveBasketForm.reset();
+      }, 700);
+    } catch (error) {
+      saveBasketStatus.textContent = "Could not save basket";
+      saveBasketStatus.hidden = false;
+    }
+  });
 
   function formatPrice(pence) {
     return `£${(pence / 100).toFixed(2)}`;
   }
 
-  await function updateTotals() {
+  async function updateTotals() {
     const totals = service.calculateTotals();
 
     document.getElementById('subtotal-text').textContent = formatPrice(totals.subtotal);

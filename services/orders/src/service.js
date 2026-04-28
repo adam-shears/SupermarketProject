@@ -16,6 +16,7 @@ This file should not be responsible for:
 
 import bcrypt from "bcrypt";
 import {
+  copyActiveBasketToSaved,
   deleteBasketItem,
   deleteShoppingListItem,
   insertNewCustomer,
@@ -26,6 +27,7 @@ import {
   selectCustomerAccountById,
   selectCustomerByEmail,
   selectCustomerOrdersById,
+  selectSavedBasketsByCustomerId,
   selectShoppingListByCustomerID,
   selectStaffByEmail,
   softDeleteCustomerById,
@@ -59,6 +61,8 @@ export const ordersDeps = {
   upsertBasketItem,
   updateBasketItem,
   deleteBasketItem,
+  copyActiveBasketToSaved,
+  selectSavedBasketsByCustomerId,
 };
 
 export class OrdersError extends Error {
@@ -106,6 +110,53 @@ export async function updateBasket(customerId, productId, input) {
 
 export async function removeBasketItem(customerId, productId) {
   await ordersDeps.deleteBasketItem(customerId, productId);
+}
+
+export async function saveBasket(customerId, payload) {
+  const name = payload.name || "Saved Basket";
+  const savedBasket = await ordersDeps.copyActiveBasketToSaved(customerId, name);
+
+  if (!savedBasket) {
+    throw new OrdersError("Can't save an empty basket", 400);
+  }
+
+  return savedBasket;
+}
+
+export async function getSavedBaskets(customerId) {
+  const rows = await ordersDeps.selectSavedBasketsByCustomerId(customerId);
+  const basketsToReturn = new Map();
+
+  for (const row of rows) {
+    if(!basketsToReturn.has(row.basket_id)) {
+      basketsToReturn.set(row.basket_id, {
+        id: row.basket_id,
+        name: row.basket_name,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        item_count: 0,
+        total_quantity: 0,
+        total_pence: 0,
+        items: [],
+      });
+    }
+
+    const basket = basketsToReturn.get(row.basket_id);
+    if (row.product_id) {
+      const totalPence = Number(row.quantity) * Number(row.price_pence);
+      basket.item_count += 1;
+      basket.total_quantity += Number(row.quantity);
+      basket.total_pence += totalPence;
+      basket.items.push({
+        product_id: row.product_id,
+        name: row.product_name,
+        quantity: row.quantity,
+        price_pence: row.price_pence,
+        total_pence: totalPence,
+      });
+    }
+  }
+  return [...basketsToReturn.values()];
 }
 
 export async function getShoppingList(customerId) {
