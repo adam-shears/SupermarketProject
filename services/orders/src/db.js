@@ -274,3 +274,79 @@ export async function softDeleteCustomerById(customerId) {
 
   return result.rows[0] || null;
 }
+
+// Basket queries
+export async function selectBasketByCustomerId(customerId) {
+  const result = await pool.query(`
+    SELECT
+      bi.product_id,
+      bi.quantity,
+      p.name,
+      p.description,
+      c.name AS category_name,
+      COALESCE(pr.price_pence, 0) AS price_pence
+    FROM baskets b
+    JOIN basket_items bi ON bi.basket_id = b.id
+    JOIN products p ON p.id = bi.product_id
+    LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN LATERAL (
+      SELECT price_pence
+      FROM prices
+      WHERE product_id = p.id
+        AND starts_at <= NOW()
+        AND (ends_at IS NULL OR ends_at > NOW())
+      ORDER BY starts_at DESC
+      LIMIT 1
+    ) pr ON true
+    WHERE b.customer_id = $1
+      AND b.saved = FALSE
+    ORDER BY bi.product_id ASC
+  `, [customerId]);
+
+  return result.rows;
+}
+
+export async function upsertBasketItem(customerId, productId, quantity) {
+  const result = await pool.query(`
+    WITH active_basket AS (
+      INSERT INTO baskets (customer_id, name, saved, created_at, updated_at)
+      VALUES ($1, NULL, FALSE, NOW(), NOW())
+      ON CONFLICT (customer_id) WHERE saved = FALSE AND customer_id IS NOT NULL
+      DO UPDATE SET updated_at = NOW()
+      RETURNING id
+    )
+    INSERT INTO basket_items (basket_id, product_id, quantity)
+    SELECT id, $2, $3 FROM active_basket
+    ON CONFLICT (basket_id, product_id)
+    DO UPDATE SET quantity = basket_items.quantity + EXCLUDED.quantity
+    RETURNING product_id, quantity
+  `, [customerId, productId, quantity]);
+
+  return result.rows[0];
+}
+
+export async function updateBasketItem(customerId, productId, quantity) {
+  const result = await pool.query(`
+    UPDATE basket_items bi
+    SET quantity = $1
+    FROM baskets b
+    WHERE b.id = bi.basket_id
+      AND b.customer_id = $2
+      AND b.saved = FALSE
+      AND bi.product_id = $3
+    RETURNING bi.product_id, bi.quantity
+  `, [quantity, customerId, productId]);
+
+  return result.rows[0] || null;
+}
+
+export async function deleteBasketItem(customerId, productId) {
+  await pool.query(`
+    DELETE FROM basket_items bi
+    USING baskets b
+    WHERE b.id = bi.basket_id
+      AND b.customer_id = $1
+      AND b.saved = FALSE
+      AND bi.product_id = $2
+  `, [customerId, productId]);
+}

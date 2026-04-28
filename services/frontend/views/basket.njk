@@ -53,7 +53,7 @@
     return `£${(pence / 100).toFixed(2)}`;
   }
 
-  function updateTotals() {
+  await function updateTotals() {
     const totals = service.calculateTotals();
 
     document.getElementById('subtotal-text').textContent = formatPrice(totals.subtotal);
@@ -71,8 +71,8 @@
     }
   }
 
-  function renderBasket() {
-    const items = service.getBasket();
+  async function renderBasket() {
+    const items = await service.getBasket();
     const itemsColumn = document.getElementById('basket-items');
     itemsColumn.innerHTML = '';
 
@@ -80,7 +80,7 @@
       itemsColumn.innerHTML = `
         <p class="empty-basket">Your basket is empty.</p>
       `;
-      updateTotals();
+      await updateTotals();
       return;
     }
 
@@ -121,21 +121,21 @@
       `;
     });
 
-    attachEventListeners();
-    updateTotals();
+    await attachEventListeners();
+    await updateTotals();
   }
 
-  function attachEventListeners() {
+  async function attachEventListeners() {
     document.querySelectorAll('.delete-button').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const productId = Number(e.currentTarget.dataset.id);
-        service.removeFromBasket(productId);
-        renderBasket();
+        await service.removeFromBasket(productId);
+        await renderBasket();
       });
     });
 
     document.querySelectorAll('.quantity-input').forEach((input) => {
-      const update = (e) => {
+      const update = async (e) => {
         const productId = Number(e.target.dataset.id);
         let quantity = parseInt(e.target.value, 10) || 1;
 
@@ -144,8 +144,8 @@
           e.target.value = 1;
         }
 
-        service.updateQuantity(productId, quantity);
-        updateTotals();
+        await service.updateQuantity(productId, quantity);
+        await updateTotals();
       };
 
       input.addEventListener('input', update);
@@ -153,7 +153,7 @@
     });
   }
 
-  renderBasket();
+  await renderBasket();
 </script>
 
 {% endblock %}

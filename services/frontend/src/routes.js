@@ -767,6 +767,53 @@ router.delete("/api/shopping-list/items/:productId", requireAuth(0), async (req,
 });
 
 /*
+Basket endpoints
+*/
+router.get("/api/basket", requireAuth(0), async (req, res) => {
+  try {
+    const items = await api.getBasket(req.session.user.id);
+    res.json(items);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get basket" });
+  }
+});
+
+router.post("/api/basket/items", requireAuth(0), async (req, res) => {
+  try {
+    const item = await api.addToBasket(req.session.user.id, req.body);
+    res.status(201).json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add item to basket" });
+  }
+});
+
+router.patch("/api/basket/items/:productId", requireAuth(0), async (req, res) => {
+  try {
+    const item = await api.updateBasketItem(
+      req.session.user.id,
+      req.params.productId,
+      req.body
+    );
+    res.json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update basket item" });
+  }
+});
+
+router.delete("/api/basket/items/:productId", requireAuth(0), async (req, res) => {
+  try {
+    await api.deleteBasketItem(req.session.user.id, req.params.productId);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to remove item from basket" });
+  }
+});
+
+/*
 Picker + stock/location synchronisation routes
 */
 

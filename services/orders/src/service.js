@@ -16,19 +16,23 @@ This file should not be responsible for:
 
 import bcrypt from "bcrypt";
 import {
+  deleteBasketItem,
   deleteShoppingListItem,
   insertNewCustomer,
   insertNewStaff,
   insertShoppingListItem,
   selectAllStaff,
+  selectBasketByCustomerId,
+  selectCustomerAccountById,
   selectCustomerByEmail,
+  selectCustomerOrdersById,
   selectShoppingListByCustomerID,
   selectStaffByEmail,
-  updateShoppingList,
-  selectCustomerAccountById,
-  updateCustomerAccountById,
-  selectCustomerOrdersById,
   softDeleteCustomerById,
+  updateBasketItem,
+  updateCustomerAccountById,
+  updateShoppingList,
+  upsertBasketItem,
 } from "./db.js";
 
 export const ordersDeps = {
@@ -49,6 +53,12 @@ export const ordersDeps = {
   updateCustomerAccountById,
   selectCustomerOrdersById,
   softDeleteCustomerById,
+
+  // basket deps
+  selectBasketByCustomerId,
+  upsertBasketItem,
+  updateBasketItem,
+  deleteBasketItem,
 };
 
 export class OrdersError extends Error {
@@ -57,6 +67,45 @@ export class OrdersError extends Error {
     this.name = "OrdersError";
     this.statusCode = statusCode || 400;
   }
+}
+
+export async function getBasket(customerId) {
+  const basket = await ordersDeps.selectBasketByCustomerId(customerId);
+
+  if (!basket) {
+    throw new OrdersError("Basket not found", 404);
+  }
+
+  return basket;
+}
+
+export async function addOrUpdateBasketItem(customerId, input) {
+  const productId = input.productId;
+  const quantity = input.quantity ?? 1;
+
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new OrdersError("quantity must be a positive integer", 400);
+  }
+
+  return ordersDeps.upsertBasketItem(customerId, productId, quantity);
+}
+
+export async function updateBasket(customerId, productId, input) {
+  const quantity = input.quantity;
+
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new OrdersError("quantity must be a positive integer", 400);
+  }
+
+  const result = await ordersDeps.updateBasketItem(customerId, productId, quantity);
+  if (!result) {
+    throw new OrdersError("Basket item not found", 404);
+  }
+  return result;
+}
+
+export async function removeBasketItem(customerId, productId) {
+  await ordersDeps.deleteBasketItem(customerId, productId);
 }
 
 export async function getShoppingList(customerId) {

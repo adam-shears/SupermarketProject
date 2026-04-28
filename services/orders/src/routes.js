@@ -11,8 +11,10 @@ Actual validation should be done in service.js.
 
 import { Router } from "express";
 import {
+  addOrUpdateBasketItem,
   addShoppingListItem,
   deleteCustomerAccount,
+  getBasket,
   getCustomerAccount,
   getCustomerOrderHistory,
   getShoppingList,
@@ -20,7 +22,9 @@ import {
   logCustomerIn,
   OrdersError,
   registerNewUser,
+  removeBasketItem,
   removeShoppingListItem,
+  updateBasket,
   updateCustomerAccount,
   updateShoppingListItem,
 } from "./service.js";
@@ -185,6 +189,52 @@ router.get("/", async (req, res) => {
 
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "orders service is healthy." });
+});
+
+/*
+  Basket routes
+*/
+router.get("/customers/:customerId/basket", async (req, res) => {
+  try {
+    const basket = await getBasket(req.params.customerId);
+    res.status(200).json(basket);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get basket.");
+  }
+});
+
+router.post("/customers/:customerId/basket/items", async (req, res) => {
+  try {
+    const item = await addOrUpdateBasketItem(
+      req.params.customerId,
+      req.body
+    );
+    res.status(201).json(item);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to add/update basket item.");
+  }
+});
+
+router.patch("/customers/:customerId/basket/items/:productId", async (req, res) => {
+  try {
+    const item = await updateBasket(
+      req.params.customerId,
+      req.params.productId,
+      req.body
+    );
+    res.status(200).json(item);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to update basket item.");
+  }
+});
+
+router.delete("/customers/:customerId/basket/items/:productId", async (req, res) => {
+  try {
+    await removeBasketItem(req.params.customerId, req.params.productId);
+    res.status(204).send();
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to remove basket item.");
+  }
 });
 
 export default router;

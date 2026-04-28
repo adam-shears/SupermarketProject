@@ -81,9 +81,13 @@ export const api = {
   searchProducts: (term) =>
     getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
 
-  getBasket: () => getJson(`${ORDERS_URL}/basket`),
-  addToBasket: (productId, quantity) =>
-    postJson(`${ORDERS_URL}/basket/items`, { productId, quantity }),
+  getBasket: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/basket`),
+  addToBasket: (customerId, payload) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/basket/items`, payload),
+  updateBasketItem: (customerId, productId, payload) =>
+    patchJson(`${ORDERS_URL}/customers/${customerId}/basket/items/${productId}`, payload),
+  deleteBasketItem: (customerId, productId) =>
+    deleteRequest(`${ORDERS_URL}/customers/${customerId}/basket/items/${productId}`),
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),

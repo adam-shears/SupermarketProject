@@ -100,9 +100,9 @@
 <script type="module">
   import * as service from '/service.js';
 
-  function attachEventListeners() {
+  async function attachEventListeners() {
     document.querySelectorAll('.add-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const productId = Number(btn.dataset.id);
         const name = btn.dataset.name;
         const price = Number(btn.dataset.price);
@@ -118,7 +118,7 @@
           quantityInput.value = 1;
         }
 
-        service.addToBasket(productId, quantity, name, price, image);
+        await service.addToBasket(productId, quantity, name, price, image);
 
         const originalText = btn.textContent;
         btn.textContent = 'Added!';
@@ -132,7 +132,7 @@
     });
   }
 
-  attachEventListeners();
+  await attachEventListeners();
 </script>
 
 {% endblock %}
