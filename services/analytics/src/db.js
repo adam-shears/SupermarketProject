@@ -66,25 +66,26 @@ export async function getTrendingItems(scale) {
 
   const query = `
     WITH current_period AS (
-      SELECT p.id, p.name, SUM(oi.quantity) as current_units
+      SELECT p.id, p.name, p.category_id, SUM(oi.quantity) as current_units
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
       JOIN products p ON oi.product_id = p.id
       WHERE o.created_at >= NOW() - INTERVAL '${interval.current}'
-      GROUP BY p.id, p.name
+      GROUP BY p.id, p.name, p.category_id
     ),
     previous_period AS (
-      SELECT p.id, p.name, SUM(oi.quantity) as previous_units
+      SELECT p.id, p.name, p.category_id, SUM(oi.quantity) as previous_units
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.id
       JOIN products p ON oi.product_id = p.id
       WHERE o.created_at >= NOW() - INTERVAL '${interval.previous}'
         AND o.created_at < NOW() - INTERVAL '${interval.current}'
-      GROUP BY p.id, p.name
+      GROUP BY p.id, p.name, p.category_id
     )
     SELECT
       cp.id,
       cp.name,
+      cp.category_id,
       cp.current_units as units_sold,
       COALESCE(
         ROUND(
@@ -173,7 +174,7 @@ export async function getFrequentlyBoughtTogether(currentProductId, limit = 4) {
   `,
     [currentProductId, limit]
   );
-  return result;
+  return result.rows.map((row) => row.id);
 }
 
 export async function getPopularProducts(limit = 4) {

@@ -13,14 +13,17 @@ This file should not be responsible for:
 */
 
 export function filterRecommendations(recommendations, constraints) {
-  const basket = new Set(constraints.productsInBasket || []);
-  const available = new Set(constraints.availableProducts || []);
-  const currentlyViewing = constraints.currentlyViewing;
+  const basket = new Set((constraints.productsInBasket || []).map(Number));
+  const available = new Set((constraints.availableProducts || []).map(Number));
+  const currentlyViewing = Number(constraints.currentlyViewing);
   const limit = constraints.limit || 4;
   const seen = new Set();
   const filtered = [];
 
-  for (const product of recommendations) {
+  for (const candidate of recommendations || []) {
+    const product = Number(candidate);
+
+    if (!Number.isInteger(product) || product <= 0) continue;
     if (seen.has(product)) continue;
     if (product === currentlyViewing) continue;
     if (basket.has(product)) continue;

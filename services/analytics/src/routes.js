@@ -42,9 +42,16 @@ router.get("/management", async (req, res) => {
   }
 });
 
-router.get("/product/recommendations", async (req, res) => {
+router.get("/recommendations/products/:productId", async (req, res) => {
   try {
-    const recommendations = getRecommendations(req.query);
+    const productId = req.params.productId;
+    const customerId = req.query.customerId;
+    const productsInBasket = req.query.productsInBasket;
+    const recommendations = await getRecommendations({
+      productId,
+      customerId,
+      productsInBasket: productsInBasket ? productsInBasket.split(",") : [],
+    });
     res.status(200).json(recommendations);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to get product recommendations");
