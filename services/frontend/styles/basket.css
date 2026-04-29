@@ -303,3 +303,30 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   justify-content: flex-end;
   gap: 0.75rem;
 }
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.checkout-form label {
+  font-weight: 600;
+}
+
+.checkout-form input {
+  width: 100%;
+  padding: 10px 12px;
+  box-sizing: border-box;
+}
+
+.checkout-form button {
+  margin-top: 8px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.required::after {
+  content: " *";
+  color: #b42318;
+}

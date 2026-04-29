@@ -870,6 +870,93 @@ router.post("/api/basket/totals", async (req, res) => {
   }
 });
 
+// checkout
+router.post("/checkout/start", async (req, res) => {
+  try {
+    let snapshot;
+    if (req.session.user) {
+      snapshot = await api.createCheckoutSnapshot(req.session.user.id, {promoCode: req.body.promoCode || null});
+    } else {
+      snapshot = await api.createGuestCheckoutSnapshot({items: req.body.items || [], promoCode: req.body.promoCode || null});
+    }
+    req.session.checkoutSnapshot = snapshot;
+    res.status(201).json({ message: "Checkout started", snapshot });
+  } catch (error) {
+    console.error("Failed to start checkout:", error);
+    res.status(error.status || 500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: `${error.status || 500} - Internal Server Error`,
+      message: `Failed to start checkout: ${error.message}`,
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/checkout/delivery", async (req, res) => {
+  try {
+    if (!req.session.checkoutSnapshot) {
+      return res.redirect("/basket");
+    }
+
+    res.render("checkout-delivery.njk", {
+      title: "Checkout - Delivery Details",
+      snapshot: req.session.checkoutSnapshot,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load delivery details page:", error);
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: `Failed to load delivery details page: ${error.message}`,
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.post("/checkout/complete", async (req, res) => {
+  try {
+    if (!req.session.checkoutSnapshot) {
+      return res.redirect("/basket");
+    }
+
+    const deliveryInfo = {
+      addressLine: req.body.address_line.trim(),
+      town: req.body.town.trim(),
+      county: req.body.county.trim(),
+      postcode: req.body.postcode.trim(),
+    };
+
+    if (!deliveryInfo.addressLine || !deliveryInfo.town || !deliveryInfo.county || !deliveryInfo.postcode) {
+      throw new Error("All delivery fields are required.");
+    }
+
+    let guestDetails;
+    if (!req.session.user) {
+      guestDetails = {
+        name: req.body.name.trim(),
+        email: req.body.email.trim(),
+        phone: req.body.phone.trim(),
+      };
+    }
+
+    const result = await api.createOrder({customerId: req.session.user?.id || null, guestDetails, deliveryInfo, snapshot: req.session.checkoutSnapshot});
+    delete req.session.checkoutSnapshot;
+
+    res.render("checkout-complete.njk", {
+      title: "Checkout Complete",
+      order: result,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    res.status(error.status || 400).render("checkout-delivery.njk", {
+      title: "Checkout - Delivery Details",
+      snapshot: req.session.checkoutSnapshot,
+      user: req.session.user || null,
+      error: error.message || "Couldn't complete checkout.",
+    });
+  }
+});
 /*
 Picker + stock/location synchronisation routes
 */

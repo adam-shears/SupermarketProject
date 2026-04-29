@@ -42,7 +42,7 @@
         <span id="total-text">&pound;0.00</span>
       </div>
 
-      <button type="button" class="proceed">Proceed &rarr;</button>
+      <button type="button" id="proceed-to-checkout" class="proceed">Proceed &rarr;</button>
 
       {% if user %}
         <button type="button" id="open-save-basket-modal" class="proceed">Save this basket</button>
@@ -231,6 +231,33 @@
         promoAppliedStatus.hidden = false;
         await updateTotals();
       }
+    });
+
+    document.getElementById("proceed-to-checkout")?.addEventListener("click", async () => {
+      const payload = {
+        promoCode: appliedPromoCode,
+      };
+
+      const basket = await service.getBasket();
+      if (!document.body.dataset.userId) {
+        payload.items = basket.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        }));
+      }
+
+      const res = await fetch("/checkout/start", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Couldn't start checkout");
+        return;
+      }
+
+      window.location.href = "/checkout/delivery";
     });
   }
 

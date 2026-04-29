@@ -1,0 +1,44 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/basket.css" />
+{% endblock %}
+
+{% block content %}
+<div class="basket-wrapper">
+  <h1 class="basket-title">Delivery Details</h1>
+
+  {% if error %}
+    <p role="alert">{{ error }}</p>
+  {% endif %}
+
+  <form method="POST" action="/checkout/complete" class="checkout-form">
+    {% if not user %}
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" required />
+
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required />
+
+      <label for="phone">Phone</label>
+      <input id="phone" name="phone" type="text" required />
+    {% endif %}
+
+    <label for="address_line">Address Line</label>
+    <input id="address_line" name="address_line" type="text" required />
+
+    <label for="town">Town/City</label>
+    <input id="town" name="town" type="text" required />
+
+    <label for="county">County</label>
+    <input id="county" name="county" type="text" required />
+
+    <label for="postcode">Postcode</label>
+    <input id="postcode" name="postcode" type="text" required />
+
+    <p><strong>Total:</strong> £{{ snapshot.totalPence / 100 | toFixed(2) }}</p>
+
+    <button type="submit" class="proceed">Place order</button>
+  </form>
+</div>
+{% endblock %}

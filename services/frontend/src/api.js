@@ -95,6 +95,9 @@ export const api = {
   pushSavedBasketToLive: (customerId, basketId) => postJson(`${ORDERS_URL}/customers/${customerId}/baskets/${basketId}/push`, {}),
   getBasketTotals : (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/basket/total`, payload),
   getGuestBasketTotals : (payload) => postJson(`${ORDERS_URL}/basket/totals`, payload),
+  createCheckoutSnapshot: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/checkout/snapshot`, payload),
+  createGuestCheckoutSnapshot: (payload) => postJson(`${ORDERS_URL}/checkout/snapshot`, payload),
+  createOrder: (payload) => postJson(`${ORDERS_URL}/orders/create`, payload),
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),

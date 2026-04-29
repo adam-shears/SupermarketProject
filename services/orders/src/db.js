@@ -530,3 +530,44 @@ export async function selectActiveDiscountsForProducts(productIds, promoCode = n
 
   return result.rows;
 }
+
+export async function insertOrder(customerId = null, guestDetails = null, status = 'pending', subtotalPence, discountPence = 0, totalPence, deliveryInfo, items) {
+  const client = await pool.connect();
+  let sqlConstructor;
+  if (customerId) {
+    sqlConstructor = [`
+      INSERT INTO orders (customer_id, status, subtotal_pence, discount_pence, total_pence, created_at, last_updated, delivery_info)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6)
+      RETURNING id
+    `, [customerId, status, subtotalPence, discountPence, totalPence, JSON.stringify(deliveryInfo)]];
+  } else {
+    sqlConstructor = [
+      `
+      INSERT INTO orders (guest_email, guest_name, guest_phone, status, subtotal_pence, discount_pence, total_pence, created_at, last_updated, delivery_info)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), $8)
+      RETURNING id
+    `, [guestDetails.email, guestDetails.name, guestDetails.phone, status, subtotalPence, discountPence, totalPence, JSON.stringify(deliveryInfo)]];
+  }
+
+  try {
+    await client.query('BEGIN');
+
+    const orderResult = await client.query(...sqlConstructor);
+    const orderId = orderResult.rows[0].id;
+
+    for (const item of items) {
+      await client.query(`
+        INSERT INTO order_items (order_id, product_id, quantity, price_pence_per_unit, line_subtotal_pence, line_discount_pence, applied_discount_id, line_total_pence)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [orderId, item.product_id, item.quantity, item.price_pence_per_unit, item.line_subtotal_pence, item.line_discount_pence, item.applied_discount_id, item.line_total_pence]);
+    }
+
+    await client.query('COMMIT');
+    return orderId;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.release();
+  }
+}

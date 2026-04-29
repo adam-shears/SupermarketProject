@@ -13,12 +13,15 @@ import { Router } from "express";
 import {
   addOrUpdateBasketItem,
   addShoppingListItem,
+  createOrder,
   deleteCustomerAccount,
   getBasket,
   getBasketTotals,
   getCustomerAccount,
   getCustomerOrderHistory,
   getGuestBasketTotals,
+  getGuestCheckoutSnapshot,
+  getLoggedInCheckoutSnapshot,
   getSavedBaskets,
   getShoppingList,
   getStaffMembers,
@@ -284,6 +287,33 @@ router.post("/basket/totals", async (req, res) => {
     res.status(200).json(totals);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to calculate guest basket totals.");
+  }
+});
+
+router.post("/customers/:customerId/checkout/snapshot", async (req, res) => {
+  try {
+    const snapshot = await getLoggedInCheckoutSnapshot(req.params.customerId, req.body.promoCode || null);
+    res.status(200).json(snapshot);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to create checkout snapshot.");
+  }
+});
+
+router.post("/checkout/snapshot", async (req, res) => {
+  try {
+    const snapshot = await getGuestCheckoutSnapshot(req.body.items, req.body.promoCode || null);
+    res.status(200).json(snapshot);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to create guest checkout snapshot.");
+  }
+});
+
+router.post("/orders/create", async (req, res) => {
+  try {
+    const order = await createOrder(req.body.snapshot, req.body.deliveryInfo, req.body.customerId || null, req.body.guestDetails || null);
+    res.status(201).json(order);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to create order.");
   }
 });
 

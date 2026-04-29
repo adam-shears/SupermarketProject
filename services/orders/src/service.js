@@ -22,6 +22,7 @@ import {
   deleteShoppingListItem,
   insertNewCustomer,
   insertNewStaff,
+  insertOrder,
   insertShoppingListItem,
   selectActiveDiscountsForProducts,
   selectAllStaff,
@@ -73,6 +74,7 @@ export const ordersDeps = {
   selectBasketPriceLinesForGuestBaskets,
   calculateDiscounts,
   calculateLineTotals,
+  insertOrder,
 };
 
 export class OrdersError extends Error {
@@ -515,4 +517,102 @@ export async function getGuestBasketTotals(items, promoCode = null) {
   const productIds = lines.map(line => line.product_id);
   const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
   return ordersDeps.calculateLineTotals(lines, discounts, promoCode);
+}
+
+function getCheckoutSnapshot(lines, discounts, promoCode = null) {
+  const discountsByProduct = new Map();
+
+  for (const discount of discounts) {
+    if (!discountsByProduct.has(discount.product_id)) {
+      discountsByProduct.set(discount.product_id, []);
+    }
+    discountsByProduct.get(discount.product_id).push(discount);
+  }
+
+  let subtotalPence = 0;
+  let discountPence = 0;
+  let promoApplied = false;
+
+  const items = lines.map((line) => {
+    const lineSubtotalPence = line.price_pence * line.quantity;
+    const lineDiscounts = discountsByProduct.get(line.product_id) || [];
+
+    let lineDiscountPence = 0;
+    let appliedDiscountId = null;
+
+    for (const discount of lineDiscounts) {
+      const result = ordersDeps.calculateDiscounts(line, discount);
+
+      if (result > 0) {
+        lineDiscountPence += result;
+        appliedDiscountId = discount.id;
+        if (discount.code) {
+          promoApplied = true;
+        }
+      }
+    }
+
+    lineDiscountPence = Math.min(lineDiscountPence, lineSubtotalPence);
+
+    subtotalPence += lineSubtotalPence;
+    discountPence += lineDiscountPence;
+
+    return {
+      product_id: line.product_id,
+      quantity: line.quantity,
+      price_pence_per_unit: line.price_pence,
+      line_subtotal_pence: lineSubtotalPence,
+      line_discount_pence: lineDiscountPence,
+      applied_discount_id: appliedDiscountId,
+      line_total_pence: lineSubtotalPence - lineDiscountPence,
+    };
+  });
+
+  if (promoCode && !promoApplied) {
+    throw new OrdersError(`Promo code ${promoCode} is not valid for any items in the basket`, 400);
+  }
+
+  if (items.length === 0) {
+    throw new OrdersError("Cannot checkout with an empty basket", 400);
+  }
+
+  return {
+    subtotalPence,
+    discountPence,
+    totalPence: Math.max(0, subtotalPence - discountPence),
+    promoApplied,
+    items,
+  };
+}
+
+export async function getLoggedInCheckoutSnapshot(customerId, promoCode = null) {
+  const lines = await ordersDeps.selectBasketPriceLinesByCustomerId(customerId);
+  const productIds = lines.map(line => line.product_id);
+  const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
+  return getCheckoutSnapshot(lines, discounts, promoCode);
+}
+
+export async function getGuestCheckoutSnapshot(items, promoCode = null) {
+  const parsed = items.map((item) => ({
+    product_id: item.productId,
+    quantity: item.quantity,
+  }));
+
+  const lines = await ordersDeps.selectBasketPriceLinesForGuestBaskets(parsed);
+  const productIds = lines.map(line => line.product_id);
+  const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
+  return getCheckoutSnapshot(lines, discounts, promoCode);
+}
+
+export async function createOrder(snapshot, deliveryInfo, customerId = null, guestDetails = null) {
+  return ordersDeps.insertOrder(
+    customerId,
+    guestDetails,
+    "pending",
+    snapshot.subtotalPence,
+    snapshot.discountPence,
+    snapshot.totalPence,
+    deliveryInfo,
+    snapshot.items
+  );
 }
