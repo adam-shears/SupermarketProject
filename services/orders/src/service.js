@@ -187,6 +187,9 @@ export async function pushSavedBasketToLive(customerId, basketId) {
 
   basketId = Number(basketId);
 
+  // correct behaviour is completely overwriting the basket with the saved one, so we clear active basket first
+  await ordersDeps.clearActiveBasket(customerId);
+
   const result = await ordersDeps.copySavedBasketToActive(customerId, basketId);
 
   if (!result) {
