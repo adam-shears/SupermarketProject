@@ -893,11 +893,9 @@ router.post("/checkout/start", async (req, res) => {
     res.status(201).json({ message: "Checkout started", snapshot });
   } catch (error) {
     console.error("Failed to start checkout:", error);
-    res.status(error.status || 500).render("5xx.njk", {
-      title: "Internal Server Error",
-      status: `${error.status || 500} - Internal Server Error`,
-      message: `Failed to start checkout: ${error.message}`,
-      user: req.session.user || null,
+    res.status(error.status || 500).json({
+      message: error.message || "Couldn't start checkout",
+      details: error.details || null,
     });
   }
 });

@@ -583,3 +583,64 @@ export async function clearActiveBasket(customerId) {
       AND b.saved = FALSE
   `, [customerId]);
 }
+
+export async function reserveStock(items) {
+  const client = await pool.connect();
+  const payload = JSON.stringify(items.map((item) => ({ product_id: item.product_id, quantity: item.quantity })));
+
+  try {
+    await client.query('BEGIN');
+
+    await client.query(`
+      SELECT product_id
+      FROM stock
+      WHERE product_id IN (
+        SELECT product_id
+        FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
+      )
+      FOR UPDATE
+    `, [payload]);
+
+    const stockCheck = await client.query(`
+      WITH requested AS (
+        SELECT product_id, SUM(quantity) AS quantity
+        FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
+        GROUP BY product_id
+      )
+      SELECT
+        r.product_id,
+        p.name,
+        r.quantity AS requested_quantity,
+        COALESCE(s.quantity_on_hand - s.quantity_reserved, 0) AS available_quantity
+      FROM requested r
+      JOIN products p ON p.id = r.product_id
+      LEFT JOIN stock s ON s.product_id = r.product_id
+      WHERE COALESCE(s.quantity_on_hand - s.quantity_reserved, 0) < r.quantity
+    `, [payload]);
+
+    if (stockCheck.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return { reserved: false, unavailableItems: stockCheck.rows };
+    }
+
+    await client.query(`
+      WITH requested AS (
+        SELECT product_id, SUM(quantity) AS quantity
+        FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
+        GROUP BY product_id
+      )
+      UPDATE stock s
+      SET quantity_reserved = quantity_reserved + requested.quantity, updated_at = NOW()
+      FROM requested
+      WHERE s.product_id = requested.product_id
+    `, [payload]);
+
+    await client.query('COMMIT');
+    return { reserved: true, unavailableItems: [] };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.release();
+  }
+}

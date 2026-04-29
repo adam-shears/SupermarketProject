@@ -25,6 +25,7 @@ import {
   insertNewStaff,
   insertOrder,
   insertShoppingListItem,
+  reserveStock,
   selectActiveDiscountsForProducts,
   selectAllStaff,
   selectBasketByCustomerId,
@@ -77,13 +78,15 @@ export const ordersDeps = {
   calculateLineTotals,
   insertOrder,
   clearActiveBasket,
+  reserveStock,
 };
 
 export class OrdersError extends Error {
-  constructor(message, statusCode) {
+  constructor(message, statusCode, details) {
     super(message);
     this.name = "OrdersError";
     this.statusCode = statusCode || 400;
+    this.details = details || null;
   }
 }
 
@@ -592,7 +595,14 @@ export async function getLoggedInCheckoutSnapshot(customerId, promoCode = null) 
   const lines = await ordersDeps.selectBasketPriceLinesByCustomerId(customerId);
   const productIds = lines.map(line => line.product_id);
   const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
-  return getCheckoutSnapshot(lines, discounts, promoCode);
+  const snapshot = getCheckoutSnapshot(lines, discounts, promoCode);
+
+  const reservation = await ordersDeps.reserveStock(snapshot.items);
+  if (!reservation.reserved) {
+    throw new OrdersError("Items are unavailable", 409, { unavailable: reservation.unavailableItems });
+  }
+
+  return snapshot;
 }
 
 export async function getGuestCheckoutSnapshot(items, promoCode = null) {
@@ -604,7 +614,14 @@ export async function getGuestCheckoutSnapshot(items, promoCode = null) {
   const lines = await ordersDeps.selectBasketPriceLinesForGuestBaskets(parsed);
   const productIds = lines.map(line => line.product_id);
   const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
-  return getCheckoutSnapshot(lines, discounts, promoCode);
+  const snapshot = getCheckoutSnapshot(lines, discounts, promoCode);
+
+  const reservation = await ordersDeps.reserveStock(snapshot.items);
+  if (!reservation.reserved) {
+    throw new OrdersError("Items are unavailable", 409, { unavailable: reservation.unavailableItems });
+  }
+
+  return snapshot;
 }
 
 export async function createOrder(snapshot, deliveryInfo, customerId = null, guestDetails = null) {

@@ -9,6 +9,8 @@
 <div class="basket-wrapper">
   <h1 class="basket-title">Your Basket</h1>
 
+  <p id="basket-error" role="alert" hidden></p>
+
   <div class="basket-page">
     <section class="items-column" aria-labelledby="basket-items-title">
       <h2 id="basket-items-title">Your Items</h2>
@@ -234,6 +236,10 @@
     });
 
     document.getElementById("proceed-to-checkout")?.addEventListener("click", async () => {
+      const errorMessage = document.getElementById("basket-error");
+      errorMessage.hidden = true;
+      errorMessage.textContent = "";
+
       const payload = {
         promoCode: appliedPromoCode,
       };
@@ -253,7 +259,17 @@
       });
 
       if (!res.ok) {
-        throw new Error("Couldn't start checkout");
+        const error = await res.json().catch(() => ({}))
+        const unavailable = error.details?.unavailable || [];
+
+        if (unavailable.length > 0) {
+          errorMessage.textContent = unavailable.map((item) => {
+            return `${item.name} is unavailable. You requested ${item.requested_quantity}, but only ${item.available_quantity} is available.`;
+          }).join(" ");
+        } else {
+          errorMessage.textContent = error.message || "Couldn't start checkout";
+        }
+        errorMessage.hidden = false;
         return;
       }
 

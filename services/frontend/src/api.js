@@ -40,6 +40,7 @@ async function postJson(url, body) {
   if (!res.ok) {
     const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
     error.status = res.status;
+    error.details = data.details || null;
     throw error;
   }
   return data;

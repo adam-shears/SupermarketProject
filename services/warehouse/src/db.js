@@ -192,6 +192,7 @@ export async function markItemAsPicked(orderId, productId) {
       `
         UPDATE stock
         SET quantity_on_hand = GREATEST(quantity_on_hand - $2, 0),
+            quantity_reserved = GREATEST(quantity_reserved - $2, 0),
             updated_at = NOW()
         WHERE product_id = $1
       `,

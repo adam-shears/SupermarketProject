@@ -42,7 +42,7 @@ const router = Router();
 
 function sendErrorResponse(res, error, fallbackMessage) {
   if (error instanceof OrdersError) {
-    return res.status(error.statusCode).json({ message: error.message });
+    return res.status(error.statusCode).json({ message: error.message, details: error.details || null });
   }
 
   console.error(error);
