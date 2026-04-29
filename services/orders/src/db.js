@@ -416,3 +416,42 @@ export async function selectSavedBasketsByCustomerId(customerId) {
 
   return result.rows;
 }
+
+export async function copySavedBasketToActive(customerId, basketId) {
+  const result = await pool.query(`
+    WITH saved_basket AS (
+      SELECT id FROM baskets
+      WHERE customer_id = $1
+        AND id = $2
+        AND saved = TRUE
+      LIMIT 1
+    ),
+    active_basket AS (
+      INSERT INTO baskets (customer_id, name, saved, created_at, updated_at)
+      SELECT $1, NULL, FALSE, NOW(), NOW()
+      WHERE EXISTS (SELECT 1 FROM saved_basket)
+      ON CONFLICT (customer_id) WHERE saved = FALSE AND customer_id IS NOT NULL
+      DO UPDATE SET updated_at = NOW()
+      RETURNING id
+      ),
+      deleted_items AS (
+        DELETE FROM basket_items bi
+        USING active_basket ab
+        WHERE bi.basket_id = ab.id
+      ),
+      copied_items AS (
+        INSERT INTO basket_items (basket_id, product_id, quantity)
+        SELECT ab.id, bi.product_id, bi.quantity
+        FROM active_basket ab
+        JOIN saved_basket sb ON TRUE
+        JOIN basket_items bi ON bi.basket_id = sb.id
+        RETURNING product_id, quantity
+      )
+      SELECT ab.id AS basket_id, COUNT(ci.product_id) AS item_count
+      FROM active_basket ab
+      LEFT JOIN copied_items ci ON TRUE
+      GROUP BY ab.id;
+  `, [customerId, basketId]);
+
+  return result.rows[0] || null;
+}

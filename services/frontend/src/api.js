@@ -91,6 +91,7 @@ export const api = {
     deleteRequest(`${ORDERS_URL}/customers/${customerId}/basket/items/${productId}`),
   saveBasket: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/basket/save`, payload),
   getSavedBaskets : (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/baskets/saved`),
+  pushSavedBasketToLive: (customerId, basketId) => postJson(`${ORDERS_URL}/customers/${customerId}/baskets/${basketId}/push`, {}),
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),

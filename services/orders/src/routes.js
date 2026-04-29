@@ -22,6 +22,7 @@ import {
   getStaffMembers,
   logCustomerIn,
   OrdersError,
+  pushSavedBasketToLive,
   registerNewUser,
   removeBasketItem,
   removeShoppingListItem,
@@ -254,6 +255,15 @@ router.post("/customers/:customerId/basket/save", async (req, res) => {
     res.status(201).json(savedBasket);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to save basket.");
+  }
+});
+
+router.post("/customers/:customerId/baskets/:basketId/push", async (req, res) => {
+  try {
+    await pushSavedBasketToLive(req.params.customerId, req.params.basketId);
+    res.status(200).json({ message: "Saved basket pushed to live basket successfully." });
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to push saved basket to live basket.");
   }
 });
 

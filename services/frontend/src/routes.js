@@ -831,6 +831,30 @@ router.post("/api/basket/save", requireAuth(0), async (req, res) => {
   }
 });
 
+router.post("/api/basket/push", requireAuth(0), async (req, res) => {
+  try {
+    await api.pushSavedBasketToLive(req.session.user.id, req.body.basket_id);
+    res.status(200).redirect("/basket");
+  } catch (error) {
+    console.error(error);
+    if (error.status >= 500) {
+      res.status(error.status).render("5xx.njk", {
+        title: "Internal Server Error",
+        status: `${error.status} - Internal Server Error`,
+        message: `Failed to push saved basket to live basket: ${error.message}`,
+        user: req.session.user || null,
+      });
+    } else {
+      res.status(error.status).render("4xx.njk", {
+        title: "Error",
+        status: `${error.status} - Error`,
+        message: `Failed to push saved basket to live basket: ${error.message}`,
+        user: req.session.user || null,
+      });
+    }
+  }
+});
+
 /*
 Picker + stock/location synchronisation routes
 */

@@ -17,6 +17,7 @@ This file should not be responsible for:
 import bcrypt from "bcrypt";
 import {
   copyActiveBasketToSaved,
+  copySavedBasketToActive,
   deleteBasketItem,
   deleteShoppingListItem,
   insertNewCustomer,
@@ -63,6 +64,7 @@ export const ordersDeps = {
   deleteBasketItem,
   copyActiveBasketToSaved,
   selectSavedBasketsByCustomerId,
+  copySavedBasketToActive,
 };
 
 export class OrdersError extends Error {
@@ -157,6 +159,24 @@ export async function getSavedBaskets(customerId) {
     }
   }
   return [...basketsToReturn.values()];
+}
+
+export async function pushSavedBasketToLive(customerId, basketId) {
+  if(!basketId) {
+    throw new OrdersError("basketId is required", 400);
+  }
+
+  if (isNaN(Number(basketId))) {
+    throw new OrdersError("basketId must be a number", 400);
+  }
+
+  basketId = Number(basketId);
+
+  const result = await ordersDeps.copySavedBasketToActive(customerId, basketId);
+
+  if (!result) {
+    throw new OrdersError("Saved basket not found", 404);
+  }
 }
 
 export async function getShoppingList(customerId) {

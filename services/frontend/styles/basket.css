@@ -220,6 +220,27 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   background: #0f4d26;
 }
 
+.cancel {
+  width: 100%;
+  padding: 15px;
+  background: #b3261e;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.proceed:hover {
+  background: #0f4d26;
+}
+
+.cancel:hover {
+  background: #b3261e;
+}
+
 .empty-basket {
   background: #ffffff;
   padding: 24px;
