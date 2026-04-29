@@ -102,7 +102,7 @@
               data-id="{{ item.id }}"
               data-name="{{ item.name }}"
               data-price="{{ item.price_pence }}"
-              data-image="/images/products/{{ product.id }}.JPG"
+              data-image="/images/products/{{ item.id }}.JPG"
             >
               <div class="quantity">
                 <button
@@ -172,7 +172,7 @@
   });
 
   document.querySelectorAll(".basket-form").forEach((form) => {
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const productId = Number(form.dataset.id);
@@ -185,7 +185,7 @@
 
       const addButton = form.querySelector(".add-btn");
 
-      service.addToBasket(productId, quantity, name, price_pence, image_url);
+      await service.addToBasket(productId, quantity, name, price_pence, image_url);
 
       const originalText = addButton.textContent;
         addButton.textContent = 'Added!';

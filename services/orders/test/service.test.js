@@ -237,4 +237,54 @@ describe("Orders Service", () => {
             });
         });
     });
+
+    describe("calculateDiscounts", () => {
+        it("should calculate percentage discounts correctly", () => {
+            const line = {product_id: 1, quantity: 2, price_pence: 1000};
+            const discount = {type: "percentage", value: 20}; // 20% off
+            const result = service.calculateDiscounts(line, discount);
+            expect(result).to.equal(400); // 20% of £20 total is £4
+        });
+
+        it("should calculate fixed amount discounts correctly", () => {
+            const line = {product_id: 1, quantity: 2, price_pence: 1000};
+            const discount = {type: "fixed", value: 300}; // £3 off
+            const result = service.calculateDiscounts(line, discount);
+            expect(result).to.equal(600); // £3 off twice because 2 quantity
+        });
+
+        it("should not allow discounts to exceed line total", () => {
+            const line = {product_id: 1, quantity: 2, price_pence: 1000};
+            const discount = {type: "fixed", value: 2500}; // £25 off
+            const result = service.calculateDiscounts(line, discount);
+            expect(result).to.equal(2000); // cannot exceed total of £20
+        });
+
+        it("should return 0 for invalid discount types", () => {
+            const line = {product_id: 1, quantity: 2, price_pence: 1000};
+            const discount = {type: "blahhabbsavbdsavabsd", value: 50};
+            const result = service.calculateDiscounts(line, discount);
+            expect(result).to.equal(0);
+        });
+    });
+
+    describe("calculateLineTotals", () => {
+        it("should calculate line totals with discounts applied", () => {
+            const lines = [
+                {product_id: 1, quantity: 2, price_pence: 1000},
+                {product_id: 2, quantity: 1, price_pence: 500},
+            ];
+            const discounts = [
+                {product_id: 1, type: "percentage", value: 20}, // 20% off product 1
+                {product_id: 2, type: "fixed", value: 200}, // £2 off product 2
+            ];
+            const result = service.calculateLineTotals(lines, discounts);
+            expect(result).to.deep.equal({
+                subtotal: 2500,
+                discounts: 600,
+                total: 1900,
+                promoApplied: false
+            });
+        });
+    })
 });

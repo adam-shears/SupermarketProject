@@ -23,6 +23,32 @@
             <p><strong>Subtotal:</strong> £{{ (order.subtotalPence / 100) | toFixed(2) }}</p>
             <p><strong>Discount:</strong> £{{ (order.discountPence / 100) | toFixed(2) }}</p>
             <p><strong>Total:</strong> £{{ (order.totalPence / 100) | toFixed(2) }}</p>
+
+            <ul>
+              {% for item in order.items %}
+                <li>
+                  {% if item.substituted %}
+                    <p><strong>{{ item.productName }}</strong> was substituted for <strong>{{ item.substitutedProductName }}</strong></p>
+                  {% else %}
+                    <p><strong>{{ item.productName }}</strong></p>
+                  {% endif %}
+
+                  <p>Quantity: {{ item.quantity }}</p>
+                  <p>Unit price: £{{ (item.pricePencePerUnit / 100) | toFixed(2) }}</p>
+
+                  {% if item.lineDiscountPence > 0 %}
+                    <p>Line subtotal: £{{ (item.lineSubtotalPence / 100) | toFixed(2) }}</p>
+                    <p>Line discount: -£{{ (item.lineDiscountPence / 100) | toFixed(2) }}</p>
+                  {% endif %}
+
+                  <p>Line total: £{{ (item.lineTotalPence / 100) | toFixed(2) }}</p>
+
+                  {% if item.substituted and item.originalLineTotalPence != item.lineTotalPence %}
+                    <p>Price updated from <strong>£{{ (item.originalLineTotalPence / 100) | toFixed(2) }}</strong> to <strong>£{{ (item.lineTotalPence / 100) | toFixed(2) }}</strong></p>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
           </article>
         {% endfor %}
       </div>
