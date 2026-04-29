@@ -114,6 +114,22 @@ export async function removeFromBasket(productId) {
   await updateHeaderCount();
 }
 
+export async function clearBasket() {
+  if(getUserId()) {
+    const res = await fetch(`/api/basket`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) throw new Error("Failed to clear database basket");
+    await updateHeaderCount();
+    return;
+  }
+
+  localStorage.removeItem(BASKET_KEY);
+  document.cookie = `${GUEST_BASKET_IDS_COOKIE}=; path=/; max-age=0`;
+  await updateHeaderCount();
+}
+
 export async function updateHeaderCount() {
   const countElement = document.getElementById('basket-count');
   if (countElement) {

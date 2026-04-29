@@ -787,6 +787,16 @@ router.get("/api/basket", requireAuth(0), async (req, res) => {
   }
 });
 
+router.delete("/api/basket", requireAuth(0), async (req, res) => {
+  try {
+    await api.clearBasket(req.session.user.id);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to clear basket" });
+  }
+});
+
 router.post("/api/basket/items", requireAuth(0), async (req, res) => {
   try {
     const item = await api.addToBasket(req.session.user.id, req.body);
@@ -943,10 +953,18 @@ router.post("/checkout/complete", async (req, res) => {
     const result = await api.createOrder({customerId: req.session.user?.id || null, guestDetails, deliveryInfo, snapshot: req.session.checkoutSnapshot});
     delete req.session.checkoutSnapshot;
 
+    let clearBasket;
+    if (req.session.user) {
+      await api.clearBasket(req.session.user.id);
+    } else {
+      clearBasket = true;
+    }
+
     res.render("checkout-complete.njk", {
       title: "Checkout Complete",
       order: result,
       user: req.session.user || null,
+      clearBasket,
     });
   } catch (error) {
     res.status(error.status || 400).render("checkout-delivery.njk", {

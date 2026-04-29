@@ -13,6 +13,7 @@ import { Router } from "express";
 import {
   addOrUpdateBasketItem,
   addShoppingListItem,
+  clearBasket,
   createOrder,
   deleteCustomerAccount,
   getBasket,
@@ -208,6 +209,15 @@ router.get("/customers/:customerId/basket", async (req, res) => {
     res.status(200).json(basket);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to get basket.");
+  }
+});
+
+router.delete("/customers/:customerId/basket", async (req, res) => {
+  try {
+    await clearBasket(req.params.customerId);
+    res.status(204).send();
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to clear basket.");
   }
 });
 

@@ -16,6 +16,7 @@ This file should not be responsible for:
 
 import bcrypt from "bcrypt";
 import {
+  clearActiveBasket,
   copyActiveBasketToSaved,
   copySavedBasketToActive,
   deleteBasketItem,
@@ -75,6 +76,7 @@ export const ordersDeps = {
   calculateDiscounts,
   calculateLineTotals,
   insertOrder,
+  clearActiveBasket,
 };
 
 export class OrdersError extends Error {
@@ -615,4 +617,8 @@ export async function createOrder(snapshot, deliveryInfo, customerId = null, gue
     deliveryInfo,
     snapshot.items
   );
+}
+
+export async function clearBasket(customerId) {
+  return ordersDeps.clearActiveBasket(customerId);
 }

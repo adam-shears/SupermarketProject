@@ -571,3 +571,13 @@ export async function insertOrder(customerId = null, guestDetails = null, status
     await client.release();
   }
 }
+
+export async function clearActiveBasket(customerId) {
+  await pool.query(`
+    DELETE FROM basket_items bi
+    USING baskets b
+    WHERE b.id = bi.basket_id
+      AND b.customer_id = $1
+      AND b.saved = FALSE
+  `, [customerId]);
+}
