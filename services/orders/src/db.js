@@ -455,3 +455,78 @@ export async function copySavedBasketToActive(customerId, basketId) {
 
   return result.rows[0] || null;
 }
+
+export async function selectBasketPriceLinesByCustomerId(customerId) {
+  const result = await pool.query(`
+    SELECT
+      bi.product_id,
+      bi.quantity,
+      COALESCE(pr.price_pence, 0) AS price_pence
+    FROM baskets b
+    JOIN basket_items bi ON bi.basket_id = b.id
+    JOIN products p ON p.id = bi.product_id
+    LEFT JOIN LATERAL (
+      SELECT price_pence
+      FROM prices
+      WHERE product_id = p.id
+        AND starts_at <= NOW()
+        AND (ends_at IS NULL OR ends_at > NOW())
+      ORDER BY starts_at DESC
+      LIMIT 1
+      ) pr ON TRUE
+      WHERE b.customer_id = $1
+        AND b.saved = FALSE
+      ORDER BY bi.product_id ASC
+  `, [customerId]);
+
+  return result.rows;
+}
+
+export async function selectBasketPriceLinesForGuestBaskets(items) {
+  const result = await pool.query(`
+    WITH input_items AS (
+      SELECT product_id, SUM(quantity) AS quantity
+    FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
+    GROUP BY product_id
+    )
+    SELECT
+      ii.product_id,
+      ii.quantity,
+      COALESCE(pr.price_pence, 0) AS price_pence
+    FROM input_items ii
+    JOIN products p ON p.id = ii.product_id
+    LEFT JOIN LATERAL (
+      SELECT price_pence
+      FROM prices
+      WHERE product_id = p.id
+        AND starts_at <= NOW()
+        AND (ends_at IS NULL OR ends_at > NOW())
+      ORDER BY starts_at DESC
+      LIMIT 1
+    ) pr ON TRUE
+  `, [JSON.stringify(items)]);
+
+  return result.rows;
+}
+
+export async function selectActiveDiscountsForProducts(productIds, promoCode = null) {
+  const result = await pool.query(`
+    SELECT
+      pd.product_id,
+      d.id,
+      d.code,
+      d.name,
+      d.type,
+      d.value
+    FROM product_discounts pd
+    JOIN discounts d ON pd.discount_id = d.id
+    WHERE pd.product_id = ANY($1)
+      AND d.active = TRUE
+      AND d.starts_at <= NOW()
+      AND (d.ends_at IS NULL OR d.ends_at > NOW())
+      AND (d.code IS NULL OR UPPER(d.code) = UPPER($2))
+    ORDER BY pd.product_id ASC, d.id ASC
+  `, [productIds, promoCode]);
+
+  return result.rows;
+}

@@ -135,6 +135,26 @@ export async function updateHeaderCount() {
 }
 document.addEventListener('DOMContentLoaded', updateHeaderCount);
 
+export async function calculateTotals(promoCode = null) {
+  const payload = { promoCode };
+
+  if (!getUserId()) {
+    payload.items = getGuestBasket().map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+  }
+
+  const res = await fetch("/api/basket/totals", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Failed to calculate basket totals");
+  return res.json();
+}
+
 
 // --- Product list logic ---
 const PRODUCTS_KEY = "products";

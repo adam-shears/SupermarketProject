@@ -11,6 +11,7 @@ should be performed in those services' service.js files.
 */
 
 
+
 const CATALOGUE_URL = process.env.CATALOGUE_URL || "http://catalogue:3000";
 const ORDERS_URL = process.env.ORDERS_URL || "http://orders:3000";
 const WAREHOUSE_URL = process.env.WAREHOUSE_URL || "http://warehouse:3000";
@@ -92,6 +93,8 @@ export const api = {
   saveBasket: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/basket/save`, payload),
   getSavedBaskets : (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/baskets/saved`),
   pushSavedBasketToLive: (customerId, basketId) => postJson(`${ORDERS_URL}/customers/${customerId}/baskets/${basketId}/push`, {}),
+  getBasketTotals : (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/basket/total`, payload),
+  getGuestBasketTotals : (payload) => postJson(`${ORDERS_URL}/basket/totals`, payload),
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),

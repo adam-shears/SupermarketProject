@@ -855,6 +855,21 @@ router.post("/api/basket/push", requireAuth(0), async (req, res) => {
   }
 });
 
+router.post("/api/basket/totals", async (req, res) => {
+  try {
+    if (req.session.user) {
+      const totals = await api.getBasketTotals(req.session.user.id, req.body.items);
+      res.status(200).json(totals);
+    } else {
+      const totals = await api.getGuestBasketTotals(req.body);
+      res.status(200).json(totals);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({ message: error.message || "Failed to calculate basket totals" });
+  }
+});
+
 /*
 Picker + stock/location synchronisation routes
 */

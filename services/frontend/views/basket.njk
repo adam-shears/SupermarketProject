@@ -34,6 +34,7 @@
         <label for="promo-code" class="visually-hidden">Promo code</label>
         <input id="promo-code" type="text" placeholder="Promo code">
         <button type="button" class="promo-btn">Add</button>
+        <p id="promo-applied-status" role="status" aria-live="polite" hidden></p>
       </div>
 
       <div class="summary-row total-row">
@@ -69,6 +70,7 @@
   const cancelSaveBasketButton = document.getElementById("cancel-save-basket");
   const saveBasketForm = document.getElementById("save-basket-form");
   const saveBasketStatus = document.getElementById("save-basket-status");
+  let appliedPromoCode = null;
 
   openSaveBasketModal?.addEventListener("click", () => {
     saveBasketStatus.hidden = true;
@@ -114,7 +116,7 @@
   }
 
   async function updateTotals() {
-    const totals = service.calculateTotals();
+    const totals = await service.calculateTotals(appliedPromoCode);
 
     document.getElementById('subtotal-text').textContent = formatPrice(totals.subtotal);
     document.getElementById('total-text').textContent = formatPrice(totals.total);
@@ -210,6 +212,25 @@
 
       input.addEventListener('input', update);
       input.addEventListener('change', update);
+    });
+
+    document.querySelector('.promo-btn')?.addEventListener('click', async () => {
+      const input = document.getElementById('promo-code');
+      const promoAppliedStatus = document.getElementById("promo-applied-status")
+      promoAppliedStatus.hidden = true;
+      appliedPromoCode = input.value.trim() || null;
+
+      try {
+        await updateTotals();
+        promoAppliedStatus.textContent = "Promo code applied";
+        promoAppliedStatus.hidden = false;
+      } catch (error) {
+        appliedPromoCode = null;
+        input.value = '';
+        promoAppliedStatus.textContent = "Promo code not found";
+        promoAppliedStatus.hidden = false;
+        await updateTotals();
+      }
     });
   }
 

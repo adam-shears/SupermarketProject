@@ -23,8 +23,11 @@ import {
   insertNewCustomer,
   insertNewStaff,
   insertShoppingListItem,
+  selectActiveDiscountsForProducts,
   selectAllStaff,
   selectBasketByCustomerId,
+  selectBasketPriceLinesByCustomerId,
+  selectBasketPriceLinesForGuestBaskets,
   selectCustomerAccountById,
   selectCustomerByEmail,
   selectCustomerOrdersById,
@@ -65,6 +68,11 @@ export const ordersDeps = {
   copyActiveBasketToSaved,
   selectSavedBasketsByCustomerId,
   copySavedBasketToActive,
+  selectBasketPriceLinesByCustomerId,
+  selectActiveDiscountsForProducts,
+  selectBasketPriceLinesForGuestBaskets,
+  calculateDiscounts,
+  calculateLineTotals,
 };
 
 export class OrdersError extends Error {
@@ -433,4 +441,78 @@ export async function deleteCustomerAccount(customerId) {
   return {
     id: deletedCustomer.id,
   };
+}
+
+export function calculateDiscounts(line, discount) {
+  const pricePence = line.price_pence;
+
+  if(discount.type === "percentage") {
+    return Math.round(pricePence * (discount.value / 100) * line.quantity);
+  } else if (discount.type === "fixed") {
+    return Math.min(discount.value, pricePence) * line.quantity;
+  }
+
+  // then discount isnt valid
+  return 0;
+}
+
+export function calculateLineTotals(lines, discounts, promoCode = null) {
+  const discountsByProduct = new Map();
+
+  for (const discount of discounts) {
+    if (!discountsByProduct.has(discount.product_id)) {
+      discountsByProduct.set(discount.product_id, []);
+    }
+    discountsByProduct.get(discount.product_id).push(discount);
+  }
+
+  let subtotal = 0;
+  let discountTotal = 0;
+  let promoApplied = false;
+
+  for (const line of lines) {
+    const lineSubtotal = line.price_pence * line.quantity;
+    subtotal += lineSubtotal;
+
+    const lineDiscounts = discountsByProduct.get(line.product_id) || [];
+    for (const discount of lineDiscounts) {
+      if (discount.code) {
+        const result = ordersDeps.calculateDiscounts(line, discount);
+        if (result > 0) promoApplied = true;
+        discountTotal += result;
+      } else {
+        discountTotal += ordersDeps.calculateDiscounts(line, discount);
+      }
+    }
+  }
+
+  if (promoCode && !promoApplied) {
+    throw new OrdersError(`Promo code ${promoCode} is not valid for any items in the basket`, 400);
+  }
+
+  return {
+    subtotal,
+    discounts: discountTotal,
+    total: Math.max(0, subtotal - discountTotal),
+    promoApplied,
+  };
+}
+
+export async function getBasketTotals(customerId, promoCode = null) {
+  const lines = await ordersDeps.selectBasketPriceLinesByCustomerId(customerId);
+  const productIds = lines.map(line => line.product_id);
+  const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
+  return ordersDeps.calculateLineTotals(lines, discounts, promoCode);
+}
+
+export async function getGuestBasketTotals(items, promoCode = null) {
+  const parsed = items.map((item) => ({
+    product_id: item.productId,
+    quantity: item.quantity,
+  }));
+
+  const lines = await ordersDeps.selectBasketPriceLinesForGuestBaskets(parsed);
+  const productIds = lines.map(line => line.product_id);
+  const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
+  return ordersDeps.calculateLineTotals(lines, discounts, promoCode);
 }

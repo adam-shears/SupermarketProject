@@ -15,8 +15,10 @@ import {
   addShoppingListItem,
   deleteCustomerAccount,
   getBasket,
+  getBasketTotals,
   getCustomerAccount,
   getCustomerOrderHistory,
+  getGuestBasketTotals,
   getSavedBaskets,
   getShoppingList,
   getStaffMembers,
@@ -264,6 +266,24 @@ router.post("/customers/:customerId/baskets/:basketId/push", async (req, res) =>
     res.status(200).json({ message: "Saved basket pushed to live basket successfully." });
   } catch (error) {
     sendErrorResponse(res, error, "Failed to push saved basket to live basket.");
+  }
+});
+
+router.post("/customers/:customerId/basket/total", async (req, res) => {
+  try {
+    const totals = await getBasketTotals(req.params.customerId, req.body.promoCode || null);
+    res.status(200).json(totals);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to calculate basket totals.");
+  }
+});
+
+router.post("/basket/totals", async (req, res) => {
+  try {
+    const totals = await getGuestBasketTotals(req.body.items, req.body.promoCode || null);
+    res.status(200).json(totals);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to calculate guest basket totals.");
   }
 });
 
