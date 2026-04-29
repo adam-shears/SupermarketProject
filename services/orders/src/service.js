@@ -426,16 +426,42 @@ export async function updateCustomerAccount(customerId, input) {
 
 export async function getCustomerOrderHistory(customerId) {
   const orders = await ordersDeps.selectCustomerOrdersById(customerId);
+  const ordersToReturn = new Map();
 
-  return orders.map((order) => ({
-    id: order.id,
-    status: order.status,
-    subtotalPence: order.subtotal_pence,
-    discountPence: order.discount_pence,
-    totalPence: order.total_pence,
-    createdAt: order.created_at,
-    itemCount: order.item_count,
-  }));
+  for (const order of orders) {
+    if(!ordersToReturn.has(order.id)) {
+      ordersToReturn.set(order.id, {
+        id: order.id,
+        status: order.status,
+        subtotalPence: order.subtotal_pence,
+        discountPence: order.discount_pence,
+        totalPence: order.total_pence,
+        createdAt: order.created_at,
+        itemCount: 0,
+        items: [],
+      });
+    }
+
+    const orderToUpdate = ordersToReturn.get(order.id);
+    orderToUpdate.itemCount += order.quantity;
+
+    const substituted = order.substituted_product_id ? true : false;
+    orderToUpdate.items.push({
+      productId: order.product_id,
+      productName: order.product_name,
+      quantity: order.quantity,
+      pricePencePerUnit: substituted ? order.substitution_price_pence_per_unit : order.price_pence_per_unit,
+      lineSubtotalPence: substituted ? order.substitution_line_subtotal_pence : order.line_subtotal_pence,
+      lineDiscountPence: order.line_discount_pence,
+      lineTotalPence: substituted ? order.substitution_line_total_pence : order.line_total_pence,
+      substituted,
+      substitutedProductId: order.substituted_product_id,
+      substitutedProductName: order.substituted_product_name,
+      originalPricePencePerUnit: order.price_pence_per_unit,
+      originalLineTotalPence: order.line_total_pence,
+    });
+  }
+  return Array.from(ordersToReturn.values());
 }
 
 export async function deleteCustomerAccount(customerId) {

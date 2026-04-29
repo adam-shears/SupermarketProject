@@ -236,17 +236,23 @@ export async function selectCustomerOrdersById(customerId) {
         COALESCE(o.discount_pence, 0) AS discount_pence,
         o.total_pence,
         o.created_at,
-        COALESCE(SUM(oi.quantity), 0)::int AS item_count
+        oi.product_id,
+        oi.quantity,
+        oi.price_pence_per_unit,
+        oi.line_subtotal_pence,
+        COALESCE(oi.line_discount_pence, 0) AS line_discount_pence,
+        oi.line_total_pence,
+        p.name AS product_name,
+        oi.substituted_product_id,
+        sp.name AS substituted_product_name,
+        oi.substitution_price_pence_per_unit,
+        oi.substitution_line_subtotal_pence,
+        oi.substitution_line_total_pence
       FROM orders o
-      LEFT JOIN order_items oi ON oi.order_id = o.id
+      JOIN order_items oi ON oi.order_id = o.id
+      JOIN products p ON p.id = oi.product_id
+      LEFT JOIN products sp ON sp.id = oi.substituted_product_id
       WHERE o.customer_id = $1
-      GROUP BY
-        o.id,
-        o.status,
-        o.subtotal_pence,
-        o.discount_pence,
-        o.total_pence,
-        o.created_at
       ORDER BY o.created_at DESC
     `,
     [customerId]
