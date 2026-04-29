@@ -49,22 +49,22 @@
       {% for item in snapshot.items %}
         <div class="summary-row">
           <span>{{ item.name }} ({{ item.quantity }})</span>
-          <span id="subtotal-text">£{{ item.line_subtotal_pence / 100 | toFixed(2) }}</span>
+          <span id="subtotal-text">£{{ (item.line_subtotal_pence / 100) | toFixed(2) }}</span>
         </div>
         {% if item.line_discount_pence > 0 %}
           <div class="summary-row discount-row">
             <span>Discount</span>
-            <span id="discount-text">-£{{ item.line_discount_pence / 100 | toFixed(2) }}</span>
+            <span id="discount-text">-£{{ (item.line_discount_pence / 100) | toFixed(2) }}</span>
           </div>
           <div class="summary-row total-row">
             <span>Total for Item</span>
-            <span id="total-text">£{{ item.line_total_pence / 100 | toFixed(2) }}</span>
+            <span id="total-text">£{{ (item.line_total_pence / 100) | toFixed(2) }}</span>
           </div>
         {% endif %}
       {% endfor %}
       <div class="summary-row total-row">
         <span>Final Total</span>
-        <span id="total-text">£{{ snapshot.totalPence / 100 | toFixed(2) }}</span>
+        <span id="total-text">£{{ (snapshot.totalPence / 100) | toFixed(2) }}</span>
       </div>
     </aside>
   </div>

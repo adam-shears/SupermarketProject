@@ -21,10 +21,10 @@
               <button typ="submit">Use this basket</button>
             </form>
             <p><strong>Date saved:</strong> {{ basket.created_at }}</p>
-            <p><strong>Total:</strong> {{ basket.total_pence / 100 | toFixed(2) }}</p>
+            <p><strong>Total:</strong> {{ (basket.total_pence / 100) | toFixed(2) }}</p>
             <ul>
               {% for item in basket.items %}
-                <li> {{ item.name }} ({{ item.quantity }}) - £{{ (item.price_pence * item.quantity) /100 | toFixed(2) }}</li>
+                <li> {{ item.name }} ({{ item.quantity }}) - £{{ ((item.price_pence * item.quantity) / 100) | toFixed(2) }}</li>
               {% endfor %}
             </ul>
           </article>
