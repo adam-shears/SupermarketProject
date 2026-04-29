@@ -461,7 +461,8 @@ export async function selectBasketPriceLinesByCustomerId(customerId) {
     SELECT
       bi.product_id,
       bi.quantity,
-      COALESCE(pr.price_pence, 0) AS price_pence
+      COALESCE(pr.price_pence, 0) AS price_pence,
+      p.name
     FROM baskets b
     JOIN basket_items bi ON bi.basket_id = b.id
     JOIN products p ON p.id = bi.product_id
@@ -492,7 +493,8 @@ export async function selectBasketPriceLinesForGuestBaskets(items) {
     SELECT
       ii.product_id,
       ii.quantity,
-      COALESCE(pr.price_pence, 0) AS price_pence
+      COALESCE(pr.price_pence, 0) AS price_pence,
+      p.name
     FROM input_items ii
     JOIN products p ON p.id = ii.product_id
     LEFT JOIN LATERAL (

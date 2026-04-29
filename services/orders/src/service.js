@@ -561,6 +561,7 @@ function getCheckoutSnapshot(lines, discounts, promoCode = null) {
 
     return {
       product_id: line.product_id,
+      name: line.name,
       quantity: line.quantity,
       price_pence_per_unit: line.price_pence,
       line_subtotal_pence: lineSubtotalPence,

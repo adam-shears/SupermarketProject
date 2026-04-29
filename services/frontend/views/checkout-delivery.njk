@@ -11,34 +11,62 @@
   {% if error %}
     <p role="alert">{{ error }}</p>
   {% endif %}
+  <div class="basket-page">
+    <section class="items-column">
+      <h2>Your Details</h2>
+      <div id="basket-items">
+        <form method="POST" action="/checkout/complete" class="checkout-form">
+          {% if not user %}
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" required />
 
-  <form method="POST" action="/checkout/complete" class="checkout-form">
-    {% if not user %}
-      <label for="name">Name</label>
-      <input id="name" name="name" type="text" required />
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required />
 
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" required />
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="text" required />
+          {% endif %}
 
-      <label for="phone">Phone</label>
-      <input id="phone" name="phone" type="text" required />
-    {% endif %}
+          <label for="address_line">Address Line</label>
+          <input id="address_line" name="address_line" type="text" required />
 
-    <label for="address_line">Address Line</label>
-    <input id="address_line" name="address_line" type="text" required />
+          <label for="town">Town/City</label>
+          <input id="town" name="town" type="text" required />
 
-    <label for="town">Town/City</label>
-    <input id="town" name="town" type="text" required />
+          <label for="county">County</label>
+          <input id="county" name="county" type="text" required />
 
-    <label for="county">County</label>
-    <input id="county" name="county" type="text" required />
+          <label for="postcode">Postcode</label>
+          <input id="postcode" name="postcode" type="text" required />
 
-    <label for="postcode">Postcode</label>
-    <input id="postcode" name="postcode" type="text" required />
+          <button type="submit" class="proceed">Place order</button>
+        </form>
+      </div>
+    </section>
 
-    <p><strong>Total:</strong> £{{ snapshot.totalPence / 100 | toFixed(2) }}</p>
-
-    <button type="submit" class="proceed">Place order</button>
-  </form>
+    <aside class="summary-column">
+      <h2 id="basket-summary-title">Summary</h2>
+      {% for item in snapshot.items %}
+        <div class="summary-row">
+          <span>{{ item.name }} ({{ item.quantity }})</span>
+          <span id="subtotal-text">£{{ item.line_subtotal_pence / 100 | toFixed(2) }}</span>
+        </div>
+        {% if item.line_discount_pence > 0 %}
+          <div class="summary-row discount-row">
+            <span>Discount</span>
+            <span id="discount-text">-£{{ item.line_discount_pence / 100 | toFixed(2) }}</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>Total for Item</span>
+            <span id="total-text">£{{ item.line_total_pence / 100 | toFixed(2) }}</span>
+          </div>
+        {% endif %}
+      {% endfor %}
+      <div class="summary-row total-row">
+        <span>Final Total</span>
+        <span id="total-text">£{{ snapshot.totalPence / 100 | toFixed(2) }}</span>
+      </div>
+    </aside>
+  </div>
 </div>
 {% endblock %}
