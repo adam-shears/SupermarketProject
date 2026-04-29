@@ -148,18 +148,57 @@ body {
   color: #ffffff !important;
 }
 
-.search {
-  flex: 0 1 400px;
-  flex-grow: 1;
-  width: min(100%, 400px);
+/* Updated container to remove the gap */
+.header form[role="search"] {
+  flex: 1 1 280px;
   min-width: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0; /* REMOVED GAP to join them */
+}
+
+/* Updated Search Input */
+.search {
+  flex: 1; /* Allows input to grow */
   max-width: 400px;
   padding: 10px 14px;
   border: 1px solid #999;
-  border-radius: 20px;
+  border-right: none; /* Removes the line between input and button */
+  border-radius: 20px 0 0 20px; /* Rounds only the left side */
   outline: none;
   background: #fff;
   color: #222;
+}
+
+/* New specific styles for the Search Button */
+.header form[role="search"] button {
+  flex: 0 0 auto;
+  padding: 10px 20px;
+  border: 1px solid #999;
+  border-left: 1px solid #ccc; /* Optional: a lighter separator line */
+  border-radius: 0 20px 20px 0; /* Rounds only the right side */
+  background-color: #f0f0f0;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.header form[role="search"] button:hover {
+  background-color: #e2e2e2;
+}
+
+.search:focus {
+  border-right: none; 
+  box-shadow: 0 2px 0 1px #005fcc, 0 -2px 0 1px #005fcc, -2px 0 0 1px #005fcc;
+  outline: none;
+  position: relative;
+  z-index: 2;
+}
+
+.search:focus + button {
+  border-left: 1px solid #005fcc;
+  box-shadow: 0 2px 0 1px #005fcc, 0 -2px 0 1px #005fcc, 2px 0 0 1px #005fcc;
+  margin-left: -1px; 
 }
 
 .search::placeholder {

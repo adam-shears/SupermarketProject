@@ -141,6 +141,12 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   transform: scale(0.97);
 }
 
+.add-btn:disabled {
+  background: #0d3b1d;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 .product-price {
   display: inline-block;
   margin: 2px 0 0;

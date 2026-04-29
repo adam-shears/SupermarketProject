@@ -122,7 +122,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .category-title-bar a {
-    text-decoration: underline;
+    text-decoration: none;
     color: #222;
     font-size: clamp(1.25rem, 2vw, 1.5rem);
     font-weight: inherit;
@@ -131,6 +131,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 .category-title-bar a:hover,
 .category-title-bar a:focus-visible {
     color: #0056b3;
+    text-decoration: underline;
 }
 
 .category-image {

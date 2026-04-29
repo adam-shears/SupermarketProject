@@ -25,7 +25,6 @@
         <p class="product-description">{{ product.description }}</p>
 
         <p class="price">
-          <span class="price-label">Price:</span>
           <span class="price-value">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</span>
         </p>
 
@@ -70,10 +69,6 @@
           <button type="submit" class="add-btn">Add to Basket</button>
         </form>
 
-        <p class="add-success" role="status" aria-live="polite" hidden>
-          Added to basket!
-        </p>
-
         {% if product.discounts and product.discounts.length > 0 %}
           {% for discount in product.discounts %}
             {% if discount.code %}
@@ -99,7 +94,6 @@
             </a>
 
             <p class="price">
-              <span class="price-label">Price:</span>
               <span class="price-value">&pound;{{ (item.price_pence / 100) | toFixed(2) }}</span>
             </p>
 
@@ -141,12 +135,9 @@
                 </button>
               </div>
 
-              <button type="submit" class="add-btn">Add to Basket</button>
+              <button type="submit" class="add-btn" aria-live="polite" aria-label="Add {{ item.name }} to basket">Add to Basket</button>
             </form>
 
-            <p class="add-success" role="status" aria-live="polite" hidden>
-              Added to basket!
-            </p>
           </article>
         {% endfor %}
       </div>
@@ -192,15 +183,18 @@
       const quantityInput = form.querySelector(".quantity-input");
       const quantity = normaliseQuantity(quantityInput);
 
+      const addButton = form.querySelector(".add-btn");
+
       service.addToBasket(productId, quantity, name, price_pence, image_url);
 
-      const successMsg = form.nextElementSibling;
-      if (successMsg && successMsg.classList.contains("add-success")) {
-        successMsg.hidden = false;
+      const originalText = addButton.textContent;
+        addButton.textContent = 'Added!';
+        addButton.disabled = true;
+
         setTimeout(() => {
-          successMsg.hidden = true;
-        }, 2000);
-      }
+          addButton.textContent = originalText;
+          addButton.disabled = false;
+        }, 800);
     });
   });
 </script>

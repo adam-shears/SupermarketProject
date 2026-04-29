@@ -108,6 +108,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   line-height: 1.6;
   font-size: 1.05rem;
   max-width: 62ch;
+  flex-grow: 1;
 }
 
 .price {
@@ -179,18 +180,32 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 
 .add-btn {
   min-height: 50px;
+  min-width: 160px;
   padding: 0 22px;
   border: none;
   border-radius: 10px;
-  background: #176130;
+  background: #1f7a3d;
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .add-btn:hover {
-  background: #0f4d26;
+  background: #176130;
+}
+
+.add-btn:active {
+  transform: scale(0.97);
+}
+
+.add-btn:disabled {
+  background: #0d3b1d;
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .quantity-minus:focus-visible,
