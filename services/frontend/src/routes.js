@@ -858,7 +858,7 @@ router.post("/api/basket/push", requireAuth(0), async (req, res) => {
 router.post("/api/basket/totals", async (req, res) => {
   try {
     if (req.session.user) {
-      const totals = await api.getBasketTotals(req.session.user.id, req.body.items);
+      const totals = await api.getBasketTotals(req.session.user.id, req.body);
       res.status(200).json(totals);
     } else {
       const totals = await api.getGuestBasketTotals(req.body);
