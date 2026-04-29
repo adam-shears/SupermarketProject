@@ -9,6 +9,8 @@
 <div class="basket-wrapper">
   <h1 class="basket-title">Your Basket</h1>
 
+  <p id="basket-error" role="alert" hidden></p>
+
   <div class="basket-page">
     <section class="items-column" aria-labelledby="basket-items-title">
       <h2 id="basket-items-title">Your Items</h2>
@@ -34,6 +36,7 @@
         <label for="promo-code" class="visually-hidden">Promo code</label>
         <input id="promo-code" type="text" placeholder="Promo code">
         <button type="button" class="promo-btn">Add</button>
+        <p id="promo-applied-status" role="status" aria-live="polite" hidden></p>
       </div>
 
       <div class="summary-row total-row">
@@ -41,20 +44,81 @@
         <span id="total-text">&pound;0.00</span>
       </div>
 
-      <button type="button" class="proceed">Proceed &rarr;</button>
+      <button type="button" id="proceed-to-checkout" class="proceed">Proceed &rarr;</button>
+
+      {% if user %}
+        <button type="button" id="open-save-basket-modal" class="proceed">Save this basket</button>
+      {% endif %}
+      <dialog id="save-basket-modal" class="save-basket-modal">
+        <form id="save-basket-form" method="dialog">
+          <h2>Save Basket</h2>
+          <label for="saved-basket-name">Basket name</label>
+          <input id="saved-basket-name" name="name" type="text" maxlength="255" placeholder="Enter basket name here..." required>
+          <p id="save-basket-status" role="status" aria-live="polite" hidden></p>
+          <div class="modal-actions">
+            <button type="button" id="cancel-save-basket" class="cancel">Cancel</button>
+            <button type="submit" class="proceed">Save</button>
+          </div>
+        </form>
+      </dialog>
     </aside>
   </div>
 </div>
 
 <script type="module">
   import * as service from '/service.js';
+  const saveBasketModal = document.getElementById("save-basket-modal");
+  const openSaveBasketModal = document.getElementById("open-save-basket-modal");
+  const cancelSaveBasketButton = document.getElementById("cancel-save-basket");
+  const saveBasketForm = document.getElementById("save-basket-form");
+  const saveBasketStatus = document.getElementById("save-basket-status");
+  let appliedPromoCode = null;
+
+  openSaveBasketModal?.addEventListener("click", () => {
+    saveBasketStatus.hidden = true;
+    saveBasketStatus.textContent = "";
+    saveBasketModal.showModal();
+  });
+
+  cancelSaveBasketButton?.addEventListener("click", () => {
+    saveBasketModal.close();
+  });
+
+  saveBasketForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const data = new FormData(saveBasketForm);
+    const name = String(data.get("name") || "").trim();
+    if (!name) return;
+
+    try {
+      const res = await fetch("/api/basket/save", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save basket");
+
+      saveBasketStatus.textContent = "Basket saved successfully";
+      saveBasketStatus.hidden = false;
+
+      setTimeout(() => {
+        saveBasketModal.close();
+        saveBasketForm.reset();
+      }, 700);
+    } catch (error) {
+      saveBasketStatus.textContent = "Could not save basket";
+      saveBasketStatus.hidden = false;
+    }
+  });
 
   function formatPrice(pence) {
     return `£${(pence / 100).toFixed(2)}`;
   }
 
-  function updateTotals() {
-    const totals = service.calculateTotals();
+  async function updateTotals() {
+    const totals = await service.calculateTotals(appliedPromoCode);
 
     document.getElementById('subtotal-text').textContent = formatPrice(totals.subtotal);
     document.getElementById('total-text').textContent = formatPrice(totals.total);
@@ -71,8 +135,8 @@
     }
   }
 
-  function renderBasket() {
-    const items = service.getBasket();
+  async function renderBasket() {
+    const items = await service.getBasket();
     const itemsColumn = document.getElementById('basket-items');
     itemsColumn.innerHTML = '';
 
@@ -80,7 +144,7 @@
       itemsColumn.innerHTML = `
         <p class="empty-basket">Your basket is empty.</p>
       `;
-      updateTotals();
+      await updateTotals();
       return;
     }
 
@@ -121,21 +185,21 @@
       `;
     });
 
-    attachEventListeners();
-    updateTotals();
+    await attachEventListeners();
+    await updateTotals();
   }
 
-  function attachEventListeners() {
+  async function attachEventListeners() {
     document.querySelectorAll('.delete-button').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const productId = Number(e.currentTarget.dataset.id);
-        service.removeFromBasket(productId);
-        renderBasket();
+        await service.removeFromBasket(productId);
+        await renderBasket();
       });
     });
 
     document.querySelectorAll('.quantity-input').forEach((input) => {
-      const update = (e) => {
+      const update = async (e) => {
         const productId = Number(e.target.dataset.id);
         let quantity = parseInt(e.target.value, 10) || 1;
 
@@ -144,16 +208,76 @@
           e.target.value = 1;
         }
 
-        service.updateQuantity(productId, quantity);
-        updateTotals();
+        await service.updateQuantity(productId, quantity);
+        await updateTotals();
       };
 
       input.addEventListener('input', update);
       input.addEventListener('change', update);
     });
+
+    document.querySelector('.promo-btn')?.addEventListener('click', async () => {
+      const input = document.getElementById('promo-code');
+      const promoAppliedStatus = document.getElementById("promo-applied-status")
+      promoAppliedStatus.hidden = true;
+      appliedPromoCode = input.value.trim() || null;
+
+      try {
+        await updateTotals();
+        promoAppliedStatus.textContent = "Promo code applied";
+        promoAppliedStatus.hidden = false;
+      } catch (error) {
+        appliedPromoCode = null;
+        input.value = '';
+        promoAppliedStatus.textContent = "Promo code not found";
+        promoAppliedStatus.hidden = false;
+        await updateTotals();
+      }
+    });
+
+    document.getElementById("proceed-to-checkout")?.addEventListener("click", async () => {
+      const errorMessage = document.getElementById("basket-error");
+      errorMessage.hidden = true;
+      errorMessage.textContent = "";
+
+      const payload = {
+        promoCode: appliedPromoCode,
+      };
+
+      const basket = await service.getBasket();
+      if (!document.body.dataset.userId) {
+        payload.items = basket.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        }));
+      }
+
+      const res = await fetch("/checkout/start", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        const unavailable = error.details?.unavailable || [];
+
+        if (unavailable.length > 0) {
+          errorMessage.textContent = unavailable.map((item) => {
+            return `${item.name} is unavailable. You requested ${item.requested_quantity}, but only ${item.available_quantity} is available.`;
+          }).join(" ");
+        } else {
+          errorMessage.textContent = error.message || "Couldn't start checkout";
+        }
+        errorMessage.hidden = false;
+        return;
+      }
+
+      window.location.href = "/checkout/delivery";
+    });
   }
 
-  renderBasket();
+  await renderBasket();
 </script>
 
 {% endblock %}
