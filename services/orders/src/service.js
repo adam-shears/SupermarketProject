@@ -25,6 +25,7 @@ import {
   insertNewStaff,
   insertOrder,
   insertShoppingListItem,
+  releaseStock,
   reserveStock,
   selectActiveDiscountsForProducts,
   selectAllStaff,
@@ -79,6 +80,7 @@ export const ordersDeps = {
   insertOrder,
   clearActiveBasket,
   reserveStock,
+  releaseStock,
 };
 
 export class OrdersError extends Error {
@@ -145,7 +147,7 @@ export async function getSavedBaskets(customerId) {
   const basketsToReturn = new Map();
 
   for (const row of rows) {
-    if(!basketsToReturn.has(row.basket_id)) {
+    if (!basketsToReturn.has(row.basket_id)) {
       basketsToReturn.set(row.basket_id, {
         id: row.basket_id,
         name: row.basket_name,
@@ -177,7 +179,7 @@ export async function getSavedBaskets(customerId) {
 }
 
 export async function pushSavedBasketToLive(customerId, basketId) {
-  if(!basketId) {
+  if (!basketId) {
     throw new OrdersError("basketId is required", 400);
   }
 
@@ -300,14 +302,7 @@ export async function registerNewUser(input) {
     const adminLevel = input.adminLevel || 1; // default to lowest staff level if not provided
     const passwordHash = await ordersDeps.hashPassword(password, 12);
 
-    return ordersDeps.insertNewStaff(
-      email,
-      passwordHash,
-      firstName,
-      lastName,
-      phone,
-      adminLevel
-    );
+    return ordersDeps.insertNewStaff(email, passwordHash, firstName, lastName, phone, adminLevel);
   }
 
   // if the user is not a staff member, proceed with normal registration unless they try to provide a staff email
@@ -321,13 +316,7 @@ export async function registerNewUser(input) {
   // at this point, the user's input is valid so we can register
   const passwordHash = await ordersDeps.hashPassword(password, 12);
 
-  return ordersDeps.insertNewCustomer(
-    email,
-    passwordHash,
-    firstName,
-    lastName,
-    phone
-  );
+  return ordersDeps.insertNewCustomer(email, passwordHash, firstName, lastName, phone);
 }
 
 export async function logCustomerIn(input) {
@@ -356,10 +345,7 @@ export async function logCustomerIn(input) {
     throw new OrdersError("Invalid email or password", 401);
   }
 
-  const passwordMatch = await ordersDeps.comparePassword(
-    password,
-    user.password_hash
-  );
+  const passwordMatch = await ordersDeps.comparePassword(password, user.password_hash);
 
   if (!passwordMatch) {
     throw new OrdersError("Invalid email or password", 401);
@@ -432,7 +418,7 @@ export async function getCustomerOrderHistory(customerId) {
   const ordersToReturn = new Map();
 
   for (const order of orders) {
-    if(!ordersToReturn.has(order.id)) {
+    if (!ordersToReturn.has(order.id)) {
       ordersToReturn.set(order.id, {
         id: order.id,
         status: order.status,
@@ -453,8 +439,12 @@ export async function getCustomerOrderHistory(customerId) {
       productId: order.product_id,
       productName: order.product_name,
       quantity: order.quantity,
-      pricePencePerUnit: substituted ? order.substitution_price_pence_per_unit : order.price_pence_per_unit,
-      lineSubtotalPence: substituted ? order.substitution_line_subtotal_pence : order.line_subtotal_pence,
+      pricePencePerUnit: substituted
+        ? order.substitution_price_pence_per_unit
+        : order.price_pence_per_unit,
+      lineSubtotalPence: substituted
+        ? order.substitution_line_subtotal_pence
+        : order.line_subtotal_pence,
       lineDiscountPence: order.line_discount_pence,
       lineTotalPence: substituted ? order.substitution_line_total_pence : order.line_total_pence,
       substituted,
@@ -482,7 +472,7 @@ export async function deleteCustomerAccount(customerId) {
 export function calculateDiscounts(line, discount) {
   const pricePence = line.price_pence;
 
-  if(discount.type === "percentage") {
+  if (discount.type === "percentage") {
     return Math.round(pricePence * (discount.value / 100) * line.quantity);
   } else if (discount.type === "fixed") {
     return Math.min(discount.value, pricePence) * line.quantity;
@@ -536,7 +526,7 @@ export function calculateLineTotals(lines, discounts, promoCode = null) {
 
 export async function getBasketTotals(customerId, promoCode = null) {
   const lines = await ordersDeps.selectBasketPriceLinesByCustomerId(customerId);
-  const productIds = lines.map(line => line.product_id);
+  const productIds = lines.map((line) => line.product_id);
   const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
   return ordersDeps.calculateLineTotals(lines, discounts, promoCode);
 }
@@ -548,7 +538,7 @@ export async function getGuestBasketTotals(items, promoCode = null) {
   }));
 
   const lines = await ordersDeps.selectBasketPriceLinesForGuestBaskets(parsed);
-  const productIds = lines.map(line => line.product_id);
+  const productIds = lines.map((line) => line.product_id);
   const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
   return ordersDeps.calculateLineTotals(lines, discounts, promoCode);
 }
@@ -622,13 +612,15 @@ function getCheckoutSnapshot(lines, discounts, promoCode = null) {
 
 export async function getLoggedInCheckoutSnapshot(customerId, promoCode = null) {
   const lines = await ordersDeps.selectBasketPriceLinesByCustomerId(customerId);
-  const productIds = lines.map(line => line.product_id);
+  const productIds = lines.map((line) => line.product_id);
   const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
   const snapshot = getCheckoutSnapshot(lines, discounts, promoCode);
 
   const reservation = await ordersDeps.reserveStock(snapshot.items);
   if (!reservation.reserved) {
-    throw new OrdersError("Items are unavailable", 409, { unavailable: reservation.unavailableItems });
+    throw new OrdersError("Items are unavailable", 409, {
+      unavailable: reservation.unavailableItems,
+    });
   }
 
   return snapshot;
@@ -641,13 +633,15 @@ export async function getGuestCheckoutSnapshot(items, promoCode = null) {
   }));
 
   const lines = await ordersDeps.selectBasketPriceLinesForGuestBaskets(parsed);
-  const productIds = lines.map(line => line.product_id);
+  const productIds = lines.map((line) => line.product_id);
   const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
   const snapshot = getCheckoutSnapshot(lines, discounts, promoCode);
 
   const reservation = await ordersDeps.reserveStock(snapshot.items);
   if (!reservation.reserved) {
-    throw new OrdersError("Items are unavailable", 409, { unavailable: reservation.unavailableItems });
+    throw new OrdersError("Items are unavailable", 409, {
+      unavailable: reservation.unavailableItems,
+    });
   }
 
   return snapshot;
@@ -668,4 +662,12 @@ export async function createOrder(snapshot, deliveryInfo, customerId = null, gue
 
 export async function clearBasket(customerId) {
   return ordersDeps.clearActiveBasket(customerId);
+}
+
+export async function releaseReservation(snapshot) {
+  if (snapshot && snapshot.items) {
+    await ordersDeps.releaseStock(snapshot.items);
+    return;
+  }
+  throw new OrdersError("No reservation to release", 400);
 }

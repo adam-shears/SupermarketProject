@@ -60,7 +60,10 @@ function requireAuth(requiredAdminLevel = 1) {
 // see comment in service.js function syncGuestBasketIdsCookie() for context on this
 function getCookie(req, name) {
   const cookies = req.headers.cookie || "";
-  const match = cookies.split(";").map((cookie) => cookie.trim()).find((cookie) => cookie.startsWith(`${name}=`));
+  const match = cookies
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(`${name}=`));
   return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
 }
 
@@ -155,9 +158,14 @@ router.get("/products/:id", async (req, res) => {
     let productsInBasket = [];
     if (customerId) {
       productsInBasket = await api.getBasket(customerId);
-      productsInBasket = productsInBasket.map((item) => Number(item.product_id)).filter(Number.isInteger);
+      productsInBasket = productsInBasket
+        .map((item) => Number(item.product_id))
+        .filter(Number.isInteger);
     } else {
-      productsInBasket = getCookie(req, "guest_basket_ids").split(",").map(Number).filter(Number.isInteger);
+      productsInBasket = getCookie(req, "guest_basket_ids")
+        .split(",")
+        .map(Number)
+        .filter(Number.isInteger);
     }
 
     const recommendedProductIds = await api.getProductRecommendations(productId, {
@@ -809,11 +817,7 @@ router.post("/api/basket/items", requireAuth(0), async (req, res) => {
 
 router.patch("/api/basket/items/:productId", requireAuth(0), async (req, res) => {
   try {
-    const item = await api.updateBasketItem(
-      req.session.user.id,
-      req.params.productId,
-      req.body
-    );
+    const item = await api.updateBasketItem(req.session.user.id, req.params.productId, req.body);
     res.json(item);
   } catch (error) {
     console.error(error);
@@ -876,18 +880,36 @@ router.post("/api/basket/totals", async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(error.status || 500).json({ message: error.message || "Failed to calculate basket totals" });
+    res
+      .status(error.status || 500)
+      .json({ message: error.message || "Failed to calculate basket totals" });
   }
 });
 
 // checkout
 router.post("/checkout/start", async (req, res) => {
   try {
+    const oldSnapshot = req.session.checkoutSnapshot;
+    if (oldSnapshot) {
+      // delete old snapshot and release reservation first
+      // so we don't get duplicate reservations
+      try {
+        await api.releaseReservation({ snapshot: oldSnapshot });
+      } finally {
+        delete req.session.checkoutSnapshot;
+      }
+    }
+
     let snapshot;
     if (req.session.user) {
-      snapshot = await api.createCheckoutSnapshot(req.session.user.id, {promoCode: req.body.promoCode || null});
+      snapshot = await api.createCheckoutSnapshot(req.session.user.id, {
+        promoCode: req.body.promoCode || null,
+      });
     } else {
-      snapshot = await api.createGuestCheckoutSnapshot({items: req.body.items || [], promoCode: req.body.promoCode || null});
+      snapshot = await api.createGuestCheckoutSnapshot({
+        items: req.body.items || [],
+        promoCode: req.body.promoCode || null,
+      });
     }
     req.session.checkoutSnapshot = snapshot;
     res.status(201).json({ message: "Checkout started", snapshot });
@@ -935,7 +957,12 @@ router.post("/checkout/complete", async (req, res) => {
       postcode: req.body.postcode.trim(),
     };
 
-    if (!deliveryInfo.addressLine || !deliveryInfo.town || !deliveryInfo.county || !deliveryInfo.postcode) {
+    if (
+      !deliveryInfo.addressLine ||
+      !deliveryInfo.town ||
+      !deliveryInfo.county ||
+      !deliveryInfo.postcode
+    ) {
       throw new Error("All delivery fields are required.");
     }
 
@@ -948,7 +975,12 @@ router.post("/checkout/complete", async (req, res) => {
       };
     }
 
-    const result = await api.createOrder({customerId: req.session.user?.id || null, guestDetails, deliveryInfo, snapshot: req.session.checkoutSnapshot});
+    const result = await api.createOrder({
+      customerId: req.session.user?.id || null,
+      guestDetails,
+      deliveryInfo,
+      snapshot: req.session.checkoutSnapshot,
+    });
     delete req.session.checkoutSnapshot;
 
     let clearBasket;
