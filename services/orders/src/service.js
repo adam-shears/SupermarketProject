@@ -270,6 +270,16 @@ function getLoyaltyTier(points) {
   return "Bronze";
 }
 
+function getHighestLoyaltyTier(currentTier, pointsTier) {
+  const rank = {
+    Bronze: 0,
+    Silver: 1,
+    Gold: 2,
+  };
+
+  return (rank[pointsTier] || 0) > (rank[currentTier] || 0) ? pointsTier : currentTier;
+}
+
 function generateCouponCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "LOYALTY-";
@@ -373,7 +383,7 @@ export async function addLoyaltyPoints(customerId, input) {
 
   const oldTier = account.tier;
   const nextPoints = Math.max(0, account.points + amount);
-  const newTier = getLoyaltyTier(nextPoints);
+  const newTier = getHighestLoyaltyTier(oldTier, getLoyaltyTier(nextPoints));
   account = await ordersDeps.updateLoyaltyAccountPoints(account.id, nextPoints, newTier);
   const transaction = await ordersDeps.insertLoyaltyTransaction(account.id, orderId, type, amount);
 
@@ -409,7 +419,7 @@ export async function redeemPoints(customerId, pointsToRedeem, orderTotalPence) 
   }
 
   const nextPoints = Math.max(0, account.points - actualPointsUsed);
-  const newTier = getLoyaltyTier(nextPoints);
+  const newTier = getHighestLoyaltyTier(account.tier, getLoyaltyTier(nextPoints));
 
   account = await ordersDeps.updateLoyaltyAccountPoints(account.id, nextPoints, newTier);
   await ordersDeps.insertLoyaltyTransaction(account.id, null, "redemption", -actualPointsUsed);

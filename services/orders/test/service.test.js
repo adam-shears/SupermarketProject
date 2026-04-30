@@ -45,7 +45,7 @@ describe("Orders Service", () => {
             sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
                 id: 10,
                 points: 150,
-                tier: "Bronze",
+                tier: "Silver",
             });
             sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
 
@@ -56,7 +56,7 @@ describe("Orders Service", () => {
                 discountPence: 3300,
                 remainingPoints: 150,
             });
-            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 150, "Bronze")).to.be.true;
+            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 150, "Silver")).to.be.true;
             expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, null, "redemption", -3300)).to.be.true;
         });
 
@@ -68,6 +68,43 @@ describe("Orders Service", () => {
             });
 
             await expect(service.redeemPoints(1, NaN, 5000)).to.be.rejectedWith(service.OrdersError, "At least 100 points are required to redeem");
+        });
+
+        it("should not downgrade tier when points are redeemed", async () => {
+            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+                id: 10,
+                points: 5200,
+                tier: "Gold",
+            });
+            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
+                id: 10,
+                points: 200,
+                tier: "Gold",
+            });
+            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+
+            await service.redeemPoints(1, 5000, 5000);
+
+            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 200, "Gold")).to.be.true;
+        });
+
+        it("should not downgrade tier when purchase points are added after redemption", async () => {
+            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+                id: 10,
+                points: 200,
+                tier: "Gold",
+            });
+            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
+                id: 10,
+                points: 300,
+                tier: "Gold",
+            });
+            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+            sinon.stub(service.ordersDeps, "selectLoyaltyTierBenefits").resolves(null);
+
+            await service.addLoyaltyPoints(1, {amount: 100, type: "purchase", orderId: 99});
+
+            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 300, "Gold")).to.be.true;
         });
     });
 

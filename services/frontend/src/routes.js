@@ -383,11 +383,15 @@ User Space / My Account routes
 
 router.get("/account", requireCustomerLogin, async (req, res) => {
   try {
-    const account = await api.getCustomerAccount(req.session.user.id);
+    const [account, loyalty] = await Promise.all([
+      api.getCustomerAccount(req.session.user.id),
+      api.getLoyaltyAccount(req.session.user.id),
+    ]);
 
     res.render("account.njk", {
       title: "My Account",
       account,
+      loyalty,
       success: req.query.updated === "1",
       error: null,
       user: req.session.user || null,
@@ -398,6 +402,7 @@ router.get("/account", requireCustomerLogin, async (req, res) => {
     res.status(error.status || 500).render("account.njk", {
       title: "My Account",
       account: req.session.user,
+      loyalty: null,
       success: false,
       error: error.message || "Could not load your account details.",
       user: req.session.user || null,
@@ -432,6 +437,7 @@ router.post("/account/update", requireCustomerLogin, async (req, res) => {
         lastName: req.body.lastName,
         phone: req.body.phone,
       },
+      loyalty: null,
       success: false,
       error: error.message || "Could not update your account details.",
       user: req.session.user || null,
