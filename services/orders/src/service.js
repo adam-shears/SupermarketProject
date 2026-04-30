@@ -909,7 +909,7 @@ export async function getGuestCheckoutSnapshot(items, promoCode = null) {
 }
 
 export async function createOrder(snapshot, deliveryInfo, customerId = null, guestDetails = null) {
-  return ordersDeps.insertOrder(
+  const orderId = await ordersDeps.insertOrder(
     customerId,
     guestDetails,
     "pending",
@@ -919,6 +919,21 @@ export async function createOrder(snapshot, deliveryInfo, customerId = null, gue
     deliveryInfo,
     snapshot.items
   );
+
+  if (customerId) {
+    const account = await ordersDeps.selectLoyaltyAccountByCustomerId(customerId);
+    const purchasePoints = calculatePointsFromPurchase(snapshot.totalPence, account?.tier || "Bronze");
+
+    if (purchasePoints > 0) {
+      await addLoyaltyPoints(customerId, {
+        amount: purchasePoints,
+        type: "purchase",
+        orderId,
+      });
+    }
+  }
+
+  return orderId;
 }
 
 export async function clearBasket(customerId) {

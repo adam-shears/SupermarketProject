@@ -30,6 +30,12 @@ describe("Orders Service", () => {
     });
 
     describe("loyalty redemption", () => {
+        it("should calculate purchase points based on the customer's current tier", () => {
+            expect(service.calculatePointsFromPurchase(1099, "Bronze")).to.equal(10);
+            expect(service.calculatePointsFromPurchase(1099, "Silver")).to.equal(21);
+            expect(service.calculatePointsFromPurchase(1099, "Gold")).to.equal(32);
+        });
+
         it("should calculate the maximum redeemable points in 100 point chunks", () => {
             expect(service.calculateRedeemablePoints(3450, 3391)).to.equal(3300);
             expect(service.calculateRedeemablePoints(90, 5000)).to.equal(0);
@@ -105,6 +111,68 @@ describe("Orders Service", () => {
             await service.addLoyaltyPoints(1, {amount: 100, type: "purchase", orderId: 99});
 
             expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 300, "Gold")).to.be.true;
+        });
+    });
+
+    describe("createOrder", () => {
+        const snapshot = {
+            subtotalPence: 1299,
+            discountPence: 200,
+            totalPence: 1099,
+            items: [
+                {
+                    product_id: 1,
+                    quantity: 1,
+                    price_pence_per_unit: 1299,
+                    line_subtotal_pence: 1299,
+                    line_discount_pence: 200,
+                    applied_discount_id: null,
+                    line_total_pence: 1099,
+                },
+            ],
+        };
+        const deliveryInfo = {
+            addressLine: "1 Test Street",
+            town: "Testville",
+            county: "Testshire",
+            postcode: "TE1 1ST",
+        };
+
+        it("should award loyalty points after creating a customer order", async () => {
+            sinon.stub(service.ordersDeps, "insertOrder").resolves(99);
+            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId")
+                .onFirstCall()
+                .resolves({ id: 10, points: 100, tier: "Silver" })
+                .onSecondCall()
+                .resolves({ id: 10, points: 100, tier: "Silver" });
+            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
+                id: 10,
+                points: 121,
+                tier: "Silver",
+            });
+            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+
+            const result = await service.createOrder(snapshot, deliveryInfo, 1);
+
+            expect(result).to.equal(99);
+            expect(service.ordersDeps.insertOrder.calledOnce).to.be.true;
+            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 121, "Silver")).to.be.true;
+            expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "purchase", 21)).to.be.true;
+        });
+
+        it("should not award loyalty points for guest orders", async () => {
+            sinon.stub(service.ordersDeps, "insertOrder").resolves(100);
+            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves(null);
+
+            const result = await service.createOrder(snapshot, deliveryInfo, null, {
+                name: "Guest User",
+                email: "guest@example.com",
+                phone: "1234567890",
+            });
+
+            expect(result).to.equal(100);
+            expect(service.ordersDeps.insertOrder.calledOnce).to.be.true;
+            expect(service.ordersDeps.selectLoyaltyAccountByCustomerId.notCalled).to.be.true;
         });
     });
 
