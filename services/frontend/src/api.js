@@ -10,6 +10,8 @@ HTTP validation should be performed in those services' routes.js files and busin
 should be performed in those services' service.js files.
 */
 
+
+
 const CATALOGUE_URL = process.env.CATALOGUE_URL || "http://catalogue:3000";
 const ORDERS_URL = process.env.ORDERS_URL || "http://orders:3000";
 const WAREHOUSE_URL = process.env.WAREHOUSE_URL || "http://warehouse:3000";
@@ -40,6 +42,7 @@ async function postJson(url, body) {
   if (!res.ok) {
     const error = new Error(data.message || `Request failed ${res.status}: ${url}`);
     error.status = res.status;
+    error.details = data.details || null;
     throw error;
   }
 
@@ -86,9 +89,22 @@ export const api = {
   searchProducts: (term) =>
     getJson(`${CATALOGUE_URL}/products/search?q=${encodeURIComponent(term)}`),
 
-  getBasket: () => getJson(`${ORDERS_URL}/basket`),
-  addToBasket: (productId, quantity) =>
-    postJson(`${ORDERS_URL}/basket/items`, { productId, quantity }),
+  getBasket: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/basket`),
+  addToBasket: (customerId, payload) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/basket/items`, payload),
+  updateBasketItem: (customerId, productId, payload) =>
+    patchJson(`${ORDERS_URL}/customers/${customerId}/basket/items/${productId}`, payload),
+  deleteBasketItem: (customerId, productId) =>
+    deleteRequest(`${ORDERS_URL}/customers/${customerId}/basket/items/${productId}`),
+  saveBasket: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/basket/save`, payload),
+  getSavedBaskets : (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/baskets/saved`),
+  pushSavedBasketToLive: (customerId, basketId) => postJson(`${ORDERS_URL}/customers/${customerId}/baskets/${basketId}/push`, {}),
+  getBasketTotals : (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/basket/total`, payload),
+  getGuestBasketTotals : (payload) => postJson(`${ORDERS_URL}/basket/totals`, payload),
+  createCheckoutSnapshot: (customerId, payload) => postJson(`${ORDERS_URL}/customers/${customerId}/checkout/snapshot`, payload),
+  createGuestCheckoutSnapshot: (payload) => postJson(`${ORDERS_URL}/checkout/snapshot`, payload),
+  createOrder: (payload) => postJson(`${ORDERS_URL}/orders/create`, payload),
+  clearBasket: (customerId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/basket`),
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),

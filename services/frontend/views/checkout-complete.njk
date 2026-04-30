@@ -1,0 +1,42 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/checkout.css" />
+{% endblock %}
+
+{% block content %}
+  <!-- copied the error page template so excuse the horrible class names -->
+  <div class="error-page">
+    <div class="error-card">
+      <p class="error-eyebrow">Checkout complete</p>
+      <h1>Thanks for shopping with us</h1>
+      <p class="error-lead">Your order has been created!</p>
+      <p class="checkout-message">Your order number: #{{ order }}</p>
+
+      <div class="error-links">
+        <p class="error-links-title">While you wait for your goods to arrive, you can try</p>
+        <div class="error-link-list">
+          <a class="error-link" href="/">
+            <span class="error-link-label">Home</span>
+            <span class="error-link-copy">Go back to the homepage</span>
+          </a>
+          <a class="error-link" href="/products">
+            <span class="error-link-label">All Products</span>
+            <span class="error-link-copy">Keep browsing the catalogue</span>
+          </a>
+          <a class="error-link" href="/basket">
+            <span class="error-link-label">Your Basket</span>
+            <span class="error-link-copy">Check the items already added</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if clearBasket %}
+    <script type="module">
+      import { clearBasket } from "/service.js";
+      await clearBasket();
+    </script>
+  {% endif %}
+{% endblock %}

@@ -1,36 +1,139 @@
 const BASKET_KEY = "basket";
+const GUEST_BASKET_IDS_COOKIE = "guest_basket_ids";
 const SHOPPING_LIST_KEY = "shopping_list_guest";
 
-// Get basket from LocalStorage
-export function getBasket() {
-  const basket = localStorage.getItem(BASKET_KEY);
-  return basket ? JSON.parse(basket) : [];
+function getUserId() {
+  return document.body.dataset.userId || null;
 }
 
-// Save basket to LocalStorage
-export function saveBasket(basket) {
-  localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
+// --- Basket logic ---
+function parseBasketItem(item) {
+  return {
+    productId: item.product_id ?? item.productId,
+    quantity: item.quantity,
+    name: item.name,
+    category_name: item.category_name ?? item.categoryName,
+    price_pence: item.price_pence ?? item.pricePence,
+    image_url: item.image_url || `/images/products/${item.product_id ?? item.productId}.JPG`,
+  };
 }
 
-// Add item to basket
-export function addToBasket(productId, quantity, name, price_pence, image_url) {
-  const basket = getBasket();
-  const existing = basket.find(i => i.productId === productId);
+function syncGuestBasketIdsCookie(items) {
+  // used GPT-5.5 to explain and help with syncing the cookies
+  // the recommendations flow is server sided so doesn't have access to local storage
+  // GPT-5.5 suggested using a cookie with the product ids
+  const ids = [...new Set(items.map((item) => Number(item.productId)).filter(Number.isInteger))];
+  document.cookie = `${GUEST_BASKET_IDS_COOKIE}=${encodeURIComponent(ids.join(","))}; path=/; max-age=31536000`; // 1 year
+}
+
+function getGuestBasket() {
+  const raw = localStorage.getItem(BASKET_KEY);
+  return raw ? JSON.parse(raw).map(parseBasketItem) : [];
+}
+
+function setGuestBasket(items) {
+  localStorage.setItem(BASKET_KEY, JSON.stringify(items));
+  syncGuestBasketIdsCookie(items);
+}
+
+async function getDatabaseBasket() {
+  const res = await fetch("/api/basket");
+  if (!res.ok) throw new Error("Failed to load basket from the database");
+  return (await res.json()).map(parseBasketItem);
+}
+
+export async function getBasket() {
+  if (getUserId()) {
+    return getDatabaseBasket();
+  }
+  return getGuestBasket();
+}
+
+export async function addToBasket(productId, quantity, name, price_pence, image_url) {
+  if (getUserId()) {
+    const res = await fetch("/api/basket/items", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ productId, quantity }),
+    });
+
+    if (!res.ok) throw new Error("Failed to add item to database basket");
+    await updateHeaderCount();
+    await autoCheck(productId);
+    return res.json();
+  }
+
+  const basket = getGuestBasket();
+  const existing = basket.find((item) => item.productId === productId);
+
   if (existing) {
     existing.quantity += quantity;
   } else {
     basket.push({ productId, quantity, name, price_pence, image_url });
   }
-  saveBasket(basket);
-  autoCheck(productId);
-
-  updateHeaderCount();
+  setGuestBasket(basket);
+  await updateHeaderCount();
+  await autoCheck(productId);
 }
 
-export function updateHeaderCount() {
+export async function updateQuantity(productId, quantity) {
+  if(getUserId()) {
+    const res = await fetch(`/api/basket/items/${productId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ quantity }),
+    });
+
+    if (!res.ok) throw new Error("Failed to update item in database basket");
+    await updateHeaderCount();
+    return res.json();
+  }
+
+  const basket = getGuestBasket();
+  const item = basket.find((item) => item.productId === productId);
+
+  if (item) {
+    item.quantity = quantity;
+    setGuestBasket(basket);
+    await updateHeaderCount();
+  }
+}
+
+export async function removeFromBasket(productId) {
+  if(getUserId()) {
+    await fetch(`/api/basket/items/${productId}`, {
+      method: "DELETE",
+    });
+    await updateHeaderCount();
+    return;
+  }
+
+  const basket = getGuestBasket();
+  const newBasket = basket.filter((item) => item.productId !== productId);
+  setGuestBasket(newBasket);
+  await updateHeaderCount();
+}
+
+export async function clearBasket() {
+  if(getUserId()) {
+    const res = await fetch(`/api/basket`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) throw new Error("Failed to clear database basket");
+    await updateHeaderCount();
+    return;
+  }
+
+  localStorage.removeItem(BASKET_KEY);
+  document.cookie = `${GUEST_BASKET_IDS_COOKIE}=; path=/; max-age=0`;
+  await updateHeaderCount();
+}
+
+export async function updateHeaderCount() {
   const countElement = document.getElementById('basket-count');
   if (countElement) {
-    const basket = getBasket();
+    const basket = await getBasket();
     const total = basket.reduce((sum, item) => sum + item.quantity, 0);
     countElement.textContent = total;
 
@@ -48,34 +151,25 @@ export function updateHeaderCount() {
 }
 document.addEventListener('DOMContentLoaded', updateHeaderCount);
 
-// Update quantity
-export function updateQuantity(productId, quantity) {
-  const basket = getBasket();
-  const item = basket.find(i => i.productId === productId);
-  if (item) {
-    item.quantity = quantity;
-    saveBasket(basket);
-    updateHeaderCount();
+export async function calculateTotals(promoCode = null) {
+  const payload = { promoCode };
+
+  if (!getUserId()) {
+    payload.items = getGuestBasket().map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
   }
-}
 
-// Remove item
-export function removeFromBasket(productId) {
-  let basket = getBasket();
-  basket = basket.filter(i => i.productId !== productId);
-  saveBasket(basket);
-  updateHeaderCount();
-}
+  const res = await fetch("/api/basket/totals", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
-// Calculate totals
-export function calculateTotals() {
-  const basket = getBasket();
-  const subtotal = basket.reduce((sum, i) => sum + i.price_pence * i.quantity, 0);
-  const discounts = 0; // implement later
-  const total = subtotal - discounts;
-  return { subtotal, discounts, total };
+  if (!res.ok) throw new Error("Failed to calculate basket totals");
+  return res.json();
 }
-
 
 
 // --- Product list logic ---
@@ -110,10 +204,6 @@ export function getRecommendations(productId) {
 function getProductId(item) {
   const productId = Number(item?.product_id ?? item?.productId ?? item?.id);
   return Number.isInteger(productId) && productId > 0 ? productId : null;
-}
-
-function getUserId() {
-  return document.body.dataset.userId || null;
 }
 
 function getGuestList() {
@@ -221,9 +311,9 @@ export async function autoCheck(productId) {
   try {
     const productIdNumber = Number(productId);
     const items = await getShoppingList();
-    const itemExists = items.some((item) => getProductId(item) === productIdNumber);
+    const item = items.find((item) => getProductId(item) === productIdNumber);
 
-    if (!itemExists) {
+    if (!item || item.checked) {
       return;
     }
 

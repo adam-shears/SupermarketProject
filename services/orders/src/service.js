@@ -16,6 +16,10 @@ This file should not be responsible for:
 
 import bcrypt from "bcrypt";
 import {
+  clearActiveBasket,
+  copyActiveBasketToSaved,
+  copySavedBasketToActive,
+  deleteBasketItem,
   deleteShoppingListItem,
   insertLoyaltyAccount,
   insertLoyaltyCoupon,
@@ -23,25 +27,34 @@ import {
   insertNewCustomer,
   insertNewCustomerWithLoyalty,
   insertNewStaff,
+  insertOrder,
   insertShoppingListItem,
   markLoyaltyCouponAsUsed,
-  selectAllStaff,
   selectAllLoyaltyTierBenefits,
+  reserveStock,
+  selectActiveDiscountsForProducts,
+  selectAllStaff,
+  selectBasketByCustomerId,
+  selectBasketPriceLinesByCustomerId,
+  selectBasketPriceLinesForGuestBaskets,
+  selectCustomerAccountById,
   selectCustomerByEmail,
+  selectCustomerOrdersById,
   selectLoyaltyAccountByCustomerId,
   selectLoyaltyCouponByCode,
   selectLoyaltyCouponsByAccountId,
   selectLoyaltyTierBenefits,
   selectLoyaltyTransactionsByAccountId,
+  selectSavedBasketsByCustomerId,
   selectShoppingListByCustomerID,
   selectStaffByEmail,
   selectUnusedLoyaltyCouponsByAccountId,
-  updateShoppingList,
-  selectCustomerAccountById,
-  updateCustomerAccountById,
-  selectCustomerOrdersById,
   softDeleteCustomerById,
+  updateBasketItem,
+  updateCustomerAccountById,
   updateLoyaltyAccountPoints,
+  updateShoppingList,
+  upsertBasketItem,
 } from "./db.js";
 
 export const ordersDeps = {
@@ -75,13 +88,138 @@ export const ordersDeps = {
   updateCustomerAccountById,
   selectCustomerOrdersById,
   softDeleteCustomerById,
+
+  // basket deps
+  selectBasketByCustomerId,
+  upsertBasketItem,
+  updateBasketItem,
+  deleteBasketItem,
+  copyActiveBasketToSaved,
+  selectSavedBasketsByCustomerId,
+  copySavedBasketToActive,
+  selectBasketPriceLinesByCustomerId,
+  selectActiveDiscountsForProducts,
+  selectBasketPriceLinesForGuestBaskets,
+  calculateDiscounts,
+  calculateLineTotals,
+  insertOrder,
+  clearActiveBasket,
+  reserveStock,
 };
 
 export class OrdersError extends Error {
-  constructor(message, statusCode) {
+  constructor(message, statusCode, details) {
     super(message);
     this.name = "OrdersError";
     this.statusCode = statusCode || 400;
+    this.details = details || null;
+  }
+}
+
+export async function getBasket(customerId) {
+  const basket = await ordersDeps.selectBasketByCustomerId(customerId);
+
+  if (!basket) {
+    throw new OrdersError("Basket not found", 404);
+  }
+
+  return basket;
+}
+
+export async function addOrUpdateBasketItem(customerId, input) {
+  const productId = input.productId;
+  const quantity = input.quantity ?? 1;
+
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new OrdersError("quantity must be a positive integer", 400);
+  }
+
+  return ordersDeps.upsertBasketItem(customerId, productId, quantity);
+}
+
+export async function updateBasket(customerId, productId, input) {
+  const quantity = input.quantity;
+
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new OrdersError("quantity must be a positive integer", 400);
+  }
+
+  const result = await ordersDeps.updateBasketItem(customerId, productId, quantity);
+  if (!result) {
+    throw new OrdersError("Basket item not found", 404);
+  }
+  return result;
+}
+
+export async function removeBasketItem(customerId, productId) {
+  await ordersDeps.deleteBasketItem(customerId, productId);
+}
+
+export async function saveBasket(customerId, payload) {
+  const name = payload.name || "Saved Basket";
+  const savedBasket = await ordersDeps.copyActiveBasketToSaved(customerId, name);
+
+  if (!savedBasket) {
+    throw new OrdersError("Can't save an empty basket", 400);
+  }
+
+  return savedBasket;
+}
+
+export async function getSavedBaskets(customerId) {
+  const rows = await ordersDeps.selectSavedBasketsByCustomerId(customerId);
+  const basketsToReturn = new Map();
+
+  for (const row of rows) {
+    if(!basketsToReturn.has(row.basket_id)) {
+      basketsToReturn.set(row.basket_id, {
+        id: row.basket_id,
+        name: row.basket_name,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        item_count: 0,
+        total_quantity: 0,
+        total_pence: 0,
+        items: [],
+      });
+    }
+
+    const basket = basketsToReturn.get(row.basket_id);
+    if (row.product_id) {
+      const totalPence = Number(row.quantity) * Number(row.price_pence);
+      basket.item_count += 1;
+      basket.total_quantity += Number(row.quantity);
+      basket.total_pence += totalPence;
+      basket.items.push({
+        product_id: row.product_id,
+        name: row.product_name,
+        quantity: row.quantity,
+        price_pence: row.price_pence,
+        total_pence: totalPence,
+      });
+    }
+  }
+  return [...basketsToReturn.values()];
+}
+
+export async function pushSavedBasketToLive(customerId, basketId) {
+  if(!basketId) {
+    throw new OrdersError("basketId is required", 400);
+  }
+
+  if (isNaN(Number(basketId))) {
+    throw new OrdersError("basketId must be a number", 400);
+  }
+
+  basketId = Number(basketId);
+
+  // correct behaviour is completely overwriting the basket with the saved one, so we clear active basket first
+  await ordersDeps.clearActiveBasket(customerId);
+
+  const result = await ordersDeps.copySavedBasketToActive(customerId, basketId);
+
+  if (!result) {
+    throw new OrdersError("Saved basket not found", 404);
   }
 }
 
@@ -536,16 +674,42 @@ export async function updateCustomerAccount(customerId, input) {
 
 export async function getCustomerOrderHistory(customerId) {
   const orders = await ordersDeps.selectCustomerOrdersById(customerId);
+  const ordersToReturn = new Map();
 
-  return orders.map((order) => ({
-    id: order.id,
-    status: order.status,
-    subtotalPence: order.subtotal_pence,
-    discountPence: order.discount_pence,
-    totalPence: order.total_pence,
-    createdAt: order.created_at,
-    itemCount: order.item_count,
-  }));
+  for (const order of orders) {
+    if(!ordersToReturn.has(order.id)) {
+      ordersToReturn.set(order.id, {
+        id: order.id,
+        status: order.status,
+        subtotalPence: order.subtotal_pence,
+        discountPence: order.discount_pence,
+        totalPence: order.total_pence,
+        createdAt: order.created_at,
+        itemCount: 0,
+        items: [],
+      });
+    }
+
+    const orderToUpdate = ordersToReturn.get(order.id);
+    orderToUpdate.itemCount += order.quantity;
+
+    const substituted = order.substituted_product_id ? true : false;
+    orderToUpdate.items.push({
+      productId: order.product_id,
+      productName: order.product_name,
+      quantity: order.quantity,
+      pricePencePerUnit: substituted ? order.substitution_price_pence_per_unit : order.price_pence_per_unit,
+      lineSubtotalPence: substituted ? order.substitution_line_subtotal_pence : order.line_subtotal_pence,
+      lineDiscountPence: order.line_discount_pence,
+      lineTotalPence: substituted ? order.substitution_line_total_pence : order.line_total_pence,
+      substituted,
+      substitutedProductId: order.substituted_product_id,
+      substitutedProductName: order.substituted_product_name,
+      originalPricePencePerUnit: order.price_pence_per_unit,
+      originalLineTotalPence: order.line_total_pence,
+    });
+  }
+  return Array.from(ordersToReturn.values());
 }
 
 export async function deleteCustomerAccount(customerId) {
@@ -558,4 +722,195 @@ export async function deleteCustomerAccount(customerId) {
   return {
     id: deletedCustomer.id,
   };
+}
+
+export function calculateDiscounts(line, discount) {
+  const pricePence = line.price_pence;
+
+  if(discount.type === "percentage") {
+    return Math.round(pricePence * (discount.value / 100) * line.quantity);
+  } else if (discount.type === "fixed") {
+    return Math.min(discount.value, pricePence) * line.quantity;
+  }
+
+  // then discount isnt valid
+  return 0;
+}
+
+export function calculateLineTotals(lines, discounts, promoCode = null) {
+  const discountsByProduct = new Map();
+
+  for (const discount of discounts) {
+    if (!discountsByProduct.has(discount.product_id)) {
+      discountsByProduct.set(discount.product_id, []);
+    }
+    discountsByProduct.get(discount.product_id).push(discount);
+  }
+
+  let subtotal = 0;
+  let discountTotal = 0;
+  let promoApplied = false;
+
+  for (const line of lines) {
+    const lineSubtotal = line.price_pence * line.quantity;
+    subtotal += lineSubtotal;
+
+    const lineDiscounts = discountsByProduct.get(line.product_id) || [];
+    for (const discount of lineDiscounts) {
+      if (discount.code) {
+        const result = ordersDeps.calculateDiscounts(line, discount);
+        if (result > 0) promoApplied = true;
+        discountTotal += result;
+      } else {
+        discountTotal += ordersDeps.calculateDiscounts(line, discount);
+      }
+    }
+  }
+
+  if (promoCode && !promoApplied) {
+    throw new OrdersError(`Promo code ${promoCode} is not valid for any items in the basket`, 400);
+  }
+
+  return {
+    subtotal,
+    discounts: discountTotal,
+    total: Math.max(0, subtotal - discountTotal),
+    promoApplied,
+  };
+}
+
+export async function getBasketTotals(customerId, promoCode = null) {
+  const lines = await ordersDeps.selectBasketPriceLinesByCustomerId(customerId);
+  const productIds = lines.map(line => line.product_id);
+  const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
+  return ordersDeps.calculateLineTotals(lines, discounts, promoCode);
+}
+
+export async function getGuestBasketTotals(items, promoCode = null) {
+  const parsed = items.map((item) => ({
+    product_id: item.productId,
+    quantity: item.quantity,
+  }));
+
+  const lines = await ordersDeps.selectBasketPriceLinesForGuestBaskets(parsed);
+  const productIds = lines.map(line => line.product_id);
+  const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
+  return ordersDeps.calculateLineTotals(lines, discounts, promoCode);
+}
+
+function getCheckoutSnapshot(lines, discounts, promoCode = null) {
+  const discountsByProduct = new Map();
+
+  for (const discount of discounts) {
+    if (!discountsByProduct.has(discount.product_id)) {
+      discountsByProduct.set(discount.product_id, []);
+    }
+    discountsByProduct.get(discount.product_id).push(discount);
+  }
+
+  let subtotalPence = 0;
+  let discountPence = 0;
+  let promoApplied = false;
+
+  const items = lines.map((line) => {
+    const lineSubtotalPence = line.price_pence * line.quantity;
+    const lineDiscounts = discountsByProduct.get(line.product_id) || [];
+
+    let lineDiscountPence = 0;
+    let appliedDiscountId = null;
+
+    for (const discount of lineDiscounts) {
+      const result = ordersDeps.calculateDiscounts(line, discount);
+
+      if (result > 0) {
+        lineDiscountPence += result;
+        appliedDiscountId = discount.id;
+        if (discount.code) {
+          promoApplied = true;
+        }
+      }
+    }
+
+    lineDiscountPence = Math.min(lineDiscountPence, lineSubtotalPence);
+
+    subtotalPence += lineSubtotalPence;
+    discountPence += lineDiscountPence;
+
+    return {
+      product_id: line.product_id,
+      name: line.name,
+      quantity: line.quantity,
+      price_pence_per_unit: line.price_pence,
+      line_subtotal_pence: lineSubtotalPence,
+      line_discount_pence: lineDiscountPence,
+      applied_discount_id: appliedDiscountId,
+      line_total_pence: lineSubtotalPence - lineDiscountPence,
+    };
+  });
+
+  if (promoCode && !promoApplied) {
+    throw new OrdersError(`Promo code ${promoCode} is not valid for any items in the basket`, 400);
+  }
+
+  if (items.length === 0) {
+    throw new OrdersError("Cannot checkout with an empty basket", 400);
+  }
+
+  return {
+    subtotalPence,
+    discountPence,
+    totalPence: Math.max(0, subtotalPence - discountPence),
+    promoApplied,
+    items,
+  };
+}
+
+export async function getLoggedInCheckoutSnapshot(customerId, promoCode = null) {
+  const lines = await ordersDeps.selectBasketPriceLinesByCustomerId(customerId);
+  const productIds = lines.map(line => line.product_id);
+  const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
+  const snapshot = getCheckoutSnapshot(lines, discounts, promoCode);
+
+  const reservation = await ordersDeps.reserveStock(snapshot.items);
+  if (!reservation.reserved) {
+    throw new OrdersError("Items are unavailable", 409, { unavailable: reservation.unavailableItems });
+  }
+
+  return snapshot;
+}
+
+export async function getGuestCheckoutSnapshot(items, promoCode = null) {
+  const parsed = items.map((item) => ({
+    product_id: item.productId,
+    quantity: item.quantity,
+  }));
+
+  const lines = await ordersDeps.selectBasketPriceLinesForGuestBaskets(parsed);
+  const productIds = lines.map(line => line.product_id);
+  const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
+  const snapshot = getCheckoutSnapshot(lines, discounts, promoCode);
+
+  const reservation = await ordersDeps.reserveStock(snapshot.items);
+  if (!reservation.reserved) {
+    throw new OrdersError("Items are unavailable", 409, { unavailable: reservation.unavailableItems });
+  }
+
+  return snapshot;
+}
+
+export async function createOrder(snapshot, deliveryInfo, customerId = null, guestDetails = null) {
+  return ordersDeps.insertOrder(
+    customerId,
+    guestDetails,
+    "pending",
+    snapshot.subtotalPence,
+    snapshot.discountPence,
+    snapshot.totalPence,
+    deliveryInfo,
+    snapshot.items
+  );
+}
+
+export async function clearBasket(customerId) {
+  return ordersDeps.clearActiveBasket(customerId);
 }

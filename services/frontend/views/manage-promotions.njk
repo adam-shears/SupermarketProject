@@ -257,7 +257,7 @@
                   {% if promo.type == "percentage" %}
                     <td>{{ promo.value }}%</td>
                   {% else %}
-                    <td>£{{ promo.value / 100 | toFixed(2) }}</td>
+                    <td>£{{ (promo.value / 100) | toFixed(2) }}</td>
                   {% endif %}
                   <td>
                     <ul class="promo-products-list">
