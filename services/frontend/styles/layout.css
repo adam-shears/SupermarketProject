@@ -31,12 +31,15 @@ body {
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: white;
-  border-bottom: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.8);
+  border-top: 10px solid #1f7a3d;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
   z-index: 1000;
   flex-wrap: wrap;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
 .header form[role="search"] {
@@ -90,39 +93,47 @@ body {
   order: 3;
 }
 
-.user-actions a,
-.logout-button {
+.login-link,
+.logout-button,
+.register-link {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  background: #fff;
+  transition: all 0.2s ease;
   text-decoration: none;
   color: #222;
   font-weight: 500;
   margin-left: 0;
   font-size: clamp(0.9rem, 1.2vw, 1rem);
-}
-
-.logout-button {
-  background: none;
   cursor: pointer;
-  font-size: inherit;
-  font-family: inherit;
-  border: none;
-  padding: 0;
+  transition: color 0.3s ease-in-out, transform 0.1s ease;
+  transition: border-color 0.3s ease-in-out, transform 0.1s ease;
 }
 
 .login-link:hover,
-.register-link:hover,
-.basket-link-text:hover,
-.logout-button:hover {
-  text-decoration: underline;
+.logout-button:hover,
+.register-link:hover {
+  border-color: #0056b3;
   color: #0056b3;
+  text-decoration: none;
 }
 
-.basket-link,
-.basket-link:visited {
+.basket-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #222;
+  color: white;
   text-decoration: none;
+  background: #1f7a3d;
+  padding: 8px 20px;
+  border-radius: 999px;
+  font-weight: 400;
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
+}
+
+.basket-link:hover {
+  background: #176130;
 }
 
 #basket-count {
@@ -148,43 +159,42 @@ body {
   color: #ffffff !important;
 }
 
-/* Updated container to remove the gap */
 .header form[role="search"] {
   flex: 1 1 280px;
   min-width: 0;
   display: flex;
   justify-content: center;
-  gap: 0; /* REMOVED GAP to join them */
+  gap: 0;
 }
 
-/* Updated Search Input */
 .search {
-  flex: 1; /* Allows input to grow */
+  flex: 1;
   max-width: 400px;
   padding: 10px 14px;
   border: 1px solid #999;
-  border-right: none; /* Removes the line between input and button */
-  border-radius: 20px 0 0 20px; /* Rounds only the left side */
+  border-right: none;
+  border-radius: 20px 0 0 20px;
   outline: none;
   background: #fff;
   color: #222;
 }
 
-/* New specific styles for the Search Button */
 .header form[role="search"] button {
   flex: 0 0 auto;
-  padding: 10px 20px;
-  border: 1px solid #999;
-  border-left: 1px solid #ccc; /* Optional: a lighter separator line */
-  border-radius: 0 20px 20px 0; /* Rounds only the right side */
-  background-color: #f0f0f0;
+  padding: 10px 24px;
+  border: 1px solid #1f7a3d;
+  border-left: 1px solid #ccc;
+  border-radius: 0 20px 20px 0;
+  background-color: #1f7a3d;
+  color: white;
   cursor: pointer;
-  font-weight: 500;
-  transition: background 0.2s;
+  font-weight: 600;
+  transition: background 0.2s, transform 0.1s;
 }
 
 .header form[role="search"] button:hover {
-  background-color: #e2e2e2;
+  background-color: #176130;
+  border-color: #176130;
 }
 
 .search:focus {
