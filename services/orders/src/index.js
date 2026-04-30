@@ -18,6 +18,4 @@ app.use(express.json());
 app.use("/", routes);
 
 const port = process.env.PORT || 3000;
-app.listen(port, "0.0.0.0", () =>
-  console.log(`orders service on port ${port}`),
-);
+app.listen(port, "0.0.0.0", () => console.log(`orders service on port ${port}`));

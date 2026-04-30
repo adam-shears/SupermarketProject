@@ -9,7 +9,6 @@ Responsibilities:
 - Anything else beyond simple HTTP checks or SQL queries
 */
 
-
 import * as db from "./db.js";
 
 export const warehouseDeps = {

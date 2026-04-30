@@ -12,14 +12,17 @@ const { Pool } = pg;
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export async function assignPickerToOrder(orderId, pickerId) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     UPDATE orders
     SET assigned_picker_id = $1,
         assigned_at = NOW(),
         last_updated = NOW()
     WHERE id = $2 AND status = 'pending'
     RETURNING id, assigned_picker_id, assigned_at
-  `, [pickerId, orderId]);
+  `,
+    [pickerId, orderId]
+  );
 
   return result.rows[0] || null;
 }
@@ -262,19 +265,23 @@ export async function applySubstitution(orderId, productId, substituteProductId)
   try {
     await client.query("BEGIN");
 
-    const itemResult = await client.query(`
+    const itemResult = await client.query(
+      `
       SELECT order_id, product_id, quantity, picked, substituted_product_id
       FROM order_items
       WHERE order_id = $1 AND product_id = $2
       FOR UPDATE
-    `, [orderId, productId]);
+    `,
+      [orderId, productId]
+    );
 
     const item = itemResult.rows[0];
     if (!item) {
       throw new Error("Order item not found for substitution");
     }
 
-    const priceResult = await client.query(`
+    const priceResult = await client.query(
+      `
       SELECT COALESCE(pr.price_pence, 0) AS price_pence
       FROM products p
       LEFT JOIN LATERAL (
@@ -287,7 +294,9 @@ export async function applySubstitution(orderId, productId, substituteProductId)
         LIMIT 1
       ) pr ON TRUE
       WHERE p.id = $1
-    `, [substituteProductId]);
+    `,
+      [substituteProductId]
+    );
 
     const price = priceResult.rows[0];
     if (!price) {
@@ -299,7 +308,8 @@ export async function applySubstitution(orderId, productId, substituteProductId)
     // could apply discounts based on the substitution here later if we want
     const lineTotal = lineSubtotal;
 
-    const updateResult = await client.query(`
+    const updateResult = await client.query(
+      `
       UPDATE order_items
       SET
         substituted_product_id = $1,
@@ -314,9 +324,12 @@ export async function applySubstitution(orderId, productId, substituteProductId)
         substitution_price_pence_per_unit,
         substitution_line_subtotal_pence,
         substitution_line_total_pence
-    `, [substituteProductId, unitPrice, lineSubtotal, lineTotal, orderId, productId]);
+    `,
+      [substituteProductId, unitPrice, lineSubtotal, lineTotal, orderId, productId]
+    );
 
-    await client.query(`
+    await client.query(
+      `
       UPDATE orders o
       SET
         subtotal_pence = totals.subtotal_pence,
@@ -334,14 +347,19 @@ export async function applySubstitution(orderId, productId, substituteProductId)
         GROUP BY order_id
       ) totals
       WHERE o.id = totals.order_id
-    `, [orderId]);
+    `,
+      [orderId]
+    );
 
     if (item.substituted_product_id === null) {
-      await client.query(`
+      await client.query(
+        `
         UPDATE stock
         SET quantity_reserved = GREATEST(quantity_reserved - $1, 0), updated_at = NOW()
         WHERE product_id = $2
-      `, [item.quantity, productId]);
+      `,
+        [item.quantity, productId]
+      );
     }
 
     await client.query("COMMIT");

@@ -30,7 +30,10 @@
   padding: 2rem 1.5rem;
   background-color: var(--bg-light);
   min-height: 100vh;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .picker-header-row {
