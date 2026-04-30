@@ -54,7 +54,7 @@
       <div class="loyalty-checkout" id="coupon-checkout" hidden>
         <h3>Loyalty Coupons</h3>
         <p class="loyalty-intro">
-          Apply your best eligible loyalty coupon before using points.
+          Loyalty coupons are applied here automatically, separate from promo codes.
         </p>
         <label class="loyalty-toggle">
           <input id="use-loyalty-coupon" type="checkbox">
@@ -438,6 +438,8 @@
 
       const payload = {
         promoCode: appliedPromoCode,
+        useLoyaltyCoupon: checkoutState.useCoupon,
+        useLoyaltyPoints: checkoutState.usePoints,
       };
 
       const basket = await service.getBasket();

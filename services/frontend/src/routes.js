@@ -949,7 +949,11 @@ router.post("/checkout/start", async (req, res) => {
   try {
     let snapshot;
     if (req.session.user) {
-      snapshot = await api.createCheckoutSnapshot(req.session.user.id, {promoCode: req.body.promoCode || null});
+      snapshot = await api.createCheckoutSnapshot(req.session.user.id, {
+        promoCode: req.body.promoCode || null,
+        useLoyaltyCoupon: Boolean(req.body.useLoyaltyCoupon),
+        useLoyaltyPoints: Boolean(req.body.useLoyaltyPoints),
+      });
     } else {
       snapshot = await api.createGuestCheckoutSnapshot({items: req.body.items || [], promoCode: req.body.promoCode || null});
     }

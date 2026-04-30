@@ -81,7 +81,7 @@
     <div class="action-card">
       <h2><span class="tier-badge tier-{{ account.tier|lower }}">{{ account.tier }}</span> member</h2>
       <p><strong>{{ account.points }}</strong> points</p>
-      <p>Account created: {{ account.created_at }}</p>
+      <p>Account created: {{ account.created_at | formatDate }}</p>
       
       {% if account.benefits %}
       <div class="benefits-grid">
@@ -133,6 +133,7 @@
     <div class="category-area coupons-section">
       <div class="category-title-bar">
         <h2>Your Coupons</h2>
+        <p>Loyalty coupons are applied from the basket loyalty section. They are separate from promo codes.</p>
       </div>
       {% for coupon in account.coupons %}
       <div class="coupon-card {% if coupon.used_at %}coupon-used{% endif %}">
@@ -142,9 +143,9 @@
           <br>
           <span class="coupon-expires">
             {% if coupon.used_at %}
-            Used on {{ coupon.used_at }}
+            Used on {{ coupon.used_at | formatDate }}
             {% else %}
-            Min spend: &pound;{{ (coupon.min_spend_pence / 100)|round(2) }} | Expires: {{ coupon.expires_at }}
+            Min spend: &pound;{{ (coupon.min_spend_pence / 100) | toFixed(2) }} | Expires {{ coupon.expires_at | formatDate }}
             {% endif %}
           </span>
         </div>
@@ -172,7 +173,7 @@
             <tbody>
               {% for tx in account.transactions %}
                 <tr>
-                  <td>{{ tx.timestamp }}</td>
+                  <td>{{ tx.timestamp | formatDate }}</td>
                   <td>{{ tx.type }}</td>
                   <td>{% if tx.order_id %}{{ tx.order_id }}{% else %}N/A{% endif %}</td>
                   <td {% if tx.point_change < 0 %}style="color: red;"{% else %}style="color: green;"{% endif %}>

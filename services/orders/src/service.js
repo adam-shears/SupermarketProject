@@ -395,7 +395,7 @@ export async function addLoyaltyPoints(customerId, input) {
   return { ...account, transaction, newCoupons };
 }
 
-export async function redeemPoints(customerId, pointsToRedeem, orderTotalPence) {
+export async function redeemPoints(customerId, pointsToRedeem, orderTotalPence, orderId = null) {
   let account = await ordersDeps.selectLoyaltyAccountByCustomerId(customerId);
   if (!account) {
     throw new OrdersError("Loyalty account not found", 404);
@@ -422,7 +422,7 @@ export async function redeemPoints(customerId, pointsToRedeem, orderTotalPence) 
   const newTier = getHighestLoyaltyTier(account.tier, getLoyaltyTier(nextPoints));
 
   account = await ordersDeps.updateLoyaltyAccountPoints(account.id, nextPoints, newTier);
-  await ordersDeps.insertLoyaltyTransaction(account.id, null, "redemption", -actualPointsUsed);
+  await ordersDeps.insertLoyaltyTransaction(account.id, orderId, "redemption", -actualPointsUsed);
 
   return {
     pointsRedeemed: actualPointsUsed,
@@ -694,6 +694,8 @@ export async function getCustomerOrderHistory(customerId) {
         subtotalPence: order.subtotal_pence,
         discountPence: order.discount_pence,
         totalPence: order.total_pence,
+        lineDiscountPence: 0,
+        orderDiscountPence: 0,
         createdAt: order.created_at,
         itemCount: 0,
         items: [],
@@ -704,6 +706,8 @@ export async function getCustomerOrderHistory(customerId) {
     orderToUpdate.itemCount += order.quantity;
 
     const substituted = order.substituted_product_id ? true : false;
+    orderToUpdate.lineDiscountPence += Number(order.line_discount_pence || 0);
+    orderToUpdate.orderDiscountPence = Math.max(0, Number(orderToUpdate.discountPence || 0) - orderToUpdate.lineDiscountPence);
     orderToUpdate.items.push({
       productId: order.product_id,
       productName: order.product_name,
@@ -875,11 +879,15 @@ function getCheckoutSnapshot(lines, discounts, promoCode = null) {
   };
 }
 
-export async function getLoggedInCheckoutSnapshot(customerId, promoCode = null) {
+export async function getLoggedInCheckoutSnapshot(customerId, promoCode = null, options = {}) {
   const lines = await ordersDeps.selectBasketPriceLinesByCustomerId(customerId);
   const productIds = lines.map(line => line.product_id);
   const discounts = await ordersDeps.selectActiveDiscountsForProducts(productIds, promoCode);
-  const snapshot = getCheckoutSnapshot(lines, discounts, promoCode);
+  const snapshot = await addCheckoutLoyaltyDiscounts(
+    getCheckoutSnapshot(lines, discounts, promoCode),
+    customerId,
+    options
+  );
 
   const reservation = await ordersDeps.reserveStock(snapshot.items);
   if (!reservation.reserved) {
@@ -905,7 +913,7 @@ export async function getGuestCheckoutSnapshot(items, promoCode = null) {
     throw new OrdersError("Items are unavailable", 409, { unavailable: reservation.unavailableItems });
   }
 
-  return snapshot;
+  return { ...snapshot, orderDiscounts: [] };
 }
 
 export async function createOrder(snapshot, deliveryInfo, customerId = null, guestDetails = null) {
@@ -921,6 +929,21 @@ export async function createOrder(snapshot, deliveryInfo, customerId = null, gue
   );
 
   if (customerId) {
+    for (const discount of snapshot.orderDiscounts || []) {
+      if (discount.type === "loyalty_coupon") {
+        await applyCoupon(customerId, discount.couponCode, discount.orderTotalPence);
+      }
+
+      if (discount.type === "loyalty_points") {
+        await redeemPoints(
+          customerId,
+          discount.pointsRedeemed,
+          discount.orderTotalPence,
+          orderId
+        );
+      }
+    }
+
     const account = await ordersDeps.selectLoyaltyAccountByCustomerId(customerId);
     const purchasePoints = calculatePointsFromPurchase(snapshot.totalPence, account?.tier || "Bronze");
 
@@ -934,6 +957,94 @@ export async function createOrder(snapshot, deliveryInfo, customerId = null, gue
   }
 
   return orderId;
+}
+
+function getCouponDiscount(coupon, orderTotalPence) {
+  if (!coupon || Number(orderTotalPence || 0) < Number(coupon.min_spend_pence || 0)) {
+    return 0;
+  }
+
+  return Math.floor(Number(orderTotalPence || 0) * (Number(coupon.discount_percent || 0) / 100));
+}
+
+function getBestEligibleCoupon(coupons, orderTotalPence) {
+  let coupon = null;
+  let discountPence = 0;
+
+  for (const item of coupons || []) {
+    const itemDiscount = getCouponDiscount(item, orderTotalPence);
+    if (itemDiscount > discountPence) {
+      coupon = item;
+      discountPence = itemDiscount;
+    }
+  }
+
+  return { coupon, discountPence };
+}
+
+async function getOrCreateLoyaltyAccount(customerId) {
+  let account = await ordersDeps.selectLoyaltyAccountByCustomerId(customerId);
+  if (!account) {
+    account = await ordersDeps.insertLoyaltyAccount(customerId, getLoyaltyTier(0), 0);
+  }
+
+  return account;
+}
+
+async function addCheckoutLoyaltyDiscounts(snapshot, customerId, options = {}) {
+  if (!customerId || (!options.useLoyaltyCoupon && !options.useLoyaltyPoints)) {
+    return { ...snapshot, orderDiscounts: snapshot.orderDiscounts || [] };
+  }
+
+  const account = await getOrCreateLoyaltyAccount(customerId);
+  const orderDiscounts = [];
+  let totalPence = Number(snapshot.totalPence || 0);
+
+  if (options.useLoyaltyCoupon) {
+    const coupons = await ordersDeps.selectUnusedLoyaltyCouponsByAccountId(account.id);
+    const { coupon, discountPence } = getBestEligibleCoupon(coupons, totalPence);
+
+    if (!coupon || discountPence <= 0) {
+      throw new OrdersError("No eligible loyalty coupon is available for this order", 400);
+    }
+
+    orderDiscounts.push({
+      type: "loyalty_coupon",
+      label: `Loyalty coupon ${coupon.code}`,
+      couponCode: coupon.code,
+      couponId: coupon.id,
+      discountPercent: coupon.discount_percent,
+      orderTotalPence: totalPence,
+      discountPence,
+    });
+    totalPence = Math.max(0, totalPence - discountPence);
+  }
+
+  if (options.useLoyaltyPoints) {
+    const pointsRedeemed = calculateRedeemablePoints(account.points, totalPence);
+
+    if (pointsRedeemed <= 0) {
+      throw new OrdersError("At least 100 points are required to redeem", 400);
+    }
+
+    orderDiscounts.push({
+      type: "loyalty_points",
+      label: "Loyalty points",
+      pointsRedeemed,
+      orderTotalPence: totalPence,
+      discountPence: pointsRedeemed,
+    });
+    totalPence = Math.max(0, totalPence - pointsRedeemed);
+  }
+
+  const orderDiscountPence = orderDiscounts.reduce((sum, discount) => sum + discount.discountPence, 0);
+
+  return {
+    ...snapshot,
+    discountPence: snapshot.discountPence + orderDiscountPence,
+    totalPence,
+    orderDiscounts,
+  };
 }
 
 export async function clearBasket(customerId) {

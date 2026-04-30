@@ -362,7 +362,10 @@ router.post("/basket/totals", async (req, res) => {
 
 router.post("/customers/:customerId/checkout/snapshot", async (req, res) => {
   try {
-    const snapshot = await getLoggedInCheckoutSnapshot(req.params.customerId, req.body.promoCode || null);
+    const snapshot = await getLoggedInCheckoutSnapshot(req.params.customerId, req.body.promoCode || null, {
+      useLoyaltyCoupon: Boolean(req.body.useLoyaltyCoupon),
+      useLoyaltyPoints: Boolean(req.body.useLoyaltyPoints),
+    });
     res.status(200).json(snapshot);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to create checkout snapshot.");

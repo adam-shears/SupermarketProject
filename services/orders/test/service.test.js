@@ -138,6 +138,42 @@ describe("Orders Service", () => {
             postcode: "TE1 1ST",
         };
 
+        it("should include selected loyalty discounts in the checkout snapshot", async () => {
+            sinon.stub(service.ordersDeps, "selectBasketPriceLinesByCustomerId").resolves([
+                { product_id: 1, quantity: 1, price_pence: 1099, name: "Test Product" },
+            ]);
+            sinon.stub(service.ordersDeps, "selectActiveDiscountsForProducts").resolves([]);
+            sinon.stub(service.ordersDeps, "reserveStock").resolves({ reserved: true, unavailableItems: [] });
+            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+                id: 10,
+                points: 500,
+                tier: "Bronze",
+            });
+            sinon.stub(service.ordersDeps, "selectUnusedLoyaltyCouponsByAccountId").resolves([
+                {
+                    id: 20,
+                    code: "LOYALTY-TEST",
+                    discount_percent: 10,
+                    min_spend_pence: 100,
+                },
+            ]);
+
+            const result = await service.getLoggedInCheckoutSnapshot(1, null, {
+                useLoyaltyCoupon: true,
+                useLoyaltyPoints: true,
+            });
+
+            expect(result.discountPence).to.equal(609);
+            expect(result.totalPence).to.equal(490);
+            expect(result.orderDiscounts).to.deep.include({
+                type: "loyalty_points",
+                label: "Loyalty points",
+                pointsRedeemed: 500,
+                orderTotalPence: 990,
+                discountPence: 500,
+            });
+        });
+
         it("should award loyalty points after creating a customer order", async () => {
             sinon.stub(service.ordersDeps, "insertOrder").resolves(99);
             sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId")
@@ -158,6 +194,63 @@ describe("Orders Service", () => {
             expect(service.ordersDeps.insertOrder.calledOnce).to.be.true;
             expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 121, "Silver")).to.be.true;
             expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "purchase", 21)).to.be.true;
+        });
+
+        it("should consume selected loyalty discounts when creating a customer order", async () => {
+            const discountedSnapshot = {
+                ...snapshot,
+                discountPence: 500,
+                totalPence: 799,
+                orderDiscounts: [
+                    {
+                        type: "loyalty_coupon",
+                        couponCode: "LOYALTY-TEST",
+                        discountPence: 300,
+                        orderTotalPence: 1099,
+                    },
+                    {
+                        type: "loyalty_points",
+                        pointsRedeemed: 200,
+                        discountPence: 200,
+                        orderTotalPence: 799,
+                    },
+                ],
+            };
+
+            sinon.stub(service.ordersDeps, "insertOrder").resolves(99);
+            sinon.stub(service.ordersDeps, "selectLoyaltyCouponByCode").resolves({
+                id: 20,
+                loyalty_account_id: 10,
+                code: "LOYALTY-TEST",
+                discount_percent: 27.3,
+                min_spend_pence: 100,
+                expires_at: new Date(Date.now() + 100000),
+                used_at: null,
+            });
+            sinon.stub(service.ordersDeps, "markLoyaltyCouponAsUsed").resolves({});
+            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId")
+                .onFirstCall()
+                .resolves({ id: 10, points: 500, tier: "Bronze" })
+                .onSecondCall()
+                .resolves({ id: 10, points: 500, tier: "Bronze" })
+                .onThirdCall()
+                .resolves({ id: 10, points: 300, tier: "Bronze" })
+                .onCall(3)
+                .resolves({ id: 10, points: 300, tier: "Bronze" });
+            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints")
+                .onFirstCall()
+                .resolves({ id: 10, points: 300, tier: "Bronze" })
+                .onSecondCall()
+                .resolves({ id: 10, points: 307, tier: "Bronze" });
+            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+            sinon.stub(service.ordersDeps, "selectLoyaltyTierBenefits").resolves(null);
+
+            const result = await service.createOrder(discountedSnapshot, deliveryInfo, 1);
+
+            expect(result).to.equal(99);
+            expect(service.ordersDeps.markLoyaltyCouponAsUsed.calledWith(20)).to.be.true;
+            expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "redemption", -200)).to.be.true;
+            expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "purchase", 7)).to.be.true;
         });
 
         it("should not award loyalty points for guest orders", async () => {
