@@ -220,7 +220,15 @@
       const input = document.getElementById('promo-code');
       const promoAppliedStatus = document.getElementById("promo-applied-status")
       promoAppliedStatus.hidden = true;
-      appliedPromoCode = input.value.trim() || null;
+      appliedPromoCode = input.value.trim();
+
+      if(!appliedPromoCode) {
+        appliedPromoCode = null;
+        promoAppliedStatus.textContent = "Promo code cannot be blank";
+        promoAppliedStatus.hidden = false;
+        await updateTotals();
+        return;
+      }
 
       try {
         await updateTotals();
