@@ -132,6 +132,15 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/nojs", (req, res) => {
+  res.render("4xx.njk", {
+    title: "JavaScript Required",
+    status: "JavaScript is Disabled",
+    message: "This site requires JavaScript to function properly. Please enable JavaScript in your browser settings.",
+    user: req.session.user || null,
+  });
+});
+
 // Staff portal home page
 router.get("/staff-portal", requireAuth(1), (req, res) => {
   res.render("staff-portal.njk", {
