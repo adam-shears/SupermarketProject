@@ -49,22 +49,39 @@
       {% for item in snapshot.items %}
         <div class="summary-row">
           <span>{{ item.name }} ({{ item.quantity }})</span>
-          <span id="subtotal-text">£{{ (item.line_subtotal_pence / 100) | toFixed(2) }}</span>
+          <span>&pound;{{ (item.line_subtotal_pence / 100) | toFixed(2) }}</span>
         </div>
         {% if item.line_discount_pence > 0 %}
           <div class="summary-row discount-row">
-            <span>Discount</span>
-            <span id="discount-text">-£{{ (item.line_discount_pence / 100) | toFixed(2) }}</span>
+            <span>Item discount</span>
+            <span>-&pound;{{ (item.line_discount_pence / 100) | toFixed(2) }}</span>
           </div>
           <div class="summary-row total-row">
-            <span>Total for Item</span>
-            <span id="total-text">£{{ (item.line_total_pence / 100) | toFixed(2) }}</span>
+            <span>Total for item</span>
+            <span>&pound;{{ (item.line_total_pence / 100) | toFixed(2) }}</span>
           </div>
         {% endif %}
       {% endfor %}
+
+      {% if snapshot.orderDiscounts and snapshot.orderDiscounts|length > 0 %}
+        {% for discount in snapshot.orderDiscounts %}
+          <div class="summary-row discount-row">
+            <span>
+              {{ discount.label }}
+              {% if discount.pointsRedeemed %}({{ discount.pointsRedeemed }} points){% endif %}
+            </span>
+            <span>-&pound;{{ (discount.discountPence / 100) | toFixed(2) }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="summary-row discount-row">
+        <span>Total discount</span>
+        <span>-&pound;{{ (snapshot.discountPence / 100) | toFixed(2) }}</span>
+      </div>
       <div class="summary-row total-row">
-        <span>Final Total</span>
-        <span id="total-text">£{{ (snapshot.totalPence / 100) | toFixed(2) }}</span>
+        <span>Final total</span>
+        <span>&pound;{{ (snapshot.totalPence / 100) | toFixed(2) }}</span>
       </div>
     </aside>
   </div>

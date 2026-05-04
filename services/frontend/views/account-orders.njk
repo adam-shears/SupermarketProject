@@ -17,12 +17,15 @@
           <article class="order-card">
             <h2>Order #{{ order.id }}</h2>
 
-            <p><strong>Date:</strong> {{ order.createdAt }}</p>
+            <p><strong>Date:</strong> {{ order.createdAt | formatDate }}</p>
             <p><strong>Status:</strong> {{ order.status }}</p>
             <p><strong>Items:</strong> {{ order.itemCount }}</p>
-            <p><strong>Subtotal:</strong> £{{ (order.subtotalPence / 100) | toFixed(2) }}</p>
-            <p><strong>Discount:</strong> £{{ (order.discountPence / 100) | toFixed(2) }}</p>
-            <p><strong>Total:</strong> £{{ (order.totalPence / 100) | toFixed(2) }}</p>
+            <p><strong>Subtotal:</strong> &pound;{{ (order.subtotalPence / 100) | toFixed(2) }}</p>
+            <p><strong>Discount:</strong> -&pound;{{ (order.discountPence / 100) | toFixed(2) }}</p>
+            {% if order.orderDiscountPence > 0 %}
+              <p><strong>Order discounts:</strong> -&pound;{{ (order.orderDiscountPence / 100) | toFixed(2) }}</p>
+            {% endif %}
+            <p><strong>Total:</strong> &pound;{{ (order.totalPence / 100) | toFixed(2) }}</p>
 
             <ul>
               {% for item in order.items %}
@@ -34,17 +37,17 @@
                   {% endif %}
 
                   <p>Quantity: {{ item.quantity }}</p>
-                  <p>Unit price: £{{ (item.pricePencePerUnit / 100) | toFixed(2) }}</p>
+                  <p>Unit price: &pound;{{ (item.pricePencePerUnit / 100) | toFixed(2) }}</p>
 
                   {% if item.lineDiscountPence > 0 %}
-                    <p>Line subtotal: £{{ (item.lineSubtotalPence / 100) | toFixed(2) }}</p>
-                    <p>Line discount: -£{{ (item.lineDiscountPence / 100) | toFixed(2) }}</p>
+                    <p>Line subtotal: &pound;{{ (item.lineSubtotalPence / 100) | toFixed(2) }}</p>
+                    <p>Line discount: -&pound;{{ (item.lineDiscountPence / 100) | toFixed(2) }}</p>
                   {% endif %}
 
-                  <p>Line total: £{{ (item.lineTotalPence / 100) | toFixed(2) }}</p>
+                  <p>Line total: &pound;{{ (item.lineTotalPence / 100) | toFixed(2) }}</p>
 
                   {% if item.substituted and item.originalLineTotalPence != item.lineTotalPence %}
-                    <p>Price updated from <strong>£{{ (item.originalLineTotalPence / 100) | toFixed(2) }}</strong> to <strong>£{{ (item.lineTotalPence / 100) | toFixed(2) }}</strong></p>
+                    <p>Price updated from <strong>&pound;{{ (item.originalLineTotalPence / 100) | toFixed(2) }}</strong> to <strong>&pound;{{ (item.lineTotalPence / 100) | toFixed(2) }}</strong></p>
                   {% endif %}
                 </li>
               {% endfor %}
