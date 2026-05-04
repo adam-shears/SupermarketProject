@@ -977,11 +977,8 @@ router.post("/checkout/start", async (req, res) => {
     if (req.session.user) {
       snapshot = await api.createCheckoutSnapshot(req.session.user.id, {
         promoCode: req.body.promoCode || null,
-<<<<<<< fix/basket-reservation-locking
-=======
         useLoyaltyCoupon: Boolean(req.body.useLoyaltyCoupon),
         useLoyaltyPoints: Boolean(req.body.useLoyaltyPoints),
->>>>>>> main
       });
     } else {
       snapshot = await api.createGuestCheckoutSnapshot({

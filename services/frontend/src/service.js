@@ -309,12 +309,8 @@ export async function autoCheck(productId) {
   try {
     const productIdNumber = Number(productId);
     const items = await getShoppingList();
-<<<<<<< fix/basket-reservation-locking
-    const item = items.find((i) => i.product_id === productId);
-=======
     const item = items.find((item) => getProductId(item) === productIdNumber);
 
->>>>>>> main
     if (!item || item.checked) {
       return;
     }
