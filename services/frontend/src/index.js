@@ -52,6 +52,19 @@ env.addFilter("toFixed", (value, decimals = 2) => {
   return num.toFixed(Number(decimals));
 });
 
+env.addFilter("formatDate", (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+});
+
 app.use("/", routes);
 app.use((req, res) => {
   res.status(404).render("4xx.njk", {
