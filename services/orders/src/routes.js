@@ -16,6 +16,10 @@ import {
   clearBasket,
   createOrder,
   deleteCustomerAccount,
+  applyCoupon,
+  getAllTierBenefits,
+  getLoyaltyAccount,
+  getLoyaltyAccountWithPoints,
   getBasket,
   getBasketTotals,
   getCustomerAccount,
@@ -33,6 +37,7 @@ import {
   releaseReservation,
   removeBasketItem,
   removeShoppingListItem,
+  redeemPoints,
   saveBasket,
   updateBasket,
   updateCustomerAccount,
@@ -149,6 +154,61 @@ router.delete("/customers/:customerId/shopping-list/items/:productId", async (re
     res.status(204).send();
   } catch (error) {
     sendErrorResponse(res, error, "Failed to delete shopping list item.");
+  }
+});
+
+/*
+  Loyalty routes
+*/
+
+router.get("/customers/:customerId/loyalty", async (req, res) => {
+  try {
+    const account = await getLoyaltyAccount(req.params.customerId);
+    res.status(200).json(account);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get loyalty account.");
+  }
+});
+
+router.get("/customers/:customerId/loyalty/checkout", async (req, res) => {
+  try {
+    const account = await getLoyaltyAccountWithPoints(req.params.customerId);
+    res.status(200).json(account);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get loyalty checkout details.");
+  }
+});
+
+router.post("/customers/:customerId/loyalty/redeem", async (req, res) => {
+  try {
+    const points = Number(req.body.points);
+    const orderTotal = Number(req.body.orderTotal);
+    const result = await redeemPoints(req.params.customerId, points, orderTotal);
+    res.status(200).json(result);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to redeem loyalty points.");
+  }
+});
+
+router.post("/customers/:customerId/loyalty/coupon/apply", async (req, res) => {
+  try {
+    const result = await applyCoupon(
+      req.params.customerId,
+      req.body.couponCode,
+      Number(req.body.orderTotal)
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to apply loyalty coupon.");
+  }
+});
+
+router.get("/loyalty/tiers", async (req, res) => {
+  try {
+    const tiers = await getAllTierBenefits();
+    res.status(200).json(tiers);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to get loyalty tiers.");
   }
 });
 
@@ -286,10 +346,10 @@ router.post("/basket/totals", async (req, res) => {
 
 router.post("/customers/:customerId/checkout/snapshot", async (req, res) => {
   try {
-    const snapshot = await getLoggedInCheckoutSnapshot(
-      req.params.customerId,
-      req.body.promoCode || null
-    );
+    const snapshot = await getLoggedInCheckoutSnapshot(req.params.customerId, req.body.promoCode || null, {
+      useLoyaltyCoupon: Boolean(req.body.useLoyaltyCoupon),
+      useLoyaltyPoints: Boolean(req.body.useLoyaltyPoints),
+    });
     res.status(200).json(snapshot);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to create checkout snapshot.");

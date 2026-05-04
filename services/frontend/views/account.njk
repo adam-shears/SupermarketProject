@@ -22,6 +22,90 @@
       <p><strong>Phone:</strong> {{ account.phone or "Not provided" }}</p>
     </div>
 
+    {% if loyalty %}
+      <div class="account-summary loyalty-account-summary">
+        <div class="loyalty-heading">
+          <h2>Loyalty</h2>
+          <span class="tier-badge tier-{{ loyalty.tier|lower }}">{{ loyalty.tier }}</span>
+        </div>
+
+        <p><strong>{{ loyalty.points }}</strong> available points</p>
+
+        {% if loyalty.tier == "Bronze" %}
+          {% set next_tier = "Silver" %}
+          {% set next_tier_point_target = 2000 %}
+        {% elif loyalty.tier == "Silver" %}
+          {% set next_tier = "Gold" %}
+          {% set next_tier_point_target = 5000 %}
+        {% else %}
+          {% set next_tier = null %}
+        {% endif %}
+
+        {% if next_tier %}
+          {% set progress = (loyalty.points / next_tier_point_target * 100)|round %}
+          {% if progress > 100 %}
+            {% set progress = 100 %}
+          {% endif %}
+          <div class="loyalty-progress-row">
+            <span>Progress to {{ next_tier }}</span>
+            <span>{{ loyalty.points }} / {{ next_tier_point_target }} points</span>
+          </div>
+          <div class="loyalty-progress" aria-label="Progress to {{ next_tier }}">
+            <span style="width: {{ progress }}%"></span>
+          </div>
+        {% endif %}
+
+        {% if loyalty.benefits %}
+          <div class="loyalty-benefits">
+            <div>
+              <strong>{{ loyalty.benefits.points_per_pound }} / &pound;1</strong>
+              <span>Earn rate</span>
+            </div>
+            <div>
+              <strong>{{ loyalty.benefits.redemption_rate }}</strong>
+              <span>points = &pound;1 off</span>
+            </div>
+            <div>
+              <strong>{{ loyalty.benefits.coupon_on_upgrade }}</strong>
+              <span>upgrade coupons</span>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if loyalty.coupons and loyalty.coupons|length > 0 %}
+          <h3>Your Coupons</h3>
+          <div class="loyalty-list">
+            {% for coupon in loyalty.coupons %}
+              <div class="loyalty-item {% if coupon.used_at %}muted{% endif %}">
+                <span><strong>{{ coupon.code }}</strong> - {{ coupon.discount_percent }}% off</span>
+                {% if coupon.used_at %}
+                  <span>Used on {{ coupon.used_at }}</span>
+                {% else %}
+                  <span>Min spend &pound;{{ (coupon.min_spend_pence / 100)|round(2) }} | Expires {{ coupon.expires_at }}</span>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <h3>Recent Loyalty Activity</h3>
+        {% if loyalty.transactions and loyalty.transactions|length > 0 %}
+          <div class="loyalty-list">
+            {% for tx in loyalty.transactions %}
+              <div class="loyalty-item">
+                <span>{{ tx.timestamp }} | {{ tx.type }}{% if tx.order_id %} | Order #{{ tx.order_id }}{% endif %}</span>
+                <strong class="{% if tx.point_change < 0 %}negative{% else %}positive{% endif %}">
+                  {{ tx.point_change }}
+                </strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p>No loyalty activity yet.</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
     <form class="account-form" method="POST" action="/account/update">
       <h2>Change Details</h2>
 
