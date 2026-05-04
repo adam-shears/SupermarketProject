@@ -92,6 +92,26 @@ router.get(["/whatever"], (req, res) => {
   });
 });*/
 
+router.get("/loyalty", requireCustomerLogin, async (req, res) => {
+  try {
+    const account = await api.getLoyaltyAccount(req.session.user.id);
+
+    res.render("loyalty.njk", {
+      title: "Loyalty Card",
+      account,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load loyalty page:", error);
+    res.status(error.status || 500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: `${error.status || 500} - Error`,
+      message: error.message || "Failed to load loyalty information",
+      user: req.session.user || null,
+    });
+  }
+});
+
 // Home page
 router.get("/", async (req, res) => {
   try {
@@ -111,6 +131,15 @@ router.get("/", async (req, res) => {
       user: req.session.user || null,
     });
   }
+});
+
+router.get("/nojs", (req, res) => {
+  res.render("4xx.njk", {
+    title: "JavaScript Required",
+    status: "JavaScript is Disabled",
+    message: "This site requires JavaScript to function properly. Please enable JavaScript in your browser settings.",
+    user: req.session.user || null,
+  });
 });
 
 // Staff portal home page
@@ -364,11 +393,15 @@ User Space / My Account routes
 
 router.get("/account", requireCustomerLogin, async (req, res) => {
   try {
-    const account = await api.getCustomerAccount(req.session.user.id);
+    const [account, loyalty] = await Promise.all([
+      api.getCustomerAccount(req.session.user.id),
+      api.getLoyaltyAccount(req.session.user.id),
+    ]);
 
     res.render("account.njk", {
       title: "My Account",
       account,
+      loyalty,
       success: req.query.updated === "1",
       error: null,
       user: req.session.user || null,
@@ -379,6 +412,7 @@ router.get("/account", requireCustomerLogin, async (req, res) => {
     res.status(error.status || 500).render("account.njk", {
       title: "My Account",
       account: req.session.user,
+      loyalty: null,
       success: false,
       error: error.message || "Could not load your account details.",
       user: req.session.user || null,
@@ -413,6 +447,7 @@ router.post("/account/update", requireCustomerLogin, async (req, res) => {
         lastName: req.body.lastName,
         phone: req.body.phone,
       },
+      loyalty: null,
       success: false,
       error: error.message || "Could not update your account details.",
       user: req.session.user || null,
@@ -747,6 +782,44 @@ router.get("/api/products/search", async (req, res) => {
   }
 });
 
+router.get("/api/loyalty/checkout", requireCustomerLogin, async (req, res) => {
+  try {
+    const account = await api.getLoyaltyAccountForCheckout(req.session.user.id);
+    res.json(account);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to load loyalty account",
+    });
+  }
+});
+
+router.post("/api/loyalty/redeem", requireCustomerLogin, async (req, res) => {
+  try {
+    const { points, orderTotal } = req.body;
+    const result = await api.redeemLoyaltyPoints(req.session.user.id, points, orderTotal);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to redeem loyalty points",
+    });
+  }
+});
+
+router.post("/api/loyalty/coupon/apply", requireCustomerLogin, async (req, res) => {
+  try {
+    const { couponCode, orderTotal } = req.body;
+    const result = await api.applyLoyaltyCoupon(req.session.user.id, couponCode, orderTotal);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to apply coupon",
+    });
+  }
+});
+
 /*
 Shopping list endpoints
 */
@@ -916,7 +989,11 @@ router.post("/checkout/start", async (req, res) => {
   try {
     let snapshot;
     if (req.session.user) {
-      snapshot = await api.createCheckoutSnapshot(req.session.user.id, {promoCode: req.body.promoCode || null});
+      snapshot = await api.createCheckoutSnapshot(req.session.user.id, {
+        promoCode: req.body.promoCode || null,
+        useLoyaltyCoupon: Boolean(req.body.useLoyaltyCoupon),
+        useLoyaltyPoints: Boolean(req.body.useLoyaltyPoints),
+      });
     } else {
       snapshot = await api.createGuestCheckoutSnapshot({items: req.body.items || [], promoCode: req.body.promoCode || null});
     }
@@ -1127,6 +1204,44 @@ router.post("/inventory/:productId", requireAuth(2), async (req, res) => {
   } catch (error) {
     console.error("Failed to update inventory:", error);
     res.redirect(`/inventory?error=${encodeURIComponent(error.message)}`);
+  }
+});
+
+router.post("/api/stock-issues", requireAuth(1), async (req, res) => {
+  try {
+    const productId = Number(req.body.productId);
+    const notes = req.body.notes || "Marked unavailable";
+    const issue = await api.reportStockIssue(productId, req.session.user.id, notes);
+    res.status(201).json(issue);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to report stock issue",
+    });
+  }
+});
+
+router.get("/api/stock-issues", requireAuth(2), async (req, res) => {
+  try {
+    const issues = await api.getStockIssues(req.query.status || null);
+    res.json(issues);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to fetch stock issues",
+    });
+  }
+});
+
+router.patch("/api/stock-issues/:id/resolve", requireAuth(2), async (req, res) => {
+  try {
+    const issue = await api.resolveStockIssue(req.params.id);
+    res.json(issue);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to resolve stock issue",
+    });
   }
 });
 

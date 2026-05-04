@@ -33,6 +33,99 @@
   margin: 8px 0;
 }
 
+.loyalty-account-summary {
+  display: grid;
+  gap: 14px;
+}
+
+.loyalty-heading,
+.loyalty-progress-row,
+.loyalty-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.tier-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.tier-bronze {
+  background: #cd7f32;
+  color: white;
+}
+
+.tier-silver {
+  background: #c0c0c0;
+  color: #222;
+}
+
+.tier-gold {
+  background: #ffd700;
+  color: #222;
+}
+
+.loyalty-progress {
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ddd;
+}
+
+.loyalty-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #4caf50;
+}
+
+.loyalty-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.loyalty-benefits div,
+.loyalty-item {
+  padding: 12px;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e2e2e2;
+}
+
+.loyalty-benefits strong,
+.loyalty-benefits span {
+  display: block;
+}
+
+.loyalty-benefits span,
+.loyalty-item span {
+  color: #555;
+}
+
+.loyalty-list {
+  display: grid;
+  gap: 8px;
+}
+
+.loyalty-item.muted {
+  color: #777;
+  text-decoration: line-through;
+}
+
+.positive {
+  color: #1b7f3a;
+}
+
+.negative {
+  color: #b00020;
+}
+
 .account-form {
   display: flex;
   flex-direction: column;
@@ -158,6 +251,17 @@
   .account-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .loyalty-heading,
+  .loyalty-progress-row,
+  .loyalty-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .loyalty-benefits {
+    grid-template-columns: 1fr;
   }
 
   .primary-button,
