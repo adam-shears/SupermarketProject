@@ -13,7 +13,7 @@
   {% endif %}
   <div class="basket-page">
     <section class="items-column">
-      <h2>Your Details</h2>
+      <h2>Please fill in your delivery details</h2>
       <div id="basket-items">
         <form method="POST" action="/checkout/complete" class="checkout-form">
           {% if not user %}
@@ -24,7 +24,7 @@
             <input id="email" name="email" type="email" required />
 
             <label for="phone">Phone</label>
-            <input id="phone" name="phone" type="text" required />
+            <input id="phone" name="phone" type="text" />
           {% endif %}
 
           <label for="address_line">Address Line</label>
