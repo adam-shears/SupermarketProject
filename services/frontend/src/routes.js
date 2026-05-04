@@ -82,14 +82,15 @@ function requireCustomerLogin(req, res, next) {
 }
 
 // not implemented pages
-router.get(["/loyalty"], (req, res) => {
+/*
+router.get(["/whatever"], (req, res) => {
   res.status(501).render("5xx.njk", {
     title: "Coming Soon",
     status: "501 - Not Implemented",
     message: "This feature is currently under development. Check back soon!",
     user: req.session.user || null,
   });
-});
+});*/
 
 // Home page
 router.get("/", async (req, res) => {
