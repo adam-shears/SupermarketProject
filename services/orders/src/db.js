@@ -462,6 +462,44 @@ export async function copySavedBasketToActive(customerId, basketId) {
   return result.rows[0] || null;
 }
 
+export async function copyLastOrderToActiveBasket(customerId) {
+  const result = await pool.query(`
+    WITH last_order AS (
+    SELECT id FROM orders
+    WHERE customer_id = $1
+    ORDER BY created_at DESC
+    LIMIT 1
+  ),
+  active_basket AS (
+    INSERT INTO baskets (customer_id, name, saved, created_at, updated_at)
+    SELECT $1, NULL, FALSE, NOW(), NOW()
+    WHERE EXISTS (SELECT 1 FROM last_order)
+    ON CONFLICT (customer_id) WHERE saved = FALSE AND customer_id IS NOT NULL
+    DO UPDATE SET updated_at = NOW()
+    RETURNING id
+  ),
+  deleted_items AS (
+    DELETE FROM basket_items bi
+    USING active_basket ab
+    WHERE bi.basket_id = ab.id
+  ),
+  copied_items AS (
+    INSERT INTO basket_items (basket_id, product_id, quantity)
+    SELECT ab.id, oi.product_id, oi.quantity
+    FROM active_basket ab
+    JOIN last_order lo ON TRUE
+    JOIN order_items oi ON oi.order_id = lo.id
+    RETURNING product_id, quantity
+  )
+  SELECT ab.id AS basket_id, COUNT(ci.product_id) AS item_count
+  FROM active_basket ab
+  LEFT JOIN copied_items ci ON TRUE
+  GROUP BY ab.id;
+  `, [customerId]);
+
+  return result.rows[0] || null;
+}
+
 export async function selectBasketPriceLinesByCustomerId(customerId) {
   const result = await pool.query(`
     SELECT

@@ -100,6 +100,7 @@ export const api = {
   createGuestCheckoutSnapshot: (payload) => postJson(`${ORDERS_URL}/checkout/snapshot`, payload),
   createOrder: (payload) => postJson(`${ORDERS_URL}/orders/create`, payload),
   clearBasket: (customerId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/basket`),
+  repeatLastOrder: (customerId) => postJson(`${ORDERS_URL}/customers/${customerId}/orders/repeat`, {}),
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
