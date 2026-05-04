@@ -929,7 +929,6 @@ export async function createOrder(snapshot, deliveryInfo, customerId = null, gue
     throw new OrdersError("No customer or guest details provided", 400);
   }
 
-  return ordersDeps.insertOrder(
   const orderId = await ordersDeps.insertOrder(
     customerId,
     guestDetails,
