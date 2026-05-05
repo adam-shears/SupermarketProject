@@ -253,7 +253,8 @@ router.get("/products", async (req, res) => {
 
     if (category) {
       products = products.filter(
-        (product) => (product.category_name || "").toLowerCase() === category.toLowerCase()
+        (product) =>
+          (product.category_name || "").toLowerCase() === category.toLowerCase()
       );
       title += ` in "${category}"`;
     }
@@ -344,7 +345,7 @@ router.post("/login", async (req, res) => {
 
     req.session.user = user;
 
-    if (user.admin_level > 0) {
+    if(user.admin_level > 0) {
       res.redirect("/staff-portal");
     } else {
       res.redirect("/");
@@ -589,12 +590,10 @@ router.get("/staff-management", requireAuth(2), async (req, res) => {
   try {
     const staff = await api.getStaffMembers();
     const assignmentOrders = await api.getPendingOrders();
-    const pickerOptions = staff
-      .filter((member) => member.admin_level === 1)
-      .map((picker) => ({
-        value: picker.id,
-        label: `${picker.first_name} ${picker.last_name} (${picker.email})`,
-      }));
+    const pickerOptions = staff.filter((member) => member.admin_level === 1).map((picker) => ({
+      value: picker.id,
+      label: `${picker.first_name} ${picker.last_name} (${picker.email})`,
+    }));
 
     res.render("staff-management.njk", {
       title: "Staff Management",
@@ -1114,20 +1113,16 @@ router.get("/picker", requireAuth(1), async (req, res) => {
   }
 });
 
-router.post(
-  "/picker/orders/:orderId/items/:productId/complete",
-  requireAuth(1),
-  async (req, res) => {
-    try {
-      const { orderId, productId } = req.params;
-      await api.completePickerItem(orderId, productId);
-      res.redirect("/picker?completed=1");
-    } catch (error) {
-      console.error("Failed to complete picker item:", error);
-      res.redirect(`/picker?error=${encodeURIComponent(error.message)}`);
-    }
+router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(1), async (req, res) => {
+  try {
+    const { orderId, productId } = req.params;
+    await api.completePickerItem(orderId, productId);
+    res.redirect("/picker?completed=1");
+  } catch (error) {
+    console.error("Failed to complete picker item:", error);
+    res.redirect(`/picker?error=${encodeURIComponent(error.message)}`);
   }
-);
+});
 
 router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(1), async (req, res) => {
   try {
