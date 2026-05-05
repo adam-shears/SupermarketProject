@@ -815,18 +815,7 @@ export async function insertOrder(
       INSERT INTO orders (guest_email, guest_name, guest_phone, status, subtotal_pence, discount_pence, total_pence, created_at, last_updated, delivery_info)
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), $8)
       RETURNING id
-    `,
-      [
-        guestDetails.email,
-        guestDetails.name,
-        guestDetails.phone,
-        status,
-        subtotalPence,
-        discountPence,
-        totalPence,
-        JSON.stringify(deliveryInfo),
-      ],
-    ];
+    `, [guestDetails.email, guestDetails.name, guestDetails.phone || null, status, subtotalPence, discountPence, totalPence, JSON.stringify(deliveryInfo)]];
   }
 
   try {

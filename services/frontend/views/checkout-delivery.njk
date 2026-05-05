@@ -13,30 +13,30 @@
   {% endif %}
   <div class="basket-page">
     <section class="items-column">
-      <h2>Your Details</h2>
+      <h2>Please fill in your delivery details</h2>
       <div id="basket-items">
         <form method="POST" action="/checkout/complete" class="checkout-form">
           {% if not user %}
-            <label for="name">Name</label>
+            <label for="name" class="required">Name</label>
             <input id="name" name="name" type="text" required />
 
-            <label for="email">Email</label>
+            <label for="email" class="required">Email</label>
             <input id="email" name="email" type="email" required />
 
             <label for="phone">Phone</label>
-            <input id="phone" name="phone" type="text" required />
+            <input id="phone" name="phone" type="text" />
           {% endif %}
 
-          <label for="address_line">Address Line</label>
+          <label for="address_line" class="required">Address Line</label>
           <input id="address_line" name="address_line" type="text" required />
 
-          <label for="town">Town/City</label>
+          <label for="town" class="required">Town/City</label>
           <input id="town" name="town" type="text" required />
 
-          <label for="county">County</label>
+          <label for="county" class="required">County</label>
           <input id="county" name="county" type="text" required />
 
-          <label for="postcode">Postcode</label>
+          <label for="postcode" class="required">Postcode</label>
           <input id="postcode" name="postcode" type="text" required />
 
           <button type="submit" class="proceed">Place order</button>

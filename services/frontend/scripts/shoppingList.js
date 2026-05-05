@@ -22,7 +22,7 @@ function showItemRow(item) {
   row.innerHTML = `
       <label>
         <input type="checkbox" data-id="${item.product_id}" ${item.checked ? "checked" : ""}>
-        <span class="${item.checked ? "checked" : ""}">${item.name}</span>
+        <span class="${item.checked ? "checked" : ""}"><a href="/products/${item.product_id}">${item.name}</a></span>
       </label>
       <button type="button" data-remove="${item.product_id}">Remove</button>
     `;
