@@ -42,6 +42,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid #dddddd;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.1s ease;
 }
 
 .back a:hover {
@@ -108,6 +109,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   line-height: 1.6;
   font-size: 1.05rem;
   max-width: 62ch;
+  flex-grow: 1;
 }
 
 .price {
@@ -144,14 +146,16 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 .quantity {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0;
 }
 
 .quantity-input {
-  width: 56px;
-  height: 50px;
-  border: 1px solid #999999;
-  border-radius: 8px;
+  width: 50px;
+  height: 48px;
+  border: 2px solid #005fcc;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
   font-size: 1.25rem;
   text-align: center;
   color: #222222;
@@ -162,9 +166,9 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 .quantity-plus {
   width: 48px;
   height: 48px;
-  border: none;
+  border: 2px solid #005fcc;
   border-radius: 8px;
-  background: #005fcc;
+  background: #007bff;
   color: #ffffff;
   font-size: 1.5rem;
   font-weight: 700;
@@ -172,25 +176,57 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   line-height: 1;
 }
 
+.quantity-minus {
+  border-radius: 8px 0 0 8px;
+}
+
+.quantity-plus {
+  border-radius: 0 8px 8px 0;
+}
+
 .quantity-minus:hover,
 .quantity-plus:hover {
   background: #004799;
 }
 
+.quantity-minus:active,
+.quantity-plus:active {
+  background-color: #004799;
+  transform: scale(0.96);
+}
+
+.add-btn, .quantity-minus, .quantity-plus {
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
+}
+
 .add-btn {
   min-height: 50px;
+  min-width: 160px;
   padding: 0 22px;
   border: none;
   border-radius: 10px;
-  background: #176130;
+  background: #1f7a3d;
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .add-btn:hover {
-  background: #0f4d26;
+  background: #176130;
+}
+
+.add-btn:active {
+  transform: scale(0.97);
+}
+
+.add-btn:disabled {
+  background: #0d3b1d;
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .quantity-minus:focus-visible,
@@ -301,13 +337,14 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 
 .recommend-buttons {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+  width: 100%;
 }
 
 .recommend-item .quantity {
-  gap: 8px;
+  gap: 0;
 }
 
 .recommend-item .quantity-minus,
@@ -324,6 +361,8 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .recommend-item .add-btn {
+  flex: 1;
+  min-width: 120px;
   min-height: 38px;
   padding: 0 14px;
   font-size: 0.92rem;

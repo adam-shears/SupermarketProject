@@ -83,6 +83,8 @@
           <button
             type="button"
             class="add-btn"
+            aria-live="polite"
+            aria-label="Add {{ product.name }} to basket"
             data-id="{{ product.id }}"
             data-name="{{ product.name }}"
             data-price="{{ product.price_pence }}"
@@ -127,7 +129,7 @@
         setTimeout(() => {
           btn.textContent = originalText;
           btn.disabled = false;
-        }, 1500);
+        }, 800);
       });
     });
   }

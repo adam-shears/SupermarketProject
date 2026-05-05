@@ -42,7 +42,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   border: 1px solid #ddd;
   border-radius: 16px;
   position: sticky;
-  top: 90px;
+  top: 110px;
   min-width: 300px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
@@ -136,6 +136,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   padding: 10px 14px;
   cursor: pointer;
   font-weight: 700;
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
 }
 
 .delete-button:hover {
@@ -197,6 +198,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
 }
 
 .promo-btn:hover {
@@ -340,6 +342,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   font-weight: 700;
   cursor: pointer;
   margin-top: 12px;
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
 }
 
 .proceed:hover {
@@ -357,6 +360,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   font-weight: 700;
   cursor: pointer;
   margin-top: 12px;
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
 }
 
 .proceed:hover {
@@ -364,7 +368,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .cancel:hover {
-  background: #b3261e;
+  background: #8f1c13;
 }
 
 .empty-basket {
