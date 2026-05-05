@@ -77,7 +77,7 @@ export async function addToBasket(productId, quantity, name, price_pence, image_
 }
 
 export async function updateQuantity(productId, quantity) {
-  if(getUserId()) {
+  if (getUserId()) {
     const res = await fetch(`/api/basket/items/${productId}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
@@ -100,7 +100,7 @@ export async function updateQuantity(productId, quantity) {
 }
 
 export async function removeFromBasket(productId) {
-  if(getUserId()) {
+  if (getUserId()) {
     await fetch(`/api/basket/items/${productId}`, {
       method: "DELETE",
     });
@@ -115,7 +115,7 @@ export async function removeFromBasket(productId) {
 }
 
 export async function clearBasket() {
-  if(getUserId()) {
+  if (getUserId()) {
     const res = await fetch(`/api/basket`, {
       method: "DELETE",
     });
@@ -131,31 +131,31 @@ export async function clearBasket() {
 }
 
 export async function updateHeaderCount() {
-  const countElement = document.getElementById('basket-count');
+  const countElement = document.getElementById("basket-count");
   if (countElement) {
     const basket = await getBasket();
     const total = basket.reduce((sum, item) => sum + item.quantity, 0);
     countElement.textContent = total;
 
     if (total === 0) {
-      countElement.style.backgroundColor = '#bbbbbb';
-      countElement.style.color = '#666';
+      countElement.style.backgroundColor = "#bbbbbb";
+      countElement.style.color = "#666";
     } else {
-      countElement.style.backgroundColor = '#e63946';
-      countElement.style.color = 'white';
+      countElement.style.backgroundColor = "#e63946";
+      countElement.style.color = "white";
     }
 
     // setting screen reader to read correct number
-    countElement.setAttribute('aria-label', `${total} items in basket`);
+    countElement.setAttribute("aria-label", `${total} items in basket`);
   }
 }
-document.addEventListener('DOMContentLoaded', updateHeaderCount);
+document.addEventListener("DOMContentLoaded", updateHeaderCount);
 
 export async function calculateTotals(promoCode = null) {
   const payload = { promoCode };
 
   if (!getUserId()) {
-    payload.items = getGuestBasket().map(item => ({
+    payload.items = getGuestBasket().map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
     }));
@@ -171,7 +171,6 @@ export async function calculateTotals(promoCode = null) {
   return res.json();
 }
 
-
 // --- Product list logic ---
 const PRODUCTS_KEY = "products";
 
@@ -186,19 +185,18 @@ export function getCachedProducts() {
 
 export function filterProducts(term) {
   const products = getCachedProducts();
-  return products.filter(p => p.name.toLowerCase().includes(term.toLowerCase()));
+  return products.filter((p) => p.name.toLowerCase().includes(term.toLowerCase()));
 }
 
 export function getProductById(id) {
   const products = getCachedProducts();
-  return products.find(p => p.id == id);
+  return products.find((p) => p.id == id);
 }
 
 export function getRecommendations(productId) {
   const products = getCachedProducts();
-  return products.filter(p => p.id != productId).slice(0, 4);
+  return products.filter((p) => p.id != productId).slice(0, 4);
 }
-
 
 // --- Shopping list logic ---
 function getProductId(item) {
@@ -220,7 +218,7 @@ function setGuestList(items) {
 async function getDatabaseList() {
   // fetch the shopping list from the database for users who are logged in
   const res = await fetch(`/api/shopping-list`);
-  if(!res.ok) throw new Error("Failed to load shopping list from the database");
+  if (!res.ok) throw new Error("Failed to load shopping list from the database");
   return res.json();
 }
 
@@ -319,9 +317,11 @@ export async function autoCheck(productId) {
 
     await checkShoppingListItem(productId, true);
 
-    window.dispatchEvent(new CustomEvent("shopping-list-updated", {
-      detail: { productId, checked: true},
-    }));
+    window.dispatchEvent(
+      new CustomEvent("shopping-list-updated", {
+        detail: { productId, checked: true },
+      })
+    );
   } catch (error) {
     console.error("Couldn't automatically check off shopping list item", error);
   }
@@ -332,7 +332,7 @@ export async function searchProducts(term) {
     return [];
   }
   const res = await fetch(`/api/products/search?q=${encodeURIComponent(term)}`);
-  if(!res.ok) {
+  if (!res.ok) {
     throw new Error("Couldn't search products");
   }
   return res.json();

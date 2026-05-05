@@ -21,12 +21,12 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .banner-text {
-    text-align: center;
+  text-align: center;
 }
 
 .banner-text h1,
 .banner-text p {
-    color: #ffffff;
+  color: #ffffff;
 }
 
 .shop-link {
@@ -49,10 +49,10 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .button-row {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 40px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 15px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
 }
 
 .action-card {
@@ -78,17 +78,17 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .placeholder-icon {
-    width: 40px;
-    height: 40px;
-    background-color: #e0e0e0;
-    margin: 0 auto 10px auto;
-    border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  background-color: #e0e0e0;
+  margin: 0 auto 10px auto;
+  border-radius: 50%;
 }
 
 .grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
 }
 
 .cat-item {
@@ -105,34 +105,34 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .cat-item:focus-visible {
-    outline: 3px solid #005fcc;
-    outline-offset: 2px;
+  outline: 3px solid #005fcc;
+  outline-offset: 2px;
 }
 
 .image-square {
-    background: #eeeeee;
-    height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    transition: background-color 0.2s;
+  background: #eeeeee;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  transition: background-color 0.2s;
 }
 
 .cat-item:hover .image-square {
-    background: #e0e0e0;
+  background: #e0e0e0;
 }
 
 .content-area {
-    width: min(90%, 1200px);
-    max-width: 1200px;
-    margin: 0 auto;
+  width: min(90%, 1200px);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .category-title-bar h2 {
-    font-size: 24px;
-    font-weight: bold;
-    color: #222;
+  font-size: 24px;
+  font-weight: bold;
+  color: #222;
 }
 
 .category-title-bar a {
@@ -163,8 +163,8 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 @media (max-width: 600px) {
-    .banner-box {
-        width: 100%;
-        min-height: 220px;
-    }
+  .banner-box {
+    width: 100%;
+    min-height: 220px;
+  }
 }

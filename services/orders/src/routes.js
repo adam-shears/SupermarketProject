@@ -35,6 +35,7 @@ import {
   pushLastOrderToBasket,
   pushSavedBasketToLive,
   registerNewUser,
+  releaseReservation,
   removeBasketItem,
   removeShoppingListItem,
   redeemPoints,
@@ -48,7 +49,9 @@ const router = Router();
 
 function sendErrorResponse(res, error, fallbackMessage) {
   if (error instanceof OrdersError) {
-    return res.status(error.statusCode).json({ message: error.message, details: error.details || null });
+    return res
+      .status(error.statusCode)
+      .json({ message: error.message, details: error.details || null });
   }
 
   console.error(error);
@@ -79,10 +82,7 @@ router.get("/customers/:customerId/account", async (req, res) => {
 
 router.patch("/customers/:customerId/account", async (req, res) => {
   try {
-    const account = await updateCustomerAccount(
-      req.params.customerId,
-      req.body
-    );
+    const account = await updateCustomerAccount(req.params.customerId, req.body);
 
     res.status(200).json(account);
   } catch (error) {
@@ -134,38 +134,29 @@ router.post("/customers/:customerId/shopping-list/items", async (req, res) => {
   }
 });
 
-router.patch(
-  "/customers/:customerId/shopping-list/items/:productId",
-  async (req, res) => {
-    try {
-      const item = await updateShoppingListItem(
-        req.params.customerId,
-        req.params.productId,
-        req.body
-      );
+router.patch("/customers/:customerId/shopping-list/items/:productId", async (req, res) => {
+  try {
+    const item = await updateShoppingListItem(
+      req.params.customerId,
+      req.params.productId,
+      req.body
+    );
 
-      res.status(200).json(item);
-    } catch (error) {
-      sendErrorResponse(res, error, "Failed to update item in shopping list.");
-    }
+    res.status(200).json(item);
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to update item in shopping list.");
   }
-);
+});
 
-router.delete(
-  "/customers/:customerId/shopping-list/items/:productId",
-  async (req, res) => {
-    try {
-      await removeShoppingListItem(
-        req.params.customerId,
-        req.params.productId
-      );
+router.delete("/customers/:customerId/shopping-list/items/:productId", async (req, res) => {
+  try {
+    await removeShoppingListItem(req.params.customerId, req.params.productId);
 
-      res.status(204).send();
-    } catch (error) {
-      sendErrorResponse(res, error, "Failed to delete shopping list item.");
-    }
+    res.status(204).send();
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to delete shopping list item.");
   }
-);
+});
 
 /*
   Loyalty routes
@@ -284,10 +275,7 @@ router.delete("/customers/:customerId/basket", async (req, res) => {
 
 router.post("/customers/:customerId/basket/items", async (req, res) => {
   try {
-    const item = await addOrUpdateBasketItem(
-      req.params.customerId,
-      req.body
-    );
+    const item = await addOrUpdateBasketItem(req.params.customerId, req.body);
     res.status(201).json(item);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to add/update basket item.");
@@ -296,11 +284,7 @@ router.post("/customers/:customerId/basket/items", async (req, res) => {
 
 router.patch("/customers/:customerId/basket/items/:productId", async (req, res) => {
   try {
-    const item = await updateBasket(
-      req.params.customerId,
-      req.params.productId,
-      req.body
-    );
+    const item = await updateBasket(req.params.customerId, req.params.productId, req.body);
     res.status(200).json(item);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to update basket item.");
@@ -382,9 +366,23 @@ router.post("/checkout/snapshot", async (req, res) => {
   }
 });
 
+router.post("/checkout/release", async (req, res) => {
+  try {
+    await releaseReservation(req.body.snapshot);
+    res.status(200).json({ message: "Reservation released successfully." });
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to release reservation.");
+  }
+});
+
 router.post("/orders/create", async (req, res) => {
   try {
-    const order = await createOrder(req.body.snapshot, req.body.deliveryInfo, req.body.customerId || null, req.body.guestDetails || null);
+    const order = await createOrder(
+      req.body.snapshot,
+      req.body.deliveryInfo,
+      req.body.customerId || null,
+      req.body.guestDetails || null
+    );
     res.status(201).json(order);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to create order.");

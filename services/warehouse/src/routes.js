@@ -9,7 +9,6 @@ and sending the response.
 Actual validation should be done in service.js.
 */
 
-
 import { Router } from "express";
 import * as service from "./service.js";
 

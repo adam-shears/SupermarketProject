@@ -502,7 +502,8 @@ export async function softDeleteCustomerById(customerId) {
 
 // Basket queries
 export async function selectBasketByCustomerId(customerId) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     SELECT
       bi.product_id,
       bi.quantity,
@@ -526,13 +527,16 @@ export async function selectBasketByCustomerId(customerId) {
     WHERE b.customer_id = $1
       AND b.saved = FALSE
     ORDER BY bi.product_id ASC
-  `, [customerId]);
+  `,
+    [customerId]
+  );
 
   return result.rows;
 }
 
 export async function upsertBasketItem(customerId, productId, quantity) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     WITH active_basket AS (
       INSERT INTO baskets (customer_id, name, saved, created_at, updated_at)
       VALUES ($1, NULL, FALSE, NOW(), NOW())
@@ -545,13 +549,16 @@ export async function upsertBasketItem(customerId, productId, quantity) {
     ON CONFLICT (basket_id, product_id)
     DO UPDATE SET quantity = basket_items.quantity + EXCLUDED.quantity
     RETURNING product_id, quantity
-  `, [customerId, productId, quantity]);
+  `,
+    [customerId, productId, quantity]
+  );
 
   return result.rows[0];
 }
 
 export async function updateBasketItem(customerId, productId, quantity) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     UPDATE basket_items bi
     SET quantity = $1
     FROM baskets b
@@ -560,24 +567,30 @@ export async function updateBasketItem(customerId, productId, quantity) {
       AND b.saved = FALSE
       AND bi.product_id = $3
     RETURNING bi.product_id, bi.quantity
-  `, [quantity, customerId, productId]);
+  `,
+    [quantity, customerId, productId]
+  );
 
   return result.rows[0] || null;
 }
 
 export async function deleteBasketItem(customerId, productId) {
-  await pool.query(`
+  await pool.query(
+    `
     DELETE FROM basket_items bi
     USING baskets b
     WHERE b.id = bi.basket_id
       AND b.customer_id = $1
       AND b.saved = FALSE
       AND bi.product_id = $2
-  `, [customerId, productId]);
+  `,
+    [customerId, productId]
+  );
 }
 
 export async function copyActiveBasketToSaved(customerId, name = null) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     WITH active_basket AS (
       SELECT id FROM baskets
       WHERE customer_id = $1
@@ -606,13 +619,16 @@ export async function copyActiveBasketToSaved(customerId, name = null) {
     FROM saved_basket sb
     LEFT JOIN copied_items ci ON TRUE
     GROUP BY sb.id, sb.name, sb.saved, sb.created_at, sb.updated_at
-  `, [customerId, name]);
+  `,
+    [customerId, name]
+  );
 
   return result.rows[0] || null;
 }
 
 export async function selectSavedBasketsByCustomerId(customerId) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     SELECT
       b.id AS basket_id,
       b.name AS basket_name,
@@ -637,13 +653,16 @@ export async function selectSavedBasketsByCustomerId(customerId) {
     WHERE b.customer_id = $1
       AND b.saved = TRUE
     ORDER BY b.updated_at DESC
-  `, [customerId]);
+  `,
+    [customerId]
+  );
 
   return result.rows;
 }
 
 export async function copySavedBasketToActive(customerId, basketId) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     WITH saved_basket AS (
       SELECT id FROM baskets
       WHERE customer_id = $1
@@ -676,7 +695,9 @@ export async function copySavedBasketToActive(customerId, basketId) {
       FROM active_basket ab
       LEFT JOIN copied_items ci ON TRUE
       GROUP BY ab.id;
-  `, [customerId, basketId]);
+  `,
+    [customerId, basketId]
+  );
 
   return result.rows[0] || null;
 }
@@ -720,7 +741,8 @@ export async function copyLastOrderToActiveBasket(customerId) {
 }
 
 export async function selectBasketPriceLinesByCustomerId(customerId) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     SELECT
       bi.product_id,
       bi.quantity,
@@ -741,13 +763,16 @@ export async function selectBasketPriceLinesByCustomerId(customerId) {
       WHERE b.customer_id = $1
         AND b.saved = FALSE
       ORDER BY bi.product_id ASC
-  `, [customerId]);
+  `,
+    [customerId]
+  );
 
   return result.rows;
 }
 
 export async function selectBasketPriceLinesForGuestBaskets(items) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     WITH input_items AS (
       SELECT product_id, SUM(quantity) AS quantity
     FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
@@ -769,13 +794,16 @@ export async function selectBasketPriceLinesForGuestBaskets(items) {
       ORDER BY starts_at DESC
       LIMIT 1
     ) pr ON TRUE
-  `, [JSON.stringify(items)]);
+  `,
+    [JSON.stringify(items)]
+  );
 
   return result.rows;
 }
 
 export async function selectActiveDiscountsForProducts(productIds, promoCode = null) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     SELECT
       pd.product_id,
       d.id,
@@ -791,20 +819,34 @@ export async function selectActiveDiscountsForProducts(productIds, promoCode = n
       AND (d.ends_at IS NULL OR d.ends_at > NOW())
       AND (d.code IS NULL OR UPPER(d.code) = UPPER($2))
     ORDER BY pd.product_id ASC, d.id ASC
-  `, [productIds, promoCode]);
+  `,
+    [productIds, promoCode]
+  );
 
   return result.rows;
 }
 
-export async function insertOrder(customerId = null, guestDetails = null, status = 'pending', subtotalPence, discountPence = 0, totalPence, deliveryInfo, items) {
+export async function insertOrder(
+  customerId = null,
+  guestDetails = null,
+  status = "pending",
+  subtotalPence,
+  discountPence = 0,
+  totalPence,
+  deliveryInfo,
+  items
+) {
   const client = await pool.connect();
   let sqlConstructor;
   if (customerId) {
-    sqlConstructor = [`
+    sqlConstructor = [
+      `
       INSERT INTO orders (customer_id, status, subtotal_pence, discount_pence, total_pence, created_at, last_updated, delivery_info)
       VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6)
       RETURNING id
-    `, [customerId, status, subtotalPence, discountPence, totalPence, JSON.stringify(deliveryInfo)]];
+    `,
+      [customerId, status, subtotalPence, discountPence, totalPence, JSON.stringify(deliveryInfo)],
+    ];
   } else {
     sqlConstructor = [
       `
@@ -815,22 +857,34 @@ export async function insertOrder(customerId = null, guestDetails = null, status
   }
 
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     const orderResult = await client.query(...sqlConstructor);
     const orderId = orderResult.rows[0].id;
 
     for (const item of items) {
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO order_items (order_id, product_id, quantity, price_pence_per_unit, line_subtotal_pence, line_discount_pence, applied_discount_id, line_total_pence)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `, [orderId, item.product_id, item.quantity, item.price_pence_per_unit, item.line_subtotal_pence, item.line_discount_pence, item.applied_discount_id, item.line_total_pence]);
+      `,
+        [
+          orderId,
+          item.product_id,
+          item.quantity,
+          item.price_pence_per_unit,
+          item.line_subtotal_pence,
+          item.line_discount_pence,
+          item.applied_discount_id,
+          item.line_total_pence,
+        ]
+      );
     }
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
     return orderId;
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw error;
   } finally {
     await client.release();
@@ -838,23 +892,29 @@ export async function insertOrder(customerId = null, guestDetails = null, status
 }
 
 export async function clearActiveBasket(customerId) {
-  await pool.query(`
+  await pool.query(
+    `
     DELETE FROM basket_items bi
     USING baskets b
     WHERE b.id = bi.basket_id
       AND b.customer_id = $1
       AND b.saved = FALSE
-  `, [customerId]);
+  `,
+    [customerId]
+  );
 }
 
 export async function reserveStock(items) {
   const client = await pool.connect();
-  const payload = JSON.stringify(items.map((item) => ({ product_id: item.product_id, quantity: item.quantity })));
+  const payload = JSON.stringify(
+    items.map((item) => ({ product_id: item.product_id, quantity: item.quantity }))
+  );
 
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
-    await client.query(`
+    await client.query(
+      `
       SELECT product_id
       FROM stock
       WHERE product_id IN (
@@ -862,9 +922,12 @@ export async function reserveStock(items) {
         FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
       )
       FOR UPDATE
-    `, [payload]);
+    `,
+      [payload]
+    );
 
-    const stockCheck = await client.query(`
+    const stockCheck = await client.query(
+      `
       WITH requested AS (
         SELECT product_id, SUM(quantity) AS quantity
         FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
@@ -879,14 +942,17 @@ export async function reserveStock(items) {
       JOIN products p ON p.id = r.product_id
       LEFT JOIN stock s ON s.product_id = r.product_id
       WHERE COALESCE(s.quantity_on_hand - s.quantity_reserved, 0) < r.quantity
-    `, [payload]);
+    `,
+      [payload]
+    );
 
     if (stockCheck.rows.length > 0) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       return { reserved: false, unavailableItems: stockCheck.rows };
     }
 
-    await client.query(`
+    await client.query(
+      `
       WITH requested AS (
         SELECT product_id, SUM(quantity) AS quantity
         FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
@@ -896,12 +962,60 @@ export async function reserveStock(items) {
       SET quantity_reserved = quantity_reserved + requested.quantity, updated_at = NOW()
       FROM requested
       WHERE s.product_id = requested.product_id
-    `, [payload]);
+    `,
+      [payload]
+    );
 
-    await client.query('COMMIT');
+    await client.query("COMMIT");
     return { reserved: true, unavailableItems: [] };
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    await client.release();
+  }
+}
+
+export async function releaseStock(items) {
+  const client = await pool.connect();
+  const payload = JSON.stringify(
+    items.map((item) => ({ product_id: item.product_id, quantity: item.quantity }))
+  );
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `
+      SELECT product_id
+      FROM stock
+      WHERE product_id IN (
+        SELECT product_id
+        FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
+      )
+      FOR UPDATE
+    `,
+      [payload]
+    );
+
+    await client.query(
+      `
+      WITH requested AS (
+        SELECT product_id, SUM(quantity) AS quantity
+        FROM jsonb_to_recordset($1::jsonb) AS item(product_id int, quantity int)
+        GROUP BY product_id
+      )
+      UPDATE stock s
+      SET quantity_reserved = GREATEST(quantity_reserved - requested.quantity, 0), updated_at = NOW()
+      FROM requested
+      WHERE s.product_id = requested.product_id
+    `,
+      [payload]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
     throw error;
   } finally {
     await client.release();

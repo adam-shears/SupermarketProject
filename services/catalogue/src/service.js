@@ -111,9 +111,11 @@ export async function getProductById(id) {
 
 export async function getActiveDeals(includeExpired = false) {
   const rows = await catalogueDeps.selectDealRows();
-  if(!includeExpired) {
+  if (!includeExpired) {
     const now = new Date();
-    return rows.filter(row => row.starts_at <= now && (row.ends_at === null || row.ends_at > now));
+    return rows.filter(
+      (row) => row.starts_at <= now && (row.ends_at === null || row.ends_at > now)
+    );
   }
   const deals = new Map();
 
@@ -183,7 +185,8 @@ export async function getProductsByCategoryWithDiscounts() {
 
 async function getLowestPriceOfProducts(products) {
   let lowestPrice, lowestPriceName;
-  let minPrice = Infinity, minPriceName = "";
+  let minPrice = Infinity,
+    minPriceName = "";
   for (const productId of products) {
     [lowestPrice, lowestPriceName] = await getLowestPriceForProduct(productId);
     if (lowestPrice === null) {
@@ -256,7 +259,10 @@ export async function createDeal(deal) {
   }
   const [lowestPrice, lowestPriceName] = await getLowestPriceOfProducts(products);
   if (type === "fixed" && value > lowestPrice / 100) {
-    throw new CatalogueError(`fixed value cannot be greater than the lowest product price. ${lowestPriceName} has price of £${lowestPrice / 100}`, 400);
+    throw new CatalogueError(
+      `fixed value cannot be greater than the lowest product price. ${lowestPriceName} has price of £${lowestPrice / 100}`,
+      400
+    );
   }
 
   // date checks
@@ -275,7 +281,7 @@ export async function createDeal(deal) {
   }
 
   // code uniqueness check - only if code is provided as it's optional
-  if(code) {
+  if (code) {
     const activeDeals = await catalogueDeps.getActiveDeals();
     const codeExists = activeDeals.some((deal) => deal.code === code);
     if (codeExists) {

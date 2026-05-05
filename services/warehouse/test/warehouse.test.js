@@ -62,9 +62,9 @@ describe("Warehouse Service", () => {
         },
       ]);
 
-      sinon.stub(service.warehouseDeps, "getSubstituteProducts").resolves([
-        { id: 7, name: "Alt Item", location_code: "Z-99" },
-      ]);
+      sinon
+        .stub(service.warehouseDeps, "getSubstituteProducts")
+        .resolves([{ id: 7, name: "Alt Item", location_code: "Z-99" }]);
 
       const result = await service.getPickerOrders();
 
@@ -346,15 +346,13 @@ describe("Warehouse Service", () => {
 
   describe("getInventory", () => {
     it("should return inventory rows from the db dependency", async () => {
-      sinon.stub(service.warehouseDeps, "getInventoryRows").resolves([
-        { id: 1, name: "Milk", quantity: 10, location_code: "A-12" },
-      ]);
+      sinon
+        .stub(service.warehouseDeps, "getInventoryRows")
+        .resolves([{ id: 1, name: "Milk", quantity: 10, location_code: "A-12" }]);
 
       const result = await service.getInventory();
 
-      expect(result).to.deep.equal([
-        { id: 1, name: "Milk", quantity: 10, location_code: "A-12" },
-      ]);
+      expect(result).to.deep.equal([{ id: 1, name: "Milk", quantity: 10, location_code: "A-12" }]);
     });
   });
 
@@ -449,9 +447,7 @@ describe("Warehouse Service", () => {
         await service.finaliseOrder(101);
         throw new Error("Expected method to throw.");
       } catch (error) {
-        expect(error.message).to.equal(
-          "Order cannot be finalised until all items are picked"
-        );
+        expect(error.message).to.equal("Order cannot be finalised until all items are picked");
       }
     });
 
