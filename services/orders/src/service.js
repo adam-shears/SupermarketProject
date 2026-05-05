@@ -917,6 +917,18 @@ export async function getGuestCheckoutSnapshot(items, promoCode = null) {
 }
 
 export async function createOrder(snapshot, deliveryInfo, customerId = null, guestDetails = null) {
+  if (!deliveryInfo.addressLine || !deliveryInfo.town || !deliveryInfo.county || !deliveryInfo.postcode) {
+    throw new OrdersError("Missing delivery info", 400);
+  }
+
+  if (guestDetails && (!guestDetails.name || !guestDetails.email)) {
+    throw new OrdersError("Missing guest details", 400);
+  }
+
+  if(!customerId && !guestDetails) {
+    throw new OrdersError("No customer or guest details provided", 400);
+  }
+
   const orderId = await ordersDeps.insertOrder(
     customerId,
     guestDetails,
