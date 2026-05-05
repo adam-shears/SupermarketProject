@@ -262,6 +262,17 @@ docker compose up --build
 If the containers are running and you still cannot get a response from `localhost`, you may be on a Remote setup where you need to forward a port.  
 In VS Code, head to the "Ports" section of the integrated terminal, and manually forward port `3000`. This is especially relevant when using Codespaces.
 
+### "Ghost Products" Appearing in the Catalogue
+Occasionally, so-called "ghost products" can appear in the catalogue. They will appear as a duplicate of some other product but won't have an image associated with them, nor any entry in the database.
+
+This happens after building various previous versions of the project, primarily before the relative bind mount was introduced for the database, and then rebuilding the project on a newer version.
+
+Leftovers of the previous database image persist. To fix, simply reset the database **including the local db image**:
+```bash
+docker compose down -v --rmi local
+```
+Then you can rebuild normally (`docker compose up --build`) and the duplicated ghost products will disappear.
+
 ## Notes
 
 Keep things simple and clean. If you're ever unsure where something belongs,

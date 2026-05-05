@@ -85,14 +85,15 @@ function requireCustomerLogin(req, res, next) {
 }
 
 // not implemented pages
-router.get(["/orders/repeat"], (req, res) => {
+/*
+router.get(["/whatever"], (req, res) => {
   res.status(501).render("5xx.njk", {
     title: "Coming Soon",
     status: "501 - Not Implemented",
     message: "This feature is currently under development. Check back soon!",
     user: req.session.user || null,
   });
-});
+});*/
 
 router.get("/loyalty", requireCustomerLogin, async (req, res) => {
   try {
@@ -480,6 +481,26 @@ router.get("/account/orders", requireCustomerLogin, async (req, res) => {
       title: "Order History",
       orders: [],
       error: error.message || "Could not load your order history.",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/account/orders/repeat", requireCustomerLogin, async (req, res) => {
+  try {
+    const data = await api.getCustomerOrders(req.session.user.id);
+    res.render("repeat-order.njk", {
+      title: "Repeat Last Order",
+      order: data.orders[0],
+      error: null,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load repeat order page:", error);
+    res.status(error.status || 500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load repeat order page",
       user: req.session.user || null,
     });
   }
@@ -955,6 +976,16 @@ router.post("/api/basket/totals", async (req, res) => {
     res
       .status(error.status || 500)
       .json({ message: error.message || "Failed to calculate basket totals" });
+  }
+});
+
+router.post("/api/orders/repeat", requireAuth(0), async (req, res) => {
+  try {
+    await api.repeatLastOrder(req.session.user.id);
+    res.status(200).redirect("/basket");
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({ message: error.message || "Failed to repeat last order" });
   }
 });
 

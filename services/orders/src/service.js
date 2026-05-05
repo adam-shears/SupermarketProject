@@ -18,6 +18,7 @@ import bcrypt from "bcrypt";
 import {
   clearActiveBasket,
   copyActiveBasketToSaved,
+  copyLastOrderToActiveBasket,
   copySavedBasketToActive,
   deleteBasketItem,
   deleteShoppingListItem,
@@ -98,6 +99,7 @@ export const ordersDeps = {
   copyActiveBasketToSaved,
   selectSavedBasketsByCustomerId,
   copySavedBasketToActive,
+  copyLastOrderToActiveBasket,
   selectBasketPriceLinesByCustomerId,
   selectActiveDiscountsForProducts,
   selectBasketPriceLinesForGuestBaskets,
@@ -1069,4 +1071,17 @@ export async function releaseReservation(snapshot) {
     return;
   }
   throw new OrdersError("No reservation to release", 400);
+}
+
+export async function pushLastOrderToBasket(customerId) {
+  if (!customerId) {
+    throw new OrdersError("customerId is required", 400);
+  }
+
+  await ordersDeps.clearActiveBasket(customerId);
+  const result = await ordersDeps.copyLastOrderToActiveBasket(customerId);
+
+  if (!result) {
+    throw new OrdersError("No previous order found to repeat", 404);
+  }
 }
