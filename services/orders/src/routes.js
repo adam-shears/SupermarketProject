@@ -32,6 +32,7 @@ import {
   getStaffMembers,
   logCustomerIn,
   OrdersError,
+  pushLastOrderToBasket,
   pushSavedBasketToLive,
   registerNewUser,
   removeBasketItem,
@@ -387,6 +388,15 @@ router.post("/orders/create", async (req, res) => {
     res.status(201).json(order);
   } catch (error) {
     sendErrorResponse(res, error, "Failed to create order.");
+  }
+});
+
+router.post("/customers/:customerId/orders/repeat", async (req, res) => {
+  try {
+    await pushLastOrderToBasket(req.params.customerId);
+    res.status(200).json({ message: "Last order repeated successfully." });
+  } catch (error) {
+    sendErrorResponse(res, error, "Failed to repeat last order.");
   }
 });
 
