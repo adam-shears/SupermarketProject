@@ -12,6 +12,8 @@
   <p id="basket-error" role="alert" hidden></p>
 
   <div class="basket-page">
+    <a href="#basket-summary" class="skip-items">Skip to basket summary</a>
+
     <section class="items-column" aria-labelledby="basket-items-title">
       <h2 id="basket-items-title">Your Items</h2>
       <div id="basket-items">
@@ -19,7 +21,7 @@
       </div>
     </section>
 
-    <aside class="summary-column" aria-labelledby="basket-summary-title">
+    <aside id="basket-summary" class="summary-column" aria-labelledby="basket-summary-title" tabindex="-1">
       <h2 id="basket-summary-title">Summary</h2>
 
       <div class="summary-row">
@@ -36,7 +38,7 @@
         <label for="promo-code" class="visually-hidden">Promo code</label>
         <input id="promo-code" type="text" placeholder="Promo code">
         <button type="button" class="promo-btn">Add</button>
-        <p id="promo-applied-status" role="status" aria-live="polite" hidden></p>
+        <p id="promo-applied-status" role="alert" aria-live="polite" hidden></p>
       </div>
 
       <div class="loyalty-summary" id="loyalty-summary" hidden>
@@ -536,5 +538,4 @@
   await loadLoyaltyCheckout();
   await renderBasket();
 </script>
-
 {% endblock %}

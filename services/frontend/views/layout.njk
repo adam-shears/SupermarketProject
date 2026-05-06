@@ -17,6 +17,7 @@
   data-user-first-name="{% if user %}{{ user.first_name or user.firstName }}{% endif %}"
 >
   <header class="header">
+    <a href="#main-content" class="skip">Skip to main content</a>
     <div class="logo">
       {% if user and (user.admin_level | default(0)) > 0 %}
         <a href="/staff-portal">
