@@ -14,25 +14,25 @@
   </div>
 
   {% if error %}
-    <div class="error-message">
+    <div class="error-message" role="alert">
       <p>{{ error }}</p>
     </div>
   {% endif %}
 
   {% if managementActionError %}
-    <div class="error-message">
+    <div class="error-message" role="alert">
       <p>{{ managementActionError }}</p>
     </div>
   {% endif %}
 
   {% if staffRegisterSuccess %}
-    <div class="success-message">
+    <div class="success-message" role="status" aria-live="polite">
       <p>New staff member registered successfully.</p>
     </div>
   {% endif %}
 
   {% if assignSuccess %}
-    <div class="success-message">
+    <div class="success-message" role="status" aria-live="polite">
       <p>Picker assigned to order successfully.</p>
     </div>
   {% endif %}
@@ -69,7 +69,7 @@
           </div>
 
           <div class="management-form-group">
-            <label for="confirmPassword">Confirm Password</label>
+            <label for="confirm_password">Confirm Password</label>
             <input id="confirm_password" name="confirm_password" type="password" required>
           </div>
 
@@ -96,7 +96,7 @@
         <div>
           <h2>Staff Members</h2>
           <p class="card-subtitle">List of all current staff accounts.</p>
-        </div
+        </div>
       </div>
 
       {% if staff.length > 0 %}
@@ -168,13 +168,14 @@
                   {% endif %}
                   <td>
                     <form action="/management/orders/{{ order.id }}/assign" method="post" class="assign-inline-form">
-                      <label class="sr-only" for="picker-email-{{ order.id }}">Picker for order {{ order.id }}</label>
+                      <label class="sr-only" for="picker-id-{{ order.id }}">Picker for order {{ order.id }}</label>
                       <select id="picker-id-{{ order.id }}" name="picker_id" required>
                         <option value="">Select picker</option>
                         {% for picker in pickerOptions %}
                           <option value="{{ picker.value }}">{{ picker.label }}</option>
                         {% endfor %}
                       </select>
+
                       {% if order.assigned_picker_id %}
                         <button type="submit" class="management-button management-button--small">Reassign</button>
                       {% else %}
@@ -296,6 +297,7 @@
       if (productName) {
         removedNames.push(productName);
       }
+
       item.remove();
     });
 
@@ -309,6 +311,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     const scaleSelect = document.getElementById("scale");
+
     if (scaleSelect && scaleSelect.form) {
       scaleSelect.addEventListener("change", () => {
         scaleSelect.form.requestSubmit();

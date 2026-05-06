@@ -135,9 +135,8 @@
                 </button>
               </div>
 
-              <button type="submit" class="add-btn" aria-live="polite" aria-label="Add {{ item.name }} to basket">Add</button>
+              <button type="submit" class="add-btn" aria-label="Add {{ item.name }} to basket">Add</button>
             </form>
-
           </article>
         {% endfor %}
       </div>
@@ -148,9 +147,27 @@
 <script type="module">
   import * as service from "/service.js";
 
+  function announceBasketUpdate(message) {
+    const status = document.getElementById("basket-status");
+
+    if (!status) {
+      return;
+    }
+
+    status.textContent = "";
+
+    setTimeout(() => {
+      status.textContent = message;
+    }, 50);
+  }
+
   function normaliseQuantity(input) {
     let value = parseInt(input.value, 10) || 1;
-    if (value < 1) value = 1;
+
+    if (value < 1) {
+      value = 1;
+    }
+
     input.value = value;
     return value;
   }
@@ -182,19 +199,20 @@
 
       const quantityInput = form.querySelector(".quantity-input");
       const quantity = normaliseQuantity(quantityInput);
-
       const addButton = form.querySelector(".add-btn");
 
       await service.addToBasket(productId, quantity, name, price_pence, image_url);
 
-      const originalText = addButton.textContent;
-        addButton.textContent = 'Added!';
-        addButton.disabled = true;
+      announceBasketUpdate(`${quantity} ${name} added to basket`);
 
-        setTimeout(() => {
-          addButton.textContent = originalText;
-          addButton.disabled = false;
-        }, 800);
+      const originalText = addButton.textContent;
+      addButton.textContent = "Added!";
+      addButton.disabled = true;
+
+      setTimeout(() => {
+        addButton.textContent = originalText;
+        addButton.disabled = false;
+      }, 800);
     });
   });
 </script>

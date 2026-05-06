@@ -6,7 +6,7 @@
     <h1>Your Saved Baskets</h1>
 
     {% if error %}
-      <p class="error-message">{{ error }}</p>
+      <p class="error-message" role="alert">{{ error }}</p>
     {% endif %}
 
     {% if savedBaskets | length == 0 %}
@@ -16,15 +16,31 @@
         {% for basket in savedBaskets %}
           <article class="order-card">
             <h2>{{ basket.name }}</h2>
+
             <form action="/api/basket/push" method="POST">
-              <input id="basket_id" name="basket_id" type="text" value="{{ basket.id }}" hidden />
-              <button type="submit">Use this basket</button>
+              <input
+                name="basket_id"
+                type="hidden"
+                value="{{ basket.id }}"
+              />
+
+              <button
+                type="submit"
+                aria-label="Use saved basket {{ basket.name }}"
+              >
+                Use this basket
+              </button>
             </form>
+
             <p><strong>Date saved:</strong> {{ basket.created_at | formatDate }}</p>
             <p><strong>Total:</strong> £{{ (basket.total_pence / 100) | toFixed(2) }}</p>
+
             <ul>
               {% for item in basket.items %}
-                <li> {{ item.name }} ({{ item.quantity }}) - £{{ ((item.price_pence * item.quantity) / 100) | toFixed(2) }}</li>
+                <li>
+                  {{ item.name }} ({{ item.quantity }}) -
+                  £{{ ((item.price_pence * item.quantity) / 100) | toFixed(2) }}
+                </li>
               {% endfor %}
             </ul>
           </article>
