@@ -82,7 +82,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   font-weight: bold;
   font-size: 0.8rem;
   text-transform: uppercase;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .basket-controls {
@@ -121,7 +121,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 
 .quantity-minus,
 .quantity-plus {
-  background-color: #007bff;
+  background-color: #0071EB;
   color: white;
   border: none;
   cursor: pointer;
@@ -164,7 +164,9 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   font-size: 1rem;
 }
 
-.add-btn, .quantity-minus, .quantity-plus {
+.add-btn,
+.quantity-minus,
+.quantity-plus {
   transition: background-color 0.3s ease-in-out, transform 0.1s ease;
 }
 
