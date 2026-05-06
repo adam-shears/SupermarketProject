@@ -2,11 +2,10 @@
 https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-4284785701 */
 
 .banner-box {
-    background-color: #2e7d32;
     width: min(90%, 700px);
     min-height: 300px;
     padding: 24px;
-    border-radius: 10px;
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -14,41 +13,53 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
     color: white;
     margin: 30px auto;
     box-sizing: border-box;
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+              url('/images/hero-groceries.jpg');
+    background-size: cover;
+    background-position: center;
+    text-align: center;
 }
 
 .banner-text {
-    text-align: center;
+  text-align: center;
 }
 
 .banner-text h1,
 .banner-text p {
-    color: #ffffff;
+  color: #ffffff;
 }
 
 .shop-link {
-    color: #ffffff;
-    font-weight: 600;
-    text-decoration: underline;
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 32px;
+    background-color: #ffffff;
+    color: #1f7a3d;
+    text-decoration: none;
+    font-weight: 700;
+    border-radius: 30px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .shop-link:hover,
 .shop-link:focus-visible {
-    color: #ffffff;
-    text-decoration: underline;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    background-color: #f8f8f8;
 }
 
 .button-row {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 40px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 15px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
 }
 
 .action-card {
     flex: 1 1 200px;
     min-width: 180px;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
+    background: #ffffff;
+    border: 2px solid transparent;
     padding: 20px;
     text-align: center;
     border-radius: 10px;
@@ -56,27 +67,28 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
     color: #222;
     display: block;
     cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease
 }
 
 .action-card:hover,
 .action-card:focus-visible {
-    background: #f0f0f0;
-    outline: 3px solid #005fcc;
-    outline-offset: 2px;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-color: #1f7a3d;
 }
 
 .placeholder-icon {
-    width: 40px;
-    height: 40px;
-    background-color: #e0e0e0;
-    margin: 0 auto 10px auto;
-    border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  background-color: #e0e0e0;
+  margin: 0 auto 10px auto;
+  border-radius: 50%;
 }
 
 .grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
 }
 
 .cat-item {
@@ -88,49 +100,51 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
     padding-bottom: 10px;
     overflow: hidden;
     display: block;
+    background: #fff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .cat-item:focus-visible {
-    outline: 3px solid #005fcc;
-    outline-offset: 2px;
+  outline: 3px solid #005fcc;
+  outline-offset: 2px;
 }
 
 .image-square {
-    background: #eeeeee;
-    height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    transition: background-color 0.2s;
+  background: #eeeeee;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  transition: background-color 0.2s;
 }
 
 .cat-item:hover .image-square {
-    background: #e0e0e0;
+  background: #e0e0e0;
 }
 
 .content-area {
-    width: min(90%, 1200px);
-    max-width: 1200px;
-    margin: 0 auto;
+  width: min(90%, 1200px);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .category-title-bar h2 {
-    font-size: 24px;
-    font-weight: bold;
-    color: #222;
+  font-size: 24px;
+  font-weight: bold;
+  color: #222;
 }
 
 .category-title-bar a {
-    text-decoration: underline;
-    color: #222;
+    text-decoration: none;
+    color: #1f7a3d;
     font-size: clamp(1.25rem, 2vw, 1.5rem);
     font-weight: inherit;
 }
 
 .category-title-bar a:hover,
 .category-title-bar a:focus-visible {
-    color: #0056b3;
+    text-decoration: underline;
 }
 
 .category-image {
@@ -141,16 +155,16 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
     display: block;
     margin-bottom: 10px;
     background: #eeeeee;
-    transition: transform 0.2s ease;
+    transition: transform 0.5s ease;
 }
 
 .cat-item:hover .category-image {
-    transform: scale(1.03);
+    transform: scale(1.1);
 }
 
 @media (max-width: 600px) {
-    .banner-box {
-        width: 100%;
-        min-height: 220px;
-    }
+  .banner-box {
+    width: 100%;
+    min-height: 220px;
+  }
 }

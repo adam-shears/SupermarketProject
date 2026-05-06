@@ -82,7 +82,7 @@ router.post("/deals/create", async (req, res) => {
 
 router.get("/deals", async (req, res) => {
   try {
-    if(req.query.includeExpired === "true") {
+    if (req.query.includeExpired === "true") {
       const deals = await getActiveDeals(true);
       return res.status(200).json(deals);
     }

@@ -1,0 +1,89 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/basket.css" />
+{% endblock %}
+
+{% block content %}
+<div class="basket-wrapper">
+  <h1 class="basket-title">Delivery Details</h1>
+
+  {% if error %}
+    <p role="alert">{{ error }}</p>
+  {% endif %}
+  <div class="basket-page">
+    <section class="items-column">
+      <h2>Please fill in your delivery details</h2>
+      <div id="basket-items">
+        <form method="POST" action="/checkout/complete" class="checkout-form">
+          {% if not user %}
+            <label for="name" class="required">Name</label>
+            <input id="name" name="name" type="text" required />
+
+            <label for="email" class="required">Email</label>
+            <input id="email" name="email" type="email" required />
+
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="text" />
+          {% endif %}
+
+          <label for="address_line" class="required">Address Line</label>
+          <input id="address_line" name="address_line" type="text" required />
+
+          <label for="town" class="required">Town/City</label>
+          <input id="town" name="town" type="text" required />
+
+          <label for="county" class="required">County</label>
+          <input id="county" name="county" type="text" required />
+
+          <label for="postcode" class="required">Postcode</label>
+          <input id="postcode" name="postcode" type="text" required />
+
+          <button type="submit" class="proceed">Place order</button>
+        </form>
+      </div>
+    </section>
+
+    <aside class="summary-column">
+      <h2 id="basket-summary-title">Summary</h2>
+      {% for item in snapshot.items %}
+        <div class="summary-row">
+          <span>{{ item.name }} ({{ item.quantity }})</span>
+          <span>&pound;{{ (item.line_subtotal_pence / 100) | toFixed(2) }}</span>
+        </div>
+        {% if item.line_discount_pence > 0 %}
+          <div class="summary-row discount-row">
+            <span>Item discount</span>
+            <span>-&pound;{{ (item.line_discount_pence / 100) | toFixed(2) }}</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>Total for item</span>
+            <span>&pound;{{ (item.line_total_pence / 100) | toFixed(2) }}</span>
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      {% if snapshot.orderDiscounts and snapshot.orderDiscounts|length > 0 %}
+        {% for discount in snapshot.orderDiscounts %}
+          <div class="summary-row discount-row">
+            <span>
+              {{ discount.label }}
+              {% if discount.pointsRedeemed %}({{ discount.pointsRedeemed }} points){% endif %}
+            </span>
+            <span>-&pound;{{ (discount.discountPence / 100) | toFixed(2) }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <div class="summary-row discount-row">
+        <span>Total discount</span>
+        <span>-&pound;{{ (snapshot.discountPence / 100) | toFixed(2) }}</span>
+      </div>
+      <div class="summary-row total-row">
+        <span>Final total</span>
+        <span>&pound;{{ (snapshot.totalPence / 100) | toFixed(2) }}</span>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

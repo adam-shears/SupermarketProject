@@ -9,10 +9,12 @@ Responsibilities:
 - Anything else beyond simple HTTP checks or SQL queries
 */
 
-
 import * as db from "./db.js";
 
 export const warehouseDeps = {
+  insertStockIssue: db.insertStockIssue,
+  selectStockIssues: db.selectStockIssues,
+  markStockIssueResolved: db.markStockIssueResolved,
   getPickerOrdersRows: db.getPickerOrdersRows,
   getSubstituteProducts: db.getSubstituteProducts,
   getOrderItem: db.getOrderItem,
@@ -33,11 +35,44 @@ export const warehouseDeps = {
 };
 
 export class WarehouseError extends Error {
-  constructor(message, statusCode) {
+  constructor(message, statusCode = 400) {
     super(message);
     this.name = "WarehouseError";
     this.statusCode = statusCode;
   }
+}
+
+export async function reportStockIssue(productId, reporterId, notes = null) {
+  if (!Number.isInteger(productId) || productId <= 0) {
+    throw new WarehouseError("productId must be a positive integer", 400);
+  }
+
+  if (!Number.isInteger(reporterId) || reporterId <= 0) {
+    throw new WarehouseError("reporterId must be a positive integer", 400);
+  }
+
+  return warehouseDeps.insertStockIssue(productId, reporterId, notes);
+}
+
+export async function listStockIssues(status) {
+  if (status && !["resolved", "unresolved"].includes(status)) {
+    throw new WarehouseError("status must be 'resolved' or 'unresolved'", 400);
+  }
+
+  return warehouseDeps.selectStockIssues(status);
+}
+
+export async function resolveStockIssue(id) {
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new WarehouseError("id must be a positive integer", 400);
+  }
+
+  const issue = await warehouseDeps.markStockIssueResolved(id);
+  if (!issue) {
+    throw new WarehouseError("Stock issue not found", 404);
+  }
+
+  return issue;
 }
 
 export async function getPendingOrders() {

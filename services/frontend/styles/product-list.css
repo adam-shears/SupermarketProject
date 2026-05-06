@@ -17,24 +17,25 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
+  gap: 32px;
 }
 
 .product-card {
-  border: none;
-  padding: 15px;
+  border: 1px solid #eaeaea;
+  padding: 20px;
   text-align: center;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
   background-color: #ffffff;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .product-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transform: scale(1.05);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
 }
 
 .product-card-link {
@@ -50,13 +51,14 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   flex-direction: column;
   flex-grow: 1;
   border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 15px;
+  padding: 0;
+  margin-bottom: 0;
 }
 
 .product-name {
   display: block;
   margin: 10px 0 8px;
+  margin-bottom: 12px;
   min-height: 2.4em;
   line-height: 1.35;
   font-size: clamp(1rem, 1.5vw, 1.2rem);
@@ -70,10 +72,17 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .offer {
-  color: #e74c3c;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #d32f2f;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 4px;
   font-weight: bold;
-  margin-bottom: 10px;
-  min-height: 1.2em;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .basket-controls {
@@ -89,18 +98,25 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 5px;
+  gap: 0;
+  width: 100%;
   height: 44px;
   flex-shrink: 0;
+  margin-bottom: 10px;
 }
 
 .quantity-input {
   padding: 5px;
-  width: 45px;
+  width: 50px;
+  height: 44px;
   text-align: center;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
+  border: 2px solid #005fcc;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  flex: 1;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .quantity-minus,
@@ -109,16 +125,31 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   color: white;
   border: none;
   cursor: pointer;
-  border-radius: 4px;
   width: 40px;
   height: 100%;
   font-size: 1.5rem;
   line-height: 1;
+  border: 2px solid #005fcc;
+  flex: 1;
+}
+
+.quantity-minus {
+  border-radius: 8px 0 0 8px;
+}
+
+.quantity-plus {
+  border-radius: 0 8px 8px 0;
 }
 
 .quantity-minus:hover,
 .quantity-plus:hover {
   background-color: #0056b3;
+}
+
+.quantity-minus:active,
+.quantity-plus:active {
+  background-color: #004799;
+  transform: scale(0.96);
 }
 
 .add-btn {
@@ -127,10 +158,14 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   border: none;
   padding: 8px 12px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 8px;
   height: 50px;
   font-weight: bold;
   font-size: 1rem;
+}
+
+.add-btn, .quantity-minus, .quantity-plus {
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
 }
 
 .add-btn:hover {
@@ -141,9 +176,16 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   transform: scale(0.97);
 }
 
+.add-btn:disabled {
+  background: #0d3b1d;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 .product-price {
-  display: inline-block;
-  margin: 2px 0 0;
+  display: block;
+  margin-top: auto;
+  margin-bottom: 15px;
   padding: 0;
   font-weight: 600;
   font-size: 1.05rem;
@@ -154,7 +196,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 .product-image {
   max-width: 100%;
   height: auto;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   aspect-ratio: 1 / 1;
   object-fit: contain;
   background-color: #f7f7f7;

@@ -57,7 +57,7 @@ export async function selectListedProductByIdWithDiscountRows(productId) {
       WHERE p.id = $1
         AND p.listed = true
     `,
-    [productId],
+    [productId]
   );
 
   return result.rows;
@@ -92,17 +92,23 @@ export async function insertNewDeal(code, name, type, value, startsAt, endsAt, p
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const discount = await client.query(`
+    const discount = await client.query(
+      `
       INSERT INTO discounts (code, name, type, value, starts_at, ends_at, active)
       VALUES ($1, $2, $3, $4, $5, $6, true)
       RETURNING id
-    `, [code, name, type, value, startsAt, endsAt]);
+    `,
+      [code, name, type, value, startsAt, endsAt]
+    );
 
     for (const productId of products) {
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO product_discounts (product_id, discount_id)
         VALUES ($1, $2)
-      `, [productId, discount.rows[0].id]);
+      `,
+        [productId, discount.rows[0].id]
+      );
     }
     await client.query("COMMIT");
     return discount.rows[0];

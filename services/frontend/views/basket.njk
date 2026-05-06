@@ -9,6 +9,8 @@
 <div class="basket-wrapper">
   <h1 class="basket-title">Your Basket</h1>
 
+  <p id="basket-error" role="alert" hidden></p>
+
   <div class="basket-page">
     <section class="items-column" aria-labelledby="basket-items-title">
       <h2 id="basket-items-title">Your Items</h2>
@@ -34,6 +36,43 @@
         <label for="promo-code" class="visually-hidden">Promo code</label>
         <input id="promo-code" type="text" placeholder="Promo code">
         <button type="button" class="promo-btn">Add</button>
+        <p id="promo-applied-status" role="status" aria-live="polite" hidden></p>
+      </div>
+
+      <div class="loyalty-summary" id="loyalty-summary" hidden>
+        <div class="loyalty-summary-header">
+          <h3>Loyalty Progress</h3>
+          <span class="tier-badge" id="loyalty-tier-badge">Bronze</span>
+        </div>
+        <p class="loyalty-points-line" id="loyalty-points-line">0 points</p>
+        <div class="loyalty-progress" aria-hidden="true">
+          <span id="loyalty-progress-fill"></span>
+        </div>
+        <p class="loyalty-help" id="loyalty-progress-help"></p>
+      </div>
+
+      <div class="loyalty-checkout" id="coupon-checkout" hidden>
+        <h3>Loyalty Coupons</h3>
+        <p class="loyalty-intro">
+          Loyalty coupons are applied here automatically, separate from promo codes.
+        </p>
+        <label class="loyalty-toggle">
+          <input id="use-loyalty-coupon" type="checkbox">
+          <span>Apply best coupon</span>
+        </label>
+        <p id="loyalty-coupon-help" class="loyalty-help"></p>
+      </div>
+
+      <div class="loyalty-checkout" id="loyalty-checkout" hidden>
+        <h3>Loyalty Points</h3>
+        <p class="loyalty-intro">
+          Every 100 points gives &pound;1 off. We will use the maximum valid amount automatically.
+        </p>
+        <label class="loyalty-toggle">
+          <input id="use-loyalty-points" type="checkbox">
+          <span>Use points at checkout</span>
+        </label>
+        <p id="loyalty-points-help" class="loyalty-help"></p>
       </div>
 
       <div class="summary-row total-row">
@@ -41,38 +80,259 @@
         <span id="total-text">&pound;0.00</span>
       </div>
 
-      <button type="button" class="proceed">Proceed &rarr;</button>
+      <button type="button" id="proceed-to-checkout" class="proceed">Proceed &rarr;</button>
+
+      {% if user %}
+        <button type="button" id="open-save-basket-modal" class="proceed">Save this basket</button>
+      {% endif %}
+      <dialog id="save-basket-modal" class="save-basket-modal">
+        <form id="save-basket-form" method="dialog">
+          <h2>Save Basket</h2>
+          <label for="saved-basket-name">Basket name</label>
+          <input id="saved-basket-name" name="name" type="text" maxlength="255" placeholder="Enter basket name here..." required>
+          <p id="save-basket-status" role="status" aria-live="polite" hidden></p>
+          <div class="modal-actions">
+            <button type="button" id="cancel-save-basket" class="cancel">Cancel</button>
+            <button type="submit" class="proceed">Save</button>
+          </div>
+        </form>
+      </dialog>
     </aside>
   </div>
 </div>
 
 <script type="module">
   import * as service from '/service.js';
+  const saveBasketModal = document.getElementById("save-basket-modal");
+  const openSaveBasketModal = document.getElementById("open-save-basket-modal");
+  const cancelSaveBasketButton = document.getElementById("cancel-save-basket");
+  const saveBasketForm = document.getElementById("save-basket-form");
+  const saveBasketStatus = document.getElementById("save-basket-status");
+  let appliedPromoCode = null;
+
+  openSaveBasketModal?.addEventListener("click", () => {
+    saveBasketStatus.hidden = true;
+    saveBasketStatus.textContent = "";
+    saveBasketModal.showModal();
+  });
+
+  cancelSaveBasketButton?.addEventListener("click", () => {
+    saveBasketModal.close();
+  });
+
+  saveBasketForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const data = new FormData(saveBasketForm);
+    const name = String(data.get("name") || "").trim();
+    if (!name) return;
+
+    try {
+      const res = await fetch("/api/basket/save", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save basket");
+
+      saveBasketStatus.textContent = "Basket saved successfully";
+      saveBasketStatus.hidden = false;
+
+      setTimeout(() => {
+        saveBasketModal.close();
+        saveBasketForm.reset();
+      }, 700);
+    } catch (error) {
+      saveBasketStatus.textContent = "Could not save basket";
+      saveBasketStatus.hidden = false;
+    }
+  });
+
+  const checkoutState = {
+    loyaltyAccount: null,
+    useCoupon: false,
+    usePoints: false,
+  };
 
   function formatPrice(pence) {
-    return `£${(pence / 100).toFixed(2)}`;
+    return `\u00a3${(pence / 100).toFixed(2)}`;
   }
 
-  function updateTotals() {
-    const totals = service.calculateTotals();
+  function getCouponDiscount(coupon, orderTotalPence) {
+    if (!coupon || Number(orderTotalPence) < Number(coupon.min_spend_pence || 0)) {
+      return 0;
+    }
+
+    return Math.floor(Number(orderTotalPence || 0) * (Number(coupon.discount_percent || 0) / 100));
+  }
+
+  function getBestEligibleCoupon(orderTotalPence) {
+    const coupons = checkoutState.loyaltyAccount?.unusedCoupons || [];
+    let coupon = null;
+    let discount = 0;
+
+    coupons.forEach((item) => {
+      const itemDiscount = getCouponDiscount(item, orderTotalPence);
+      if (itemDiscount > discount) {
+        coupon = item;
+        discount = itemDiscount;
+      }
+    });
+
+    return { coupon, discount };
+  }
+
+  function getMaxLoyaltyDiscount(orderTotalPence) {
+    const points = Number(checkoutState.loyaltyAccount?.points || 0);
+    const usablePoints = Math.floor(points / 100) * 100;
+    const redeemableOrderValue = Math.floor(orderTotalPence / 100) * 100;
+
+    return Math.max(0, Math.min(usablePoints, redeemableOrderValue));
+  }
+
+  function getNextTierInfo(tier, points) {
+    if (tier === 'Bronze') {
+      return { name: 'Silver', target: 2000, progress: Math.min(100, Math.round((points / 2000) * 100)) };
+    }
+
+    if (tier === 'Silver') {
+      return { name: 'Gold', target: 5000, progress: Math.min(100, Math.round((points / 5000) * 100)) };
+    }
+
+    return { name: null, target: points, progress: 100 };
+  }
+
+  function showLoyaltySummary(message) {
+    const summary = document.getElementById('loyalty-summary');
+    const badge = document.getElementById('loyalty-tier-badge');
+    const pointsLine = document.getElementById('loyalty-points-line');
+    const progressFill = document.getElementById('loyalty-progress-fill');
+    const progressHelp = document.getElementById('loyalty-progress-help');
+
+    summary.hidden = false;
+
+    if (!checkoutState.loyaltyAccount) {
+      badge.textContent = 'Loyalty';
+      badge.className = 'tier-badge';
+      pointsLine.textContent = 'Sign in to view your points and tier progress.';
+      progressFill.style.width = '0%';
+      progressHelp.textContent = message || 'Your loyalty status will appear here when you are logged in.';
+      return;
+    }
+
+    const tier = checkoutState.loyaltyAccount.tier || 'Bronze';
+    const points = Number(checkoutState.loyaltyAccount.points || 0);
+    const nextTier = getNextTierInfo(tier, points);
+
+    badge.textContent = tier;
+    badge.className = `tier-badge tier-${tier.toLowerCase()}`;
+    pointsLine.textContent = `${points} loyalty points`;
+    progressFill.style.width = `${nextTier.progress}%`;
+
+    if (nextTier.name) {
+      const remaining = Math.max(0, nextTier.target - points);
+      progressHelp.textContent =
+        `${points} / ${nextTier.target} points. ${remaining} more points to reach ${nextTier.name}.`;
+    } else {
+      progressHelp.textContent = 'You have reached the top loyalty tier.';
+    }
+  }
+
+  function updateCouponControls(orderTotalPence) {
+    const section = document.getElementById('coupon-checkout');
+    const checkbox = document.getElementById('use-loyalty-coupon');
+    const help = document.getElementById('loyalty-coupon-help');
+
+    if (!checkoutState.loyaltyAccount) {
+      section.hidden = true;
+      return;
+    }
+
+    const coupons = checkoutState.loyaltyAccount.unusedCoupons || [];
+    const bestCoupon = getBestEligibleCoupon(orderTotalPence);
+
+    section.hidden = false;
+    checkbox.disabled = coupons.length === 0 || !bestCoupon.coupon;
+    checkbox.checked = checkoutState.useCoupon && !checkbox.disabled;
+
+    if (coupons.length === 0) {
+      checkoutState.useCoupon = false;
+      help.textContent = 'You do not have any unused loyalty coupons right now.';
+    } else if (!bestCoupon.coupon) {
+      checkoutState.useCoupon = false;
+      help.textContent = 'Your coupons need a higher basket total before they can be used.';
+    } else if (checkoutState.useCoupon) {
+      help.textContent = `${bestCoupon.coupon.code} gives ${bestCoupon.coupon.discount_percent}% off (${formatPrice(bestCoupon.discount)}).`;
+    } else {
+      help.textContent = `Best available coupon: ${bestCoupon.coupon.code} for ${formatPrice(bestCoupon.discount)} off.`;
+    }
+  }
+
+  function updateLoyaltyControls(orderTotalPence) {
+    const section = document.getElementById('loyalty-checkout');
+    const checkbox = document.getElementById('use-loyalty-points');
+    const help = document.getElementById('loyalty-points-help');
+
+    if (!checkoutState.loyaltyAccount) {
+      section.hidden = true;
+      return;
+    }
+
+    const points = Number(checkoutState.loyaltyAccount.points || 0);
+    const maxDiscount = getMaxLoyaltyDiscount(orderTotalPence);
+
+    section.hidden = false;
+    checkbox.disabled = points < 100;
+    checkbox.checked = checkoutState.usePoints && !checkbox.disabled;
+
+    if (points < 100) {
+      checkoutState.usePoints = false;
+      help.textContent = `You have ${points} points. You need at least 100 points to use them at checkout.`;
+    } else if (maxDiscount <= 0) {
+      help.textContent = `You have ${points} points. Add at least \u00a31.00 of items to use points.`;
+    } else if (checkoutState.usePoints) {
+      help.textContent = `${maxDiscount} points will be used for ${formatPrice(maxDiscount)} off.`;
+    } else {
+      help.textContent = `You have ${points} points. Available discount: ${formatPrice(maxDiscount)}.`;
+    }
+  }
+
+  async function updateTotals() {
+    const totals = await service.calculateTotals(appliedPromoCode);
+    let remainingTotal = Math.max(0, totals.subtotal - totals.discounts);
+    updateCouponControls(remainingTotal);
+
+    const couponDiscount = checkoutState.useCoupon
+      ? getBestEligibleCoupon(remainingTotal).discount
+      : 0;
+
+    remainingTotal = Math.max(0, remainingTotal - couponDiscount);
+    updateLoyaltyControls(remainingTotal);
+
+    const loyaltyDiscount = checkoutState.usePoints
+      ? getMaxLoyaltyDiscount(remainingTotal)
+      : 0;
+    const discounts = totals.discounts + couponDiscount + loyaltyDiscount;
+    const total = Math.max(0, totals.subtotal - discounts);
 
     document.getElementById('subtotal-text').textContent = formatPrice(totals.subtotal);
-    document.getElementById('total-text').textContent = formatPrice(totals.total);
+    document.getElementById('total-text').textContent = formatPrice(total);
 
     const discountDiv = document.getElementById('discount-div');
     const discountText = document.getElementById('discount-text');
 
-    if (totals.discounts > 0) {
+    if (discounts > 0) {
       discountDiv.hidden = false;
-      discountText.textContent = `-${formatPrice(totals.discounts)}`;
+      discountText.textContent = `-${formatPrice(discounts)}`;
     } else {
       discountDiv.hidden = true;
-      discountText.textContent = '-£0.00';
+      discountText.textContent = '-\u00a30.00';
     }
   }
 
-  function renderBasket() {
-    const items = service.getBasket();
+  async function renderBasket() {
+    const items = await service.getBasket();
     const itemsColumn = document.getElementById('basket-items');
     itemsColumn.innerHTML = '';
 
@@ -80,7 +340,7 @@
       itemsColumn.innerHTML = `
         <p class="empty-basket">Your basket is empty.</p>
       `;
-      updateTotals();
+      await updateTotals();
       return;
     }
 
@@ -121,21 +381,21 @@
       `;
     });
 
-    attachEventListeners();
-    updateTotals();
+    await attachEventListeners();
+    await updateTotals();
   }
 
-  function attachEventListeners() {
+  async function attachEventListeners() {
     document.querySelectorAll('.delete-button').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const productId = Number(e.currentTarget.dataset.id);
-        service.removeFromBasket(productId);
-        renderBasket();
+        await service.removeFromBasket(productId);
+        await renderBasket();
       });
     });
 
     document.querySelectorAll('.quantity-input').forEach((input) => {
-      const update = (e) => {
+      const update = async (e) => {
         const productId = Number(e.target.dataset.id);
         let quantity = parseInt(e.target.value, 10) || 1;
 
@@ -144,16 +404,137 @@
           e.target.value = 1;
         }
 
-        service.updateQuantity(productId, quantity);
-        updateTotals();
+        await service.updateQuantity(productId, quantity);
+        await updateTotals();
       };
 
       input.addEventListener('input', update);
       input.addEventListener('change', update);
     });
+
+    document.querySelector('.promo-btn')?.addEventListener('click', async () => {
+      const input = document.getElementById('promo-code');
+      const promoAppliedStatus = document.getElementById("promo-applied-status")
+      promoAppliedStatus.hidden = true;
+      appliedPromoCode = input.value.trim();
+
+      if(!appliedPromoCode) {
+        appliedPromoCode = null;
+        promoAppliedStatus.textContent = "Promo code cannot be blank";
+        promoAppliedStatus.hidden = false;
+        await updateTotals();
+        return;
+      }
+
+      try {
+        await updateTotals();
+        promoAppliedStatus.textContent = "Promo code applied";
+        promoAppliedStatus.hidden = false;
+      } catch (error) {
+        appliedPromoCode = null;
+        input.value = '';
+        promoAppliedStatus.textContent = "Promo code not found";
+        promoAppliedStatus.hidden = false;
+        await updateTotals();
+      }
+    });
+
+    document.getElementById("proceed-to-checkout")?.addEventListener("click", async () => {
+      const errorMessage = document.getElementById("basket-error");
+      errorMessage.hidden = true;
+      errorMessage.textContent = "";
+
+      const payload = {
+        promoCode: appliedPromoCode,
+        useLoyaltyCoupon: checkoutState.useCoupon,
+        useLoyaltyPoints: checkoutState.usePoints,
+      };
+
+      const basket = await service.getBasket();
+      if (!document.body.dataset.userId) {
+        payload.items = basket.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        }));
+      }
+
+      const res = await fetch("/checkout/start", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        const unavailable = error.details?.unavailable || [];
+
+        if (unavailable.length > 0) {
+          errorMessage.textContent = unavailable.map((item) => {
+            return `${item.name} is unavailable. You requested ${item.requested_quantity}, but only ${item.available_quantity} is available.`;
+          }).join(" ");
+        } else {
+          errorMessage.textContent = error.message || "Couldn't start checkout";
+        }
+        errorMessage.hidden = false;
+        return;
+      }
+
+      window.location.href = "/checkout/delivery";
+    });
   }
 
-  renderBasket();
+  function showGuestLoyaltyControls() {
+    const couponSection = document.getElementById('coupon-checkout');
+    const couponCheckbox = document.getElementById('use-loyalty-coupon');
+    const couponHelp = document.getElementById('loyalty-coupon-help');
+    const pointsSection = document.getElementById('loyalty-checkout');
+    const pointsCheckbox = document.getElementById('use-loyalty-points');
+    const pointsHelp = document.getElementById('loyalty-points-help');
+
+    showLoyaltySummary();
+
+    couponSection.hidden = false;
+    couponCheckbox.disabled = true;
+    couponHelp.textContent = 'Log in to see and apply your loyalty coupons.';
+
+    pointsSection.hidden = false;
+    pointsCheckbox.disabled = true;
+    pointsHelp.textContent = 'Log in to use loyalty points at checkout.';
+  }
+
+  async function loadLoyaltyCheckout() {
+    if (!document.body.dataset.userId) {
+      showGuestLoyaltyControls();
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/loyalty/checkout', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Failed to load loyalty checkout details');
+      }
+
+      checkoutState.loyaltyAccount = await response.json();
+      showLoyaltySummary();
+      await updateTotals();
+    } catch (error) {
+      console.error(error);
+      showLoyaltySummary('We could not load your loyalty details right now.');
+    }
+  }
+
+  document.getElementById('use-loyalty-points').addEventListener('change', async (event) => {
+    checkoutState.usePoints = event.target.checked;
+    await updateTotals();
+  });
+
+  document.getElementById('use-loyalty-coupon').addEventListener('change', async (event) => {
+    checkoutState.useCoupon = event.target.checked;
+    await updateTotals();
+  });
+
+  await loadLoyaltyCheckout();
+  await renderBasket();
 </script>
 
 {% endblock %}
