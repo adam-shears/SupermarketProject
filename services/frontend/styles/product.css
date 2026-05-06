@@ -189,9 +189,9 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   background: #003f8c;
 }
 
-.quantity-minus:active,
-.quantity-plus:active {
-  background-color: #003f8c;
+.quantity-minus:hover,
+.quantity-plus:hover {
+  background: #003f8c;
   transform: scale(0.96);
 }
 
