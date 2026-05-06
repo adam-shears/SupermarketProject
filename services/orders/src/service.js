@@ -656,6 +656,10 @@ export async function updateCustomerAccount(customerId, input) {
     throw new OrdersError("First name and last name are required", 400);
   }
 
+  if (phone && !/^\d+$/.test(phone)) {
+    throw new OrdersError("Phone must contain digits only", 400);
+  }
+
   const updatedCustomer = await ordersDeps.updateCustomerAccountById(customerId, {
     firstName,
     lastName,
