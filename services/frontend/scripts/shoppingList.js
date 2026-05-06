@@ -19,11 +19,10 @@ closeButton.addEventListener("click", () => panel.classList.add("hidden"));
 function showItemRow(item) {
   const row = document.createElement("div");
   row.className = "shopping-list-row";
-  row.innerHTML =
-    `
+  row.innerHTML = `
       <label>
         <input type="checkbox" data-id="${item.product_id}" ${item.checked ? "checked" : ""}>
-        <span class="${item.checked ? "checked" : ""}">${item.name}</span>
+        <span class="${item.checked ? "checked" : ""}"><a href="/products/${item.product_id}">${item.name}</a></span>
       </label>
       <button type="button" data-remove="${item.product_id}">Remove</button>
     `;
@@ -59,7 +58,9 @@ async function showList() {
     // only group by category if there are more than 2 items
 
     // group items by category and sort by category name
-    const grouped = Array.from(groupByCategory(items).entries()).sort(([a], [b]) => a.localeCompare(b));
+    const grouped = Array.from(groupByCategory(items).entries()).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
 
     grouped.forEach(([category, items]) => {
       const section = document.createElement("div");

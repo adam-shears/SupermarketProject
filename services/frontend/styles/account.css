@@ -1,0 +1,274 @@
+.account-page {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.account-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.account-card h1 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.account-card h2 {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.account-summary {
+  padding: 16px;
+  background: #f7f7f7;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.account-summary p {
+  margin: 8px 0;
+}
+
+.loyalty-account-summary {
+  display: grid;
+  gap: 14px;
+}
+
+.loyalty-heading,
+.loyalty-progress-row,
+.loyalty-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.tier-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.tier-bronze {
+  background: #cd7f32;
+  color: white;
+}
+
+.tier-silver {
+  background: #c0c0c0;
+  color: #222;
+}
+
+.tier-gold {
+  background: #ffd700;
+  color: #222;
+}
+
+.loyalty-progress {
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ddd;
+}
+
+.loyalty-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #4caf50;
+}
+
+.loyalty-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.loyalty-benefits div,
+.loyalty-item {
+  padding: 12px;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e2e2e2;
+}
+
+.loyalty-benefits strong,
+.loyalty-benefits span {
+  display: block;
+}
+
+.loyalty-benefits span,
+.loyalty-item span {
+  color: #555;
+}
+
+.loyalty-list {
+  display: grid;
+  gap: 8px;
+}
+
+.loyalty-item.muted {
+  color: #777;
+  text-decoration: line-through;
+}
+
+.positive {
+  color: #1b7f3a;
+}
+
+.negative {
+  color: #b00020;
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.account-form label {
+  font-weight: bold;
+}
+
+.account-form input {
+  padding: 10px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.account-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
+}
+
+.primary-button {
+  background: #222;
+  color: white;
+}
+
+.primary-button:hover {
+  background: #444;
+}
+
+.secondary-button {
+  background: #eee;
+  color: #222;
+}
+
+.secondary-button:hover {
+  background: #ddd;
+}
+
+.danger-button {
+  background: #b00020;
+  color: white;
+}
+
+.danger-button:hover {
+  background: #8a0019;
+}
+
+.danger-link {
+  color: #b00020;
+  font-weight: bold;
+}
+
+.success-message {
+  padding: 12px;
+  border-radius: 6px;
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.error-message {
+  padding: 12px;
+  border-radius: 6px;
+  background: #ffebee;
+  color: #b00020;
+}
+
+.orders-list {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.order-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafafa;
+}
+
+.order-card h2 {
+  margin-top: 0;
+}
+
+.order-card p {
+  margin: 6px 0;
+}
+
+.delete-card {
+  border-color: #b00020;
+}
+
+.delete-form {
+  margin: 20px 0;
+}
+
+@media (max-width: 600px) {
+  .account-page {
+    margin: 20px auto;
+    padding: 0 12px;
+  }
+
+  .account-card {
+    padding: 18px;
+  }
+
+  .account-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .loyalty-heading,
+  .loyalty-progress-row,
+  .loyalty-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .loyalty-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .danger-button {
+    width: 100%;
+    text-align: center;
+  }
+}

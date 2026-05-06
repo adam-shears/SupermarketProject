@@ -1,0 +1,26 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<section class="account-page">
+  <div class="account-card delete-card">
+    <h1>Delete Account</h1>
+
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+
+    <p>
+      Are you sure you want to delete your account?
+      Your personal details will be removed, but your past orders may be kept for store records.
+    </p>
+
+    <form method="POST" action="/account/delete" class="delete-form">
+      <button type="submit" class="danger-button">
+        Delete my account
+      </button>
+    </form>
+
+    <a class="secondary-button" href="/account">Cancel</a>
+  </div>
+</section>
+{% endblock %}

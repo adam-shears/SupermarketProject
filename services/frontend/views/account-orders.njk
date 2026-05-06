@@ -1,0 +1,63 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<section class="account-page">
+  <div class="account-card">
+    <h1>Order History</h1>
+
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+
+    {% if orders | length == 0 %}
+      <p>You do not have any previous orders yet.</p>
+    {% else %}
+      <div class="orders-list">
+        {% for order in orders %}
+          <article class="order-card">
+            <h2>Order #{{ order.id }}</h2>
+
+            <p><strong>Date:</strong> {{ order.createdAt | formatDate }}</p>
+            <p><strong>Status:</strong> {{ order.status }}</p>
+            <p><strong>Items:</strong> {{ order.itemCount }}</p>
+            <p><strong>Subtotal:</strong> &pound;{{ (order.subtotalPence / 100) | toFixed(2) }}</p>
+            <p><strong>Discount:</strong> -&pound;{{ (order.discountPence / 100) | toFixed(2) }}</p>
+            {% if order.orderDiscountPence > 0 %}
+              <p><strong>Order discounts:</strong> -&pound;{{ (order.orderDiscountPence / 100) | toFixed(2) }}</p>
+            {% endif %}
+            <p><strong>Total:</strong> &pound;{{ (order.totalPence / 100) | toFixed(2) }}</p>
+
+            <ul>
+              {% for item in order.items %}
+                <li>
+                  {% if item.substituted %}
+                    <p><strong>{{ item.productName }}</strong> was substituted for <strong>{{ item.substitutedProductName }}</strong></p>
+                  {% else %}
+                    <p><strong>{{ item.productName }}</strong></p>
+                  {% endif %}
+
+                  <p>Quantity: {{ item.quantity }}</p>
+                  <p>Unit price: &pound;{{ (item.pricePencePerUnit / 100) | toFixed(2) }}</p>
+
+                  {% if item.lineDiscountPence > 0 %}
+                    <p>Line subtotal: &pound;{{ (item.lineSubtotalPence / 100) | toFixed(2) }}</p>
+                    <p>Line discount: -&pound;{{ (item.lineDiscountPence / 100) | toFixed(2) }}</p>
+                  {% endif %}
+
+                  <p>Line total: &pound;{{ (item.lineTotalPence / 100) | toFixed(2) }}</p>
+
+                  {% if item.substituted and item.originalLineTotalPence != item.lineTotalPence %}
+                    <p>Price updated from <strong>&pound;{{ (item.originalLineTotalPence / 100) | toFixed(2) }}</strong> to <strong>&pound;{{ (item.lineTotalPence / 100) | toFixed(2) }}</strong></p>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <a class="secondary-button" href="/account">Back to my account</a>
+  </div>
+</section>
+{% endblock %}

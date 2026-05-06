@@ -9,7 +9,6 @@ and sending the response.
 Actual validation should be done in service.js.
 */
 
-
 import { Router } from "express";
 import * as service from "./service.js";
 
@@ -21,6 +20,50 @@ router.get("/", async (req, res) => {
 
 router.get("/health", async (req, res) => {
   res.status(200).json({ message: "warehouse service is healthy." });
+});
+
+router.get("/stock-issues", async (req, res) => {
+  try {
+    const issues = await service.listStockIssues(req.query.status);
+    res.status(200).json(issues);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof service.WarehouseError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Failed to get stock issues" });
+  }
+});
+
+router.post("/stock-issues", async (req, res) => {
+  try {
+    const { productId, reporterId, notes } = req.body;
+    const issue = await service.reportStockIssue(
+      Number(productId),
+      Number(reporterId),
+      notes
+    );
+    res.status(201).json(issue);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof service.WarehouseError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Failed to create stock issue" });
+  }
+});
+
+router.patch("/stock-issues/:id/resolve", async (req, res) => {
+  try {
+    const issue = await service.resolveStockIssue(Number(req.params.id));
+    res.status(200).json(issue);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof service.WarehouseError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Failed to resolve stock issue" });
+  }
 });
 
 router.get("/picker/orders", async (req, res) => {

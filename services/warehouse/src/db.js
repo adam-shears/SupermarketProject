@@ -11,15 +11,74 @@ const { Pool } = pg;
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
+export async function insertStockIssue(productId, reporterId, notes = null) {
+  const result = await pool.query(
+    `
+      INSERT INTO stock_issues (product_id, reporter_id, notes, status, created_at)
+      VALUES ($1, $2, $3, 'unresolved', NOW())
+      RETURNING id, product_id, reporter_id, status, notes, created_at, resolved_at
+    `,
+    [productId, reporterId, notes]
+  );
+
+  return result.rows[0];
+}
+
+export async function selectStockIssues(status) {
+  const params = [];
+  let whereClause = "";
+
+  if (status) {
+    params.push(status);
+    whereClause = "WHERE si.status = $1";
+  }
+
+  const result = await pool.query(
+    `
+      SELECT
+        si.*,
+        p.name AS product_name,
+        s.first_name AS reporter_first_name,
+        s.last_name AS reporter_last_name
+      FROM stock_issues si
+      LEFT JOIN products p ON p.id = si.product_id
+      LEFT JOIN staff s ON s.id = si.reporter_id
+      ${whereClause}
+      ORDER BY si.created_at DESC
+    `,
+    params
+  );
+
+  return result.rows;
+}
+
+export async function markStockIssueResolved(id) {
+  const result = await pool.query(
+    `
+      UPDATE stock_issues
+      SET status = 'resolved',
+          resolved_at = NOW()
+      WHERE id = $1
+      RETURNING id, product_id, reporter_id, status, notes, created_at, resolved_at
+    `,
+    [id]
+  );
+
+  return result.rows[0] || null;
+}
+
 export async function assignPickerToOrder(orderId, pickerId) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     UPDATE orders
     SET assigned_picker_id = $1,
         assigned_at = NOW(),
         last_updated = NOW()
     WHERE id = $2 AND status = 'pending'
     RETURNING id, assigned_picker_id, assigned_at
-  `, [pickerId, orderId]);
+  `,
+    [pickerId, orderId]
+  );
 
   return result.rows[0] || null;
 }
@@ -66,8 +125,8 @@ export async function getPickerOrdersRows(pickerId) {
       p.name AS product_name,
       p.description AS product_description,
       c2.name AS category_name,
-      COALESCE(s.location_code, 'Unknown') AS location_code,
-      COALESCE(s.quantity_on_hand - s.quantity_reserved, 0) AS stock_quantity,
+      COALESCE(s.location_code, ss.location_code, 'Unknown') AS location_code,
+      COALESCE(s.quantity_on_hand - s.quantity_reserved, ss.quantity_on_hand - ss.quantity_reserved, 0) AS stock_quantity,
       COALESCE(c.first_name || ' ' || c.last_name, o.guest_name, 'Guest Customer') AS customer_name,
       COUNT(*) OVER (PARTITION BY o.id) AS item_count,
       sp.name AS substituted_product_name,
@@ -81,6 +140,7 @@ export async function getPickerOrdersRows(pickerId) {
     JOIN products p ON p.id = oi.product_id
     LEFT JOIN categories c2 ON c2.id = p.category_id
     LEFT JOIN stock s ON s.product_id = p.id
+    LEFT JOIN stock ss ON ss.product_id = oi.substituted_product_id
     LEFT JOIN customers c ON c.id = o.customer_id
     LEFT JOIN products sp ON sp.id = oi.substituted_product_id
     LEFT JOIN LATERAL (
@@ -164,7 +224,12 @@ export async function markItemAsPicked(orderId, productId) {
 
     const itemResult = await client.query(
       `
-        SELECT order_id, product_id, quantity, picked
+        SELECT
+          order_id,
+          product_id,
+          COALESCE(substituted_product_id, product_id) AS picked_product_id,
+          quantity,
+          picked
         FROM order_items
         WHERE order_id = $1 AND product_id = $2
         FOR UPDATE
@@ -192,10 +257,14 @@ export async function markItemAsPicked(orderId, productId) {
       `
         UPDATE stock
         SET quantity_on_hand = GREATEST(quantity_on_hand - $2, 0),
+            quantity_reserved = CASE
+              WHEN product_id = $3 THEN GREATEST(quantity_reserved - $2, 0)
+              ELSE quantity_reserved
+            END,
             updated_at = NOW()
         WHERE product_id = $1
       `,
-      [productId, item.quantity]
+      [item.picked_product_id, item.quantity, item.product_id]
     );
 
     await client.query(
@@ -247,17 +316,116 @@ export async function resolvePickerIssue(issueId) {
 }
 
 export async function applySubstitution(orderId, productId, substituteProductId) {
-  const result = await pool.query(
-    `
-      UPDATE order_items
-      SET substituted_product_id = $3
-      WHERE order_id = $1 AND product_id = $2
-      RETURNING order_id, product_id, substituted_product_id
-    `,
-    [orderId, productId, substituteProductId]
-  );
+  const client = await pool.connect();
 
-  return result.rows[0] || null;
+  try {
+    await client.query("BEGIN");
+
+    const itemResult = await client.query(
+      `
+      SELECT order_id, product_id, quantity, picked, substituted_product_id
+      FROM order_items
+      WHERE order_id = $1 AND product_id = $2
+      FOR UPDATE
+    `,
+      [orderId, productId]
+    );
+
+    const item = itemResult.rows[0];
+    if (!item) {
+      throw new Error("Order item not found for substitution");
+    }
+
+    const priceResult = await client.query(
+      `
+      SELECT COALESCE(pr.price_pence, 0) AS price_pence
+      FROM products p
+      LEFT JOIN LATERAL (
+        SELECT price_pence
+        FROM prices
+        WHERE product_id = p.id
+          AND starts_at <= NOW()
+          AND (ends_at IS NULL OR ends_at > NOW())
+        ORDER BY starts_at DESC
+        LIMIT 1
+      ) pr ON TRUE
+      WHERE p.id = $1
+    `,
+      [substituteProductId]
+    );
+
+    const price = priceResult.rows[0];
+    if (!price) {
+      throw new Error("Price not found for substitute product");
+    }
+
+    const unitPrice = price.price_pence;
+    const lineSubtotal = unitPrice * item.quantity;
+    // could apply discounts based on the substitution here later if we want
+    const lineTotal = lineSubtotal;
+
+    const updateResult = await client.query(
+      `
+      UPDATE order_items
+      SET
+        substituted_product_id = $1,
+        substitution_price_pence_per_unit = $2,
+        substitution_line_subtotal_pence = $3,
+        substitution_line_total_pence = $4
+      WHERE order_id = $5 AND product_id = $6
+      RETURNING
+        order_id,
+        product_id,
+        substituted_product_id,
+        substitution_price_pence_per_unit,
+        substitution_line_subtotal_pence,
+        substitution_line_total_pence
+    `,
+      [substituteProductId, unitPrice, lineSubtotal, lineTotal, orderId, productId]
+    );
+
+    await client.query(
+      `
+      UPDATE orders o
+      SET
+        subtotal_pence = totals.subtotal_pence,
+        discount_pence = totals.discount_pence,
+        total_pence = totals.total_pence,
+        last_updated = NOW()
+      FROM (
+        SELECT
+          order_id,
+          SUM(COALESCE(substitution_line_subtotal_pence, line_subtotal_pence)) AS subtotal_pence,
+          SUM(CASE WHEN substituted_product_id IS NULL THEN COALESCE(line_discount_pence, 0) ELSE 0 END) AS discount_pence,
+          SUM(COALESCE(substitution_line_total_pence, line_total_pence)) AS total_pence
+        FROM order_items
+        WHERE order_id = $1
+        GROUP BY order_id
+      ) totals
+      WHERE o.id = totals.order_id
+    `,
+      [orderId]
+    );
+
+    if (item.substituted_product_id === null) {
+      await client.query(
+        `
+        UPDATE stock
+        SET quantity_reserved = GREATEST(quantity_reserved - $1, 0), updated_at = NOW()
+        WHERE product_id = $2
+      `,
+        [item.quantity, productId]
+      );
+    }
+
+    await client.query("COMMIT");
+    return updateResult.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function getInventoryRows() {

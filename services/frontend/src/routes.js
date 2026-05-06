@@ -22,6 +22,7 @@ function getFallbackPickerOptions() {
 function getFallbackAssignmentOrders() {
   return [];
 }
+
 const router = Router();
 
 // --- Helper Functions ---
@@ -55,14 +56,63 @@ function requireAuth(requiredAdminLevel = 1) {
   };
 }
 
+// cookie parser
+// see comment in service.js function syncGuestBasketIdsCookie() for context on this
+function getCookie(req, name) {
+  const cookies = req.headers.cookie || "";
+  const match = cookies
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
+}
+
+function requireCustomerLogin(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+
+  if ((req.session.user.admin_level || 0) !== 0) {
+    return res.status(403).render("4xx.njk", {
+      title: "Forbidden",
+      status: "403 - Forbidden",
+      message: "This page is only available to customer accounts.",
+      user: req.session.user || null,
+    });
+  }
+
+  next();
+}
+
 // not implemented pages
-router.get(["/orders/repeat", "/baskets/saved", "/loyalty"], (req, res) => {
+/*
+router.get(["/whatever"], (req, res) => {
   res.status(501).render("5xx.njk", {
     title: "Coming Soon",
     status: "501 - Not Implemented",
     message: "This feature is currently under development. Check back soon!",
     user: req.session.user || null,
   });
+});*/
+
+router.get("/loyalty", requireCustomerLogin, async (req, res) => {
+  try {
+    const account = await api.getLoyaltyAccount(req.session.user.id);
+
+    res.render("loyalty.njk", {
+      title: "Loyalty Card",
+      account,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load loyalty page:", error);
+    res.status(error.status || 500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: `${error.status || 500} - Error`,
+      message: error.message || "Failed to load loyalty information",
+      user: req.session.user || null,
+    });
+  }
 });
 
 // Home page
@@ -84,6 +134,15 @@ router.get("/", async (req, res) => {
       user: req.session.user || null,
     });
   }
+});
+
+router.get("/nojs", (req, res) => {
+  res.render("4xx.njk", {
+    title: "JavaScript Required",
+    status: "JavaScript is Disabled",
+    message: "This site requires JavaScript to function properly. Please enable JavaScript in your browser settings.",
+    user: req.session.user || null,
+  });
 });
 
 // Staff portal home page
@@ -123,14 +182,29 @@ router.get("/products/:id", async (req, res) => {
       backtext = `Back to ${from}`;
     }
 
-    const [product, products] = await Promise.all([
-      api.getProduct(productId),
-      api.listProducts(),
-    ]);
+    const [product, products] = await Promise.all([api.getProduct(productId), api.listProducts()]);
 
-    const recommendations = products
-      .filter((item) => Number(item.id) !== productId)
-      .slice(0, 4);
+    const customerId = req.session.user ? req.session.user.id : null;
+    let productsInBasket = [];
+    if (customerId) {
+      productsInBasket = await api.getBasket(customerId);
+      productsInBasket = productsInBasket
+        .map((item) => Number(item.product_id))
+        .filter(Number.isInteger);
+    } else {
+      productsInBasket = getCookie(req, "guest_basket_ids")
+        .split(",")
+        .map(Number)
+        .filter(Number.isInteger);
+    }
+
+    const recommendedProductIds = await api.getProductRecommendations(productId, {
+      customerId,
+      productsInBasket,
+      limit: req.query.limit || 4,
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+    const recommendations = recommendedProductIds.map((id) => productMap.get(id)).filter(Boolean);
 
     res.render("product.njk", {
       title: product.name,
@@ -220,32 +294,8 @@ router.post("/basket/items", async (req, res) => {
 // Basket GET endpoint
 router.get("/basket", async (req, res) => {
   try {
-    const basket = {
-      items: [
-        {
-          name: "Cheese",
-          price_pence: 299,
-          quantity: 1,
-          image_url: "https://via.placeholder.com/100",
-        },
-        {
-          name: "Milk",
-          price_pence: 150,
-          quantity: 2,
-          image_url: "https://via.placeholder.com/100",
-        },
-      ],
-      subtotal: 599,
-      discounts: 100,
-      total: 499,
-    };
-
     res.render("basket.njk", {
       title: "Basket",
-      items: basket.items,
-      subtotal: basket.subtotal,
-      discounts: basket.discounts,
-      total: basket.total,
       user: req.session.user || null,
     });
   } catch (error) {
@@ -254,6 +304,26 @@ router.get("/basket", async (req, res) => {
       title: "Internal Server Error",
       status: "500 - Internal Server Error",
       message: "Failed to load basket",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/baskets/saved", requireAuth(0), async (req, res) => {
+  try {
+    const savedBaskets = await api.getSavedBaskets(req.session.user.id);
+
+    res.render("saved-baskets.njk", {
+      title: "Saved Baskets",
+      savedBaskets,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load saved baskets",
       user: req.session.user || null,
     });
   }
@@ -275,6 +345,7 @@ router.post("/login", async (req, res) => {
     });
 
     req.session.user = user;
+
     if(user.admin_level > 0) {
       res.redirect("/staff-portal");
     } else {
@@ -323,6 +394,142 @@ router.post("/logout", (req, res) => {
   req.session.destroy(() => {
     res.redirect("/");
   });
+});
+
+/*
+User Space / My Account routes
+*/
+
+router.get("/account", requireCustomerLogin, async (req, res) => {
+  try {
+    const [account, loyalty] = await Promise.all([
+      api.getCustomerAccount(req.session.user.id),
+      api.getLoyaltyAccount(req.session.user.id),
+    ]);
+
+    res.render("account.njk", {
+      title: "My Account",
+      account,
+      loyalty,
+      success: req.query.updated === "1",
+      error: null,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load account page:", error);
+
+    res.status(error.status || 500).render("account.njk", {
+      title: "My Account",
+      account: req.session.user,
+      loyalty: null,
+      success: false,
+      error: error.message || "Could not load your account details.",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.post("/account/update", requireCustomerLogin, async (req, res) => {
+  try {
+    const updatedAccount = await api.updateCustomerAccount(req.session.user.id, {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      phone: req.body.phone,
+    });
+
+    req.session.user = {
+      ...req.session.user,
+      first_name: updatedAccount.firstName,
+      last_name: updatedAccount.lastName,
+      phone: updatedAccount.phone,
+    };
+
+    res.redirect("/account?updated=1");
+  } catch (error) {
+    console.error("Failed to update account:", error);
+
+    res.status(error.status || 400).render("account.njk", {
+      title: "My Account",
+      account: {
+        ...req.session.user,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        phone: req.body.phone,
+      },
+      loyalty: null,
+      success: false,
+      error: error.message || "Could not update your account details.",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/account/orders", requireCustomerLogin, async (req, res) => {
+  try {
+    const data = await api.getCustomerOrders(req.session.user.id);
+
+    res.render("account-orders.njk", {
+      title: "Order History",
+      orders: data.orders || [],
+      error: null,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load order history:", error);
+
+    res.status(error.status || 500).render("account-orders.njk", {
+      title: "Order History",
+      orders: [],
+      error: error.message || "Could not load your order history.",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/account/orders/repeat", requireCustomerLogin, async (req, res) => {
+  try {
+    const data = await api.getCustomerOrders(req.session.user.id);
+    res.render("repeat-order.njk", {
+      title: "Repeat Last Order",
+      order: data.orders[0],
+      error: null,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load repeat order page:", error);
+    res.status(error.status || 500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: "Failed to load repeat order page",
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.get("/account/delete", requireCustomerLogin, (req, res) => {
+  res.render("account-delete.njk", {
+    title: "Delete Account",
+    error: null,
+    user: req.session.user || null,
+  });
+});
+
+router.post("/account/delete", requireCustomerLogin, async (req, res) => {
+  try {
+    await api.deleteCustomerAccount(req.session.user.id);
+
+    req.session.destroy(() => {
+      res.redirect("/");
+    });
+  } catch (error) {
+    console.error("Failed to delete account:", error);
+
+    res.status(error.status || 500).render("account-delete.njk", {
+      title: "Delete Account",
+      error: error.message || "Could not delete your account. Please try again.",
+      user: req.session.user || null,
+    });
+  }
 });
 
 // Management view
@@ -379,6 +586,7 @@ router.get("/manage-promotions", requireAuth(2), async (req, res) => {
   try {
     const allPromotions = await api.getAllPromotions();
     const groupedProducts = await api.chunkProductsByCategory();
+
     res.render("manage-promotions.njk", {
       title: "Promotions Management",
       groupedProducts: groupedProducts,
@@ -488,7 +696,11 @@ router.post("/management/promotions/promo-codes", requireAuth(2), async (req, re
       value: Number(req.body.value),
       startsAt: toUTC(req.body.starts_at),
       endsAt: toUTC(req.body.ends_at),
-      products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
+      products: req.body.products
+        ? Array.isArray(req.body.products)
+          ? req.body.products
+          : [req.body.products]
+        : [],
     });
 
     res.redirect("/manage-promotions?promoSuccess=1");
@@ -511,7 +723,11 @@ router.post("/management/promotions/discounts", requireAuth(2), async (req, res)
       value: Number(req.body.value),
       startsAt: toUTC(req.body.starts_at),
       endsAt: toUTC(req.body.ends_at),
-      products: req.body.products ? (Array.isArray(req.body.products) ? req.body.products : [req.body.products]) : [],
+      products: req.body.products
+        ? Array.isArray(req.body.products)
+          ? req.body.products
+          : [req.body.products]
+        : [],
     });
 
     res.redirect("/manage-promotions?discountSuccess=1");
@@ -573,6 +789,44 @@ router.get("/api/products/search", async (req, res) => {
   }
 });
 
+router.get("/api/loyalty/checkout", requireCustomerLogin, async (req, res) => {
+  try {
+    const account = await api.getLoyaltyAccountForCheckout(req.session.user.id);
+    res.json(account);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to load loyalty account",
+    });
+  }
+});
+
+router.post("/api/loyalty/redeem", requireCustomerLogin, async (req, res) => {
+  try {
+    const { points, orderTotal } = req.body;
+    const result = await api.redeemLoyaltyPoints(req.session.user.id, points, orderTotal);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to redeem loyalty points",
+    });
+  }
+});
+
+router.post("/api/loyalty/coupon/apply", requireCustomerLogin, async (req, res) => {
+  try {
+    const { couponCode, orderTotal } = req.body;
+    const result = await api.applyLoyaltyCoupon(req.session.user.id, couponCode, orderTotal);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to apply coupon",
+    });
+  }
+});
+
 /*
 Shopping list endpoints
 */
@@ -621,6 +875,241 @@ router.delete("/api/shopping-list/items/:productId", requireAuth(0), async (req,
   }
 });
 
+/*
+Basket endpoints
+*/
+router.get("/api/basket", requireAuth(0), async (req, res) => {
+  try {
+    const items = await api.getBasket(req.session.user.id);
+    res.json(items);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get basket" });
+  }
+});
+
+router.delete("/api/basket", requireAuth(0), async (req, res) => {
+  try {
+    await api.clearBasket(req.session.user.id);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to clear basket" });
+  }
+});
+
+router.post("/api/basket/items", requireAuth(0), async (req, res) => {
+  try {
+    const item = await api.addToBasket(req.session.user.id, req.body);
+    res.status(201).json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add item to basket" });
+  }
+});
+
+router.patch("/api/basket/items/:productId", requireAuth(0), async (req, res) => {
+  try {
+    const item = await api.updateBasketItem(req.session.user.id, req.params.productId, req.body);
+    res.json(item);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update basket item" });
+  }
+});
+
+router.delete("/api/basket/items/:productId", requireAuth(0), async (req, res) => {
+  try {
+    await api.deleteBasketItem(req.session.user.id, req.params.productId);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to remove item from basket" });
+  }
+});
+
+router.post("/api/basket/save", requireAuth(0), async (req, res) => {
+  try {
+    const savedBasket = await api.saveBasket(req.session.user.id, req.body);
+    res.status(201).json(savedBasket);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to save basket" });
+  }
+});
+
+router.post("/api/basket/push", requireAuth(0), async (req, res) => {
+  try {
+    await api.pushSavedBasketToLive(req.session.user.id, req.body.basket_id);
+    res.status(200).redirect("/basket");
+  } catch (error) {
+    console.error(error);
+    if (error.status >= 500) {
+      res.status(error.status).render("5xx.njk", {
+        title: "Internal Server Error",
+        status: `${error.status} - Internal Server Error`,
+        message: `Failed to push saved basket to live basket: ${error.message}`,
+        user: req.session.user || null,
+      });
+    } else {
+      res.status(error.status).render("4xx.njk", {
+        title: "Error",
+        status: `${error.status} - Error`,
+        message: `Failed to push saved basket to live basket: ${error.message}`,
+        user: req.session.user || null,
+      });
+    }
+  }
+});
+
+router.post("/api/basket/totals", async (req, res) => {
+  try {
+    if (req.session.user) {
+      const totals = await api.getBasketTotals(req.session.user.id, req.body);
+      res.status(200).json(totals);
+    } else {
+      const totals = await api.getGuestBasketTotals(req.body);
+      res.status(200).json(totals);
+    }
+  } catch (error) {
+    console.error(error);
+    res
+      .status(error.status || 500)
+      .json({ message: error.message || "Failed to calculate basket totals" });
+  }
+});
+
+router.post("/api/orders/repeat", requireAuth(0), async (req, res) => {
+  try {
+    await api.repeatLastOrder(req.session.user.id);
+    res.status(200).redirect("/basket");
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({ message: error.message || "Failed to repeat last order" });
+  }
+});
+
+// checkout
+router.post("/checkout/start", async (req, res) => {
+  try {
+    const oldSnapshot = req.session.checkoutSnapshot;
+    if (oldSnapshot) {
+      // delete old snapshot and release reservation first
+      // so we don't get duplicate reservations
+      try {
+        await api.releaseReservation({ snapshot: oldSnapshot });
+      } finally {
+        delete req.session.checkoutSnapshot;
+      }
+    }
+
+    let snapshot;
+    if (req.session.user) {
+      snapshot = await api.createCheckoutSnapshot(req.session.user.id, {
+        promoCode: req.body.promoCode || null,
+        useLoyaltyCoupon: Boolean(req.body.useLoyaltyCoupon),
+        useLoyaltyPoints: Boolean(req.body.useLoyaltyPoints),
+      });
+    } else {
+      snapshot = await api.createGuestCheckoutSnapshot({
+        items: req.body.items || [],
+        promoCode: req.body.promoCode || null,
+      });
+    }
+    req.session.checkoutSnapshot = snapshot;
+    res.status(201).json({ message: "Checkout started", snapshot });
+  } catch (error) {
+    console.error("Failed to start checkout:", error);
+    res.status(error.status || 500).json({
+      message: error.message || "Couldn't start checkout",
+      details: error.details || null,
+    });
+  }
+});
+
+router.get("/checkout/delivery", async (req, res) => {
+  try {
+    if (!req.session.checkoutSnapshot) {
+      return res.redirect("/basket");
+    }
+
+    res.render("checkout-delivery.njk", {
+      title: "Checkout - Delivery Details",
+      snapshot: req.session.checkoutSnapshot,
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Failed to load delivery details page:", error);
+    res.status(500).render("5xx.njk", {
+      title: "Internal Server Error",
+      status: "500 - Internal Server Error",
+      message: `Failed to load delivery details page: ${error.message}`,
+      user: req.session.user || null,
+    });
+  }
+});
+
+router.post("/checkout/complete", async (req, res) => {
+  try {
+    if (!req.session.checkoutSnapshot) {
+      return res.redirect("/basket");
+    }
+
+    const deliveryInfo = {
+      addressLine: req.body.address_line.trim(),
+      town: req.body.town.trim(),
+      county: req.body.county.trim(),
+      postcode: req.body.postcode.trim(),
+    };
+
+    if (
+      !deliveryInfo.addressLine ||
+      !deliveryInfo.town ||
+      !deliveryInfo.county ||
+      !deliveryInfo.postcode
+    ) {
+      throw new Error("All delivery fields are required.");
+    }
+
+    let guestDetails;
+    if (!req.session.user) {
+      guestDetails = {
+        name: req.body.name.trim(),
+        email: req.body.email.trim(),
+        phone: req.body.phone.trim(),
+      };
+    }
+
+    const result = await api.createOrder({
+      customerId: req.session.user?.id || null,
+      guestDetails,
+      deliveryInfo,
+      snapshot: req.session.checkoutSnapshot,
+    });
+    delete req.session.checkoutSnapshot;
+
+    let clearBasket;
+    if (req.session.user) {
+      await api.clearBasket(req.session.user.id);
+    } else {
+      clearBasket = true;
+    }
+
+    res.render("checkout-complete.njk", {
+      title: "Checkout Complete",
+      order: result,
+      user: req.session.user || null,
+      clearBasket,
+    });
+  } catch (error) {
+    res.status(error.status || 400).render("checkout-delivery.njk", {
+      title: "Checkout - Delivery Details",
+      snapshot: req.session.checkoutSnapshot,
+      user: req.session.user || null,
+      error: error.message || "Couldn't complete checkout.",
+    });
+  }
+});
 /*
 Picker + stock/location synchronisation routes
 */
@@ -740,6 +1229,44 @@ router.post("/inventory/:productId", requireAuth(2), async (req, res) => {
   } catch (error) {
     console.error("Failed to update inventory:", error);
     res.redirect(`/inventory?error=${encodeURIComponent(error.message)}`);
+  }
+});
+
+router.post("/api/stock-issues", requireAuth(1), async (req, res) => {
+  try {
+    const productId = Number(req.body.productId);
+    const notes = req.body.notes || "Marked unavailable";
+    const issue = await api.reportStockIssue(productId, req.session.user.id, notes);
+    res.status(201).json(issue);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to report stock issue",
+    });
+  }
+});
+
+router.get("/api/stock-issues", requireAuth(2), async (req, res) => {
+  try {
+    const issues = await api.getStockIssues(req.query.status || null);
+    res.json(issues);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to fetch stock issues",
+    });
+  }
+});
+
+router.patch("/api/stock-issues/:id/resolve", requireAuth(2), async (req, res) => {
+  try {
+    const issue = await api.resolveStockIssue(req.params.id);
+    res.json(issue);
+  } catch (error) {
+    console.error(error);
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to resolve stock issue",
+    });
   }
 });
 

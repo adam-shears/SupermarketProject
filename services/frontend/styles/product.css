@@ -168,7 +168,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   height: 48px;
   border: 2px solid #003f8c;
   border-radius: 8px;
-  background: #005fcc;
+  background: #007bff;
   color: #ffffff;
   font-size: 1.5rem;
   font-weight: 700;
@@ -201,13 +201,23 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   transition: background-color 0.3s ease-in-out, transform 0.1s ease;
 }
 
+.quantity-minus:active,
+.quantity-plus:active {
+  background-color: #004799;
+  transform: scale(0.96);
+}
+
+.add-btn, .quantity-minus, .quantity-plus {
+  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
+}
+
 .add-btn {
   min-height: 50px;
   min-width: 160px;
   padding: 0 22px;
   border: 2px solid #0d3b1d;
   border-radius: 10px;
-  background: #176130;
+  background: #1f7a3d;
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;

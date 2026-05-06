@@ -83,6 +83,8 @@
           <button
             type="button"
             class="add-btn"
+            aria-live="polite"
+            aria-label="Add {{ product.name }} to basket"
             data-id="{{ product.id }}"
             data-name="{{ product.name }}"
             data-price="{{ product.price_pence }}"
@@ -100,9 +102,9 @@
 <script type="module">
   import * as service from '/service.js';
 
-  function attachEventListeners() {
+  async function attachEventListeners() {
     document.querySelectorAll('.add-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const productId = Number(btn.dataset.id);
         const name = btn.dataset.name;
         const price = Number(btn.dataset.price);
@@ -118,7 +120,7 @@
           quantityInput.value = 1;
         }
 
-        service.addToBasket(productId, quantity, name, price, image);
+        await service.addToBasket(productId, quantity, name, price, image);
 
         const originalText = btn.textContent;
         btn.textContent = 'Added!';
@@ -127,12 +129,12 @@
         setTimeout(() => {
           btn.textContent = originalText;
           btn.disabled = false;
-        }, 1500);
+        }, 800);
       });
     });
   }
 
-  attachEventListeners();
+  await attachEventListeners();
 </script>
 
 {% endblock %}
