@@ -316,7 +316,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 }
 
 .loyalty-toggle:has(input:disabled) {
-  color: #777777;
+  color: #6E6E6E;
   cursor: not-allowed;
 }
 
