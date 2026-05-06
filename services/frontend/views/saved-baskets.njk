@@ -1,0 +1,54 @@
+{% extends "layout.njk" %}
+
+{% block content %}
+<section class="account-page">
+  <div class="account-card">
+    <h1>Your Saved Baskets</h1>
+
+    {% if error %}
+      <p class="error-message" role="alert">{{ error }}</p>
+    {% endif %}
+
+    {% if savedBaskets | length == 0 %}
+      <p>You do not have any saved baskets yet.</p>
+    {% else %}
+      <div class="orders-list">
+        {% for basket in savedBaskets %}
+          <article class="order-card">
+            <h2>{{ basket.name }}</h2>
+
+            <form action="/api/basket/push" method="POST">
+              <input
+                name="basket_id"
+                type="hidden"
+                value="{{ basket.id }}"
+              />
+
+              <button
+                type="submit"
+                aria-label="Use saved basket {{ basket.name }}"
+              >
+                Use this basket
+              </button>
+            </form>
+
+            <p><strong>Date saved:</strong> {{ basket.created_at | formatDate }}</p>
+            <p><strong>Total:</strong> £{{ (basket.total_pence / 100) | toFixed(2) }}</p>
+
+            <ul>
+              {% for item in basket.items %}
+                <li>
+                  {{ item.name }} ({{ item.quantity }}) -
+                  £{{ ((item.price_pence * item.quantity) / 100) | toFixed(2) }}
+                </li>
+              {% endfor %}
+            </ul>
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <a class="secondary-button" href="/account">Back to my account</a>
+  </div>
+</section>
+{% endblock %}

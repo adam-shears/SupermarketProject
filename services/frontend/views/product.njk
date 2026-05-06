@@ -25,7 +25,6 @@
         <p class="product-description">{{ product.description }}</p>
 
         <p class="price">
-          <span class="price-label">Price:</span>
           <span class="price-value">&pound;{{ (product.price_pence / 100) | toFixed(2) }}</span>
         </p>
 
@@ -70,10 +69,6 @@
           <button type="submit" class="add-btn">Add to Basket</button>
         </form>
 
-        <p class="add-success" role="status" aria-live="polite" hidden>
-          Added to basket!
-        </p>
-
         {% if product.discounts and product.discounts.length > 0 %}
           {% for discount in product.discounts %}
             {% if discount.code %}
@@ -99,7 +94,6 @@
             </a>
 
             <p class="price">
-              <span class="price-label">Price:</span>
               <span class="price-value">&pound;{{ (item.price_pence / 100) | toFixed(2) }}</span>
             </p>
 
@@ -108,7 +102,7 @@
               data-id="{{ item.id }}"
               data-name="{{ item.name }}"
               data-price="{{ item.price_pence }}"
-              data-image="/images/products/{{ product.id }}.JPG"
+              data-image="/images/products/{{ item.id }}.JPG"
             >
               <div class="quantity">
                 <button
@@ -141,12 +135,8 @@
                 </button>
               </div>
 
-              <button type="submit" class="add-btn">Add to Basket</button>
+              <button type="submit" class="add-btn" aria-label="Add {{ item.name }} to basket">Add</button>
             </form>
-
-            <p class="add-success" role="status" aria-live="polite" hidden>
-              Added to basket!
-            </p>
           </article>
         {% endfor %}
       </div>
@@ -157,9 +147,27 @@
 <script type="module">
   import * as service from "/service.js";
 
+  function announceBasketUpdate(message) {
+    const status = document.getElementById("basket-status");
+
+    if (!status) {
+      return;
+    }
+
+    status.textContent = "";
+
+    setTimeout(() => {
+      status.textContent = message;
+    }, 50);
+  }
+
   function normaliseQuantity(input) {
     let value = parseInt(input.value, 10) || 1;
-    if (value < 1) value = 1;
+
+    if (value < 1) {
+      value = 1;
+    }
+
     input.value = value;
     return value;
   }
@@ -181,7 +189,7 @@
   });
 
   document.querySelectorAll(".basket-form").forEach((form) => {
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const productId = Number(form.dataset.id);
@@ -191,16 +199,20 @@
 
       const quantityInput = form.querySelector(".quantity-input");
       const quantity = normaliseQuantity(quantityInput);
+      const addButton = form.querySelector(".add-btn");
 
-      service.addToBasket(productId, quantity, name, price_pence, image_url);
+      await service.addToBasket(productId, quantity, name, price_pence, image_url);
 
-      const successMsg = form.nextElementSibling;
-      if (successMsg && successMsg.classList.contains("add-success")) {
-        successMsg.hidden = false;
-        setTimeout(() => {
-          successMsg.hidden = true;
-        }, 2000);
-      }
+      announceBasketUpdate(`${quantity} ${name} added to basket`);
+
+      const originalText = addButton.textContent;
+      addButton.textContent = "Added!";
+      addButton.disabled = true;
+
+      setTimeout(() => {
+        addButton.textContent = originalText;
+        addButton.disabled = false;
+      }, 800);
     });
   });
 </script>
