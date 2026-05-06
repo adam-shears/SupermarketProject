@@ -460,3 +460,18 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   content: " *";
   color: #b42318;
 }
+
+.skip-items {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skip-items:focus {
+  position: static;
+  width: auto;
+  height: auto;
+}
