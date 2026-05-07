@@ -14,6 +14,12 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
   text-align: center;
 }
 
+.banner-text {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: bold;
+  margin: 0 0 10px;
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

@@ -2,70 +2,7 @@
 
 {% block styles %}
 <link rel="stylesheet" href="/home.css" />
-<style>
-  .tier-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 14px;
-  }
-  .tier-bronze { background: #cd7f32; color: white; }
-  .tier-silver { background: #c0c0c0; color: #333; }
-  .tier-gold { background: #ffd700; color: #333; }
-  
-  .benefits-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin: 16px 0;
-  }
-  .benefit-card {
-    background: #f5f5f5;
-    padding: 16px;
-    border-radius: 8px;
-    text-align: center;
-  }
-  .benefit-card h4 { margin: 0 0 8px 0; }
-  .benefit-card .value { font-size: 24px; font-weight: bold; color: #2c3e50; }
-  
-  .coupons-section {
-    margin-top: 24px;
-  }
-  .coupon-card {
-    background: #fff3cd;
-    border: 1px solid #ffeeba;
-    padding: 12px;
-    margin: 8px 0;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .coupon-code { font-family: monospace; font-weight: bold; }
-  .coupon-expires { font-size: 12px; color: #666; }
-  .coupon-used { text-decoration: line-through; color: #999; }
-  
-  .progress-section {
-    margin: 16px 0;
-    padding: 16px;
-    background: #e8f4f8;
-    border-radius: 8px;
-  }
-  .progress-bar {
-    height: 20px;
-    background: #ddd;
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 8px 0;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4CAF50, #8BC34A);
-    border-radius: 10px;
-    transition: width 0.3s;
-  }
-</style>
+<link rel="stylesheet" href="/loyalty.css" />
 {% endblock %}
 
 {% block content %}
@@ -86,17 +23,17 @@
       {% if account.benefits %}
       <div class="benefits-grid">
         <div class="benefit-card">
-          <h4>Points Earned</h4>
+          <h3>Points Earned</h3>
           <div class="value">{{ account.benefits.points_per_pound }} / &pound;1</div>
           <p>points per pound</p>
         </div>
         <div class="benefit-card">
-          <h4>Redemption Rate</h4>
+          <h3>Redemption Rate</h3>
           <div class="value">{{ account.benefits.redemption_rate }}</div>
           <p>points = &pound;1 off</p>
         </div>
         <div class="benefit-card">
-          <h4>Upgrade Coupons</h4>
+          <h3>Upgrade Coupons</h3>
           <div class="value">{{ account.benefits.coupon_on_upgrade }}</div>
           <p>on tier upgrade</p>
         </div>
