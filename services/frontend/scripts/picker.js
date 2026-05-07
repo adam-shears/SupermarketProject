@@ -62,7 +62,7 @@ async function setupAutoSync() {
     }
 
     lastState = nextState;
-  }, 10000);
+  }, 1000);
 }
 
 setupIssuePopups();
