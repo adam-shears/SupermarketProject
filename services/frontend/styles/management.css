@@ -150,14 +150,14 @@
 
 .management-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr));
   gap: 1.5rem;
   align-items: start;
 }
 
 .management-section-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr));
   gap: 1.5rem;
   margin-top: 1.5rem;
   align-items: start;
@@ -339,6 +339,7 @@
 }
 
 .management-form-group {
+  min-width: 200px;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
