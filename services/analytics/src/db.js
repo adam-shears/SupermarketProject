@@ -55,7 +55,7 @@ export async function getSalesPerCategory(scale) {
   return result.rows;
 }
 
-export async function getTrendingItems(scale) {
+export async function getTrendingItems(scale, limit) {
   const intervals = {
     day: { current: "1 day", previous: "2 day" },
     week: { current: "7 day", previous: "14 day" },
@@ -98,7 +98,7 @@ export async function getTrendingItems(scale) {
     LEFT JOIN previous_period pp ON cp.id = pp.id
     WHERE cp.current_units > 0
     ORDER BY growth_rate DESC, units_sold DESC
-    LIMIT 3
+    LIMIT ${limit || 3}
   `;
 
   const result = await pool.query(query);
