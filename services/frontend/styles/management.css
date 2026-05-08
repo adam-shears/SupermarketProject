@@ -5,7 +5,7 @@
 }
 
 .skip-link {
-  position: fixed; 
+  position: fixed;
   top: 0;
   left: 1rem;
   padding: 10px 15px;
@@ -13,12 +13,12 @@
   color: #ffffff;
   font-weight: bold;
   z-index: 999999;
-  transform: translateY(-100%); 
-  transition: transform 0.2s ease; 
+  transform: translateY(-100%);
+  transition: transform 0.2s ease;
 }
 
 .skip-link:focus {
-  transform: translateY(10px); 
+  transform: translateY(10px);
 }
 
 #promotion-settings:focus,

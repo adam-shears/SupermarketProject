@@ -703,7 +703,8 @@ export async function copySavedBasketToActive(customerId, basketId) {
 }
 
 export async function copyLastOrderToActiveBasket(customerId) {
-  const result = await pool.query(`
+  const result = await pool.query(
+    `
     WITH last_order AS (
     SELECT id FROM orders
     WHERE customer_id = $1
@@ -735,7 +736,9 @@ export async function copyLastOrderToActiveBasket(customerId) {
   FROM active_basket ab
   LEFT JOIN copied_items ci ON TRUE
   GROUP BY ab.id;
-  `, [customerId]);
+  `,
+    [customerId]
+  );
 
   return result.rows[0] || null;
 }
@@ -853,7 +856,18 @@ export async function insertOrder(
       INSERT INTO orders (guest_email, guest_name, guest_phone, status, subtotal_pence, discount_pence, total_pence, created_at, last_updated, delivery_info)
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), $8)
       RETURNING id
-    `, [guestDetails.email, guestDetails.name, guestDetails.phone || null, status, subtotalPence, discountPence, totalPence, JSON.stringify(deliveryInfo)]];
+    `,
+      [
+        guestDetails.email,
+        guestDetails.name,
+        guestDetails.phone || null,
+        status,
+        subtotalPence,
+        discountPence,
+        totalPence,
+        JSON.stringify(deliveryInfo),
+      ],
+    ];
   }
 
   try {

@@ -2,15 +2,15 @@ const passwordInput = document.getElementById("password");
 const strengthIndicator = document.getElementById("password-strength");
 
 const requirements = [
-  { text: "One uppercase letter", regex: /[A-Z]/ },
-  { text: "One lowercase letter", regex: /[a-z]/ },
-  { text: "One number", regex: /\d/ },
-  { text: "One special character (@$!%*?&)", regex: /[@$!%*?&]/ },
+  { text: "At least one uppercase letter", regex: /[A-Z]/ },
+  { text: "At least one lowercase letter", regex: /[a-z]/ },
+  { text: "At least one number", regex: /\d/ },
+  { text: "At least one special character (@$!%*?&)", regex: /[@$!%*?&]/ },
 ];
 
 function listRequirements(password = "") {
   strengthIndicator.innerHTML = `
-  <span>Password must contain at least one of the following:</span>
+  <span>Password must contain all of the following:</span>
   <ul class="password-requirements">
     ${requirements
       .map((requirement) => {

@@ -108,28 +108,25 @@ export const api = {
   createOrder: (payload) => postJson(`${ORDERS_URL}/orders/create`, payload),
   clearBasket: (customerId) => deleteRequest(`${ORDERS_URL}/customers/${customerId}/basket`),
   releaseReservation: (payload) => postJson(`${ORDERS_URL}/checkout/release`, payload),
-  repeatLastOrder: (customerId) => postJson(`${ORDERS_URL}/customers/${customerId}/orders/repeat`, {}),
+  repeatLastOrder: (customerId) =>
+    postJson(`${ORDERS_URL}/customers/${customerId}/orders/repeat`, {}),
 
   register: (payload) => postJson(`${ORDERS_URL}/auth/register`, payload),
   login: (payload) => postJson(`${ORDERS_URL}/auth/login`, payload),
 
-  getCustomerAccount: (customerId) =>
-    getJson(`${ORDERS_URL}/customers/${customerId}/account`),
+  getCustomerAccount: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/account`),
 
   updateCustomerAccount: (customerId, payload) =>
     patchJson(`${ORDERS_URL}/customers/${customerId}/account`, payload),
 
-  getCustomerOrders: (customerId) =>
-    getJson(`${ORDERS_URL}/customers/${customerId}/orders`),
+  getCustomerOrders: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/orders`),
 
   deleteCustomerAccount: (customerId) =>
     deleteRequest(`${ORDERS_URL}/customers/${customerId}/account`),
 
-  getShoppingList: (customerId) =>
-    getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
+  getShoppingList: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/shopping-list`),
 
-  getLoyaltyAccount: (customerId) =>
-    getJson(`${ORDERS_URL}/customers/${customerId}/loyalty`),
+  getLoyaltyAccount: (customerId) => getJson(`${ORDERS_URL}/customers/${customerId}/loyalty`),
 
   getLoyaltyAccountForCheckout: (customerId) =>
     getJson(`${ORDERS_URL}/customers/${customerId}/loyalty/checkout`),
@@ -167,8 +164,7 @@ export const api = {
     return `/management/export.csv?${params}`;
   },
 
-  getPickerOrders: (pickerId) =>
-    getJson(`${WAREHOUSE_URL}/picker/orders?pickerId=${pickerId}`),
+  getPickerOrders: (pickerId) => getJson(`${WAREHOUSE_URL}/picker/orders?pickerId=${pickerId}`),
 
   completePickerItem: (orderId, productId) =>
     postJson(`${WAREHOUSE_URL}/picker/orders/${orderId}/items/${productId}/complete`, {}),
@@ -192,34 +188,27 @@ export const api = {
     return getJson(`${WAREHOUSE_URL}/stock-issues${params}`);
   },
 
-  resolveStockIssue: (issueId) =>
-    patchJson(`${WAREHOUSE_URL}/stock-issues/${issueId}/resolve`),
+  resolveStockIssue: (issueId) => patchJson(`${WAREHOUSE_URL}/stock-issues/${issueId}/resolve`),
 
   getInventory: () => getJson(`${WAREHOUSE_URL}/inventory`),
 
   updateInventory: (productId, payload) =>
     patchJson(`${WAREHOUSE_URL}/inventory/${productId}`, payload),
 
-  registerStaffMember: (payload) =>
-    postJson(`${ORDERS_URL}/auth/register-staff`, payload),
+  registerStaffMember: (payload) => postJson(`${ORDERS_URL}/auth/register-staff`, payload),
 
   assignPickerToOrder: (orderId, payload) =>
     postJson(`${WAREHOUSE_URL}/management/orders/${orderId}/assign`, payload),
 
-  getPendingOrders: () =>
-    getJson(`${WAREHOUSE_URL}/management/orders/pending`),
+  getPendingOrders: () => getJson(`${WAREHOUSE_URL}/management/orders/pending`),
 
-  getStaffMembers: () =>
-    getJson(`${ORDERS_URL}/staff`),
+  getStaffMembers: () => getJson(`${ORDERS_URL}/staff`),
 
-  getCurrentPromotions: () =>
-    getJson(`${CATALOGUE_URL}/deals`),
+  getCurrentPromotions: () => getJson(`${CATALOGUE_URL}/deals`),
 
-  getAllPromotions: () =>
-    getJson(`${CATALOGUE_URL}/deals?includeExpired=true`),
+  getAllPromotions: () => getJson(`${CATALOGUE_URL}/deals?includeExpired=true`),
 
-  createDeal: (payload) =>
-    postJson(`${CATALOGUE_URL}/deals/create`, payload),
+  createDeal: (payload) => postJson(`${CATALOGUE_URL}/deals/create`, payload),
 
   getProductRecommendations: (productId, { customerId, productsInBasket, limit }) => {
     const params = new URLSearchParams({

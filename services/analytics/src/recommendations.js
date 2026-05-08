@@ -42,7 +42,7 @@ export async function mergeRecommendations(recommendations, constraints) {
   const seen = new Set();
 
   for (const productList of recommendations) {
-    const filtered = filterRecommendations(productList, {...constraints, seen});
+    const filtered = filterRecommendations(productList, { ...constraints, seen });
     merged.push(...filtered);
 
     if (merged.length >= constraints.limit) break;

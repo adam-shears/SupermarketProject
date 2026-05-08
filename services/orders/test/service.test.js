@@ -51,399 +51,442 @@ describe("Orders Service", () => {
       ).to.be.rejectedWith(service.OrdersError, "Email and password are required");
     });
 
-  describe("loyalty redemption", () => {
-        it("should calculate purchase points based on the customer's current tier", () => {
-            expect(service.calculatePointsFromPurchase(1099, "Bronze")).to.equal(10);
-            expect(service.calculatePointsFromPurchase(1099, "Silver")).to.equal(21);
-            expect(service.calculatePointsFromPurchase(1099, "Gold")).to.equal(32);
+    describe("loyalty redemption", () => {
+      it("should calculate purchase points based on the customer's current tier", () => {
+        expect(service.calculatePointsFromPurchase(1099, "Bronze")).to.equal(10);
+        expect(service.calculatePointsFromPurchase(1099, "Silver")).to.equal(21);
+        expect(service.calculatePointsFromPurchase(1099, "Gold")).to.equal(32);
+      });
+
+      it("should calculate the maximum redeemable points in 100 point chunks", () => {
+        expect(service.calculateRedeemablePoints(3450, 3391)).to.equal(3300);
+        expect(service.calculateRedeemablePoints(90, 5000)).to.equal(0);
+        expect(service.calculateRedeemablePoints(1000, 99)).to.equal(0);
+      });
+
+      it("should automatically redeem the maximum available points when points are not provided", async () => {
+        sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+          id: 10,
+          points: 3450,
+          tier: "Silver",
+        });
+        sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
+          id: 10,
+          points: 150,
+          tier: "Silver",
+        });
+        sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+
+        const result = await service.redeemPoints(1, NaN, 3391);
+
+        expect(result).to.deep.equal({
+          pointsRedeemed: 3300,
+          discountPence: 3300,
+          remainingPoints: 150,
+        });
+        expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 150, "Silver")).to.be
+          .true;
+        expect(
+          service.ordersDeps.insertLoyaltyTransaction.calledWith(10, null, "redemption", -3300)
+        ).to.be.true;
+      });
+
+      it("should reject redemption when fewer than 100 points can be used", async () => {
+        sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+          id: 10,
+          points: 90,
+          tier: "Bronze",
         });
 
-        it("should calculate the maximum redeemable points in 100 point chunks", () => {
-            expect(service.calculateRedeemablePoints(3450, 3391)).to.equal(3300);
-            expect(service.calculateRedeemablePoints(90, 5000)).to.equal(0);
-            expect(service.calculateRedeemablePoints(1000, 99)).to.equal(0);
+        await expect(service.redeemPoints(1, NaN, 5000)).to.be.rejectedWith(
+          service.OrdersError,
+          "At least 100 points are required to redeem"
+        );
+      });
+
+      it("should not downgrade tier when points are redeemed", async () => {
+        sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+          id: 10,
+          points: 5200,
+          tier: "Gold",
         });
-
-        it("should automatically redeem the maximum available points when points are not provided", async () => {
-            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
-                id: 10,
-                points: 3450,
-                tier: "Silver",
-            });
-            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
-                id: 10,
-                points: 150,
-                tier: "Silver",
-            });
-            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
-
-            const result = await service.redeemPoints(1, NaN, 3391);
-
-            expect(result).to.deep.equal({
-                pointsRedeemed: 3300,
-                discountPence: 3300,
-                remainingPoints: 150,
-            });
-            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 150, "Silver")).to.be.true;
-            expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, null, "redemption", -3300)).to.be.true;
+        sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
+          id: 10,
+          points: 200,
+          tier: "Gold",
         });
+        sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
 
-        it("should reject redemption when fewer than 100 points can be used", async () => {
-            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
-                id: 10,
-                points: 90,
-                tier: "Bronze",
-            });
+        await service.redeemPoints(1, 5000, 5000);
 
-            await expect(service.redeemPoints(1, NaN, 5000)).to.be.rejectedWith(service.OrdersError, "At least 100 points are required to redeem");
+        expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 200, "Gold")).to.be
+          .true;
+      });
+
+      it("should not downgrade tier when purchase points are added after redemption", async () => {
+        sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+          id: 10,
+          points: 200,
+          tier: "Gold",
         });
-
-        it("should not downgrade tier when points are redeemed", async () => {
-            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
-                id: 10,
-                points: 5200,
-                tier: "Gold",
-            });
-            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
-                id: 10,
-                points: 200,
-                tier: "Gold",
-            });
-            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
-
-            await service.redeemPoints(1, 5000, 5000);
-
-            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 200, "Gold")).to.be.true;
+        sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
+          id: 10,
+          points: 300,
+          tier: "Gold",
         });
+        sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+        sinon.stub(service.ordersDeps, "selectLoyaltyTierBenefits").resolves(null);
 
-        it("should not downgrade tier when purchase points are added after redemption", async () => {
-            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
-                id: 10,
-                points: 200,
-                tier: "Gold",
-            });
-            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
-                id: 10,
-                points: 300,
-                tier: "Gold",
-            });
-            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
-            sinon.stub(service.ordersDeps, "selectLoyaltyTierBenefits").resolves(null);
+        await service.addLoyaltyPoints(1, { amount: 100, type: "purchase", orderId: 99 });
 
-            await service.addLoyaltyPoints(1, {amount: 100, type: "purchase", orderId: 99});
-
-            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 300, "Gold")).to.be.true;
-        });
+        expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 300, "Gold")).to.be
+          .true;
+      });
     });
 
     describe("createOrder", () => {
-        const snapshot = {
-            subtotalPence: 1299,
-            discountPence: 200,
-            totalPence: 1099,
-            items: [
-                {
-                    product_id: 1,
-                    quantity: 1,
-                    price_pence_per_unit: 1299,
-                    line_subtotal_pence: 1299,
-                    line_discount_pence: 200,
-                    applied_discount_id: null,
-                    line_total_pence: 1099,
-                },
-            ],
+      const snapshot = {
+        subtotalPence: 1299,
+        discountPence: 200,
+        totalPence: 1099,
+        items: [
+          {
+            product_id: 1,
+            quantity: 1,
+            price_pence_per_unit: 1299,
+            line_subtotal_pence: 1299,
+            line_discount_pence: 200,
+            applied_discount_id: null,
+            line_total_pence: 1099,
+          },
+        ],
+      };
+      const deliveryInfo = {
+        addressLine: "1 Test Street",
+        town: "Testville",
+        county: "Testshire",
+        postcode: "TE1 1ST",
+      };
+
+      it("should include selected loyalty discounts in the checkout snapshot", async () => {
+        sinon
+          .stub(service.ordersDeps, "selectBasketPriceLinesByCustomerId")
+          .resolves([{ product_id: 1, quantity: 1, price_pence: 1099, name: "Test Product" }]);
+        sinon.stub(service.ordersDeps, "selectActiveDiscountsForProducts").resolves([]);
+        sinon
+          .stub(service.ordersDeps, "reserveStock")
+          .resolves({ reserved: true, unavailableItems: [] });
+        sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
+          id: 10,
+          points: 500,
+          tier: "Bronze",
+        });
+        sinon.stub(service.ordersDeps, "selectUnusedLoyaltyCouponsByAccountId").resolves([
+          {
+            id: 20,
+            code: "LOYALTY-TEST",
+            discount_percent: 10,
+            min_spend_pence: 100,
+          },
+        ]);
+
+        const result = await service.getLoggedInCheckoutSnapshot(1, null, {
+          useLoyaltyCoupon: true,
+          useLoyaltyPoints: true,
+        });
+
+        expect(result.discountPence).to.equal(609);
+        expect(result.totalPence).to.equal(490);
+        expect(result.orderDiscounts).to.deep.include({
+          type: "loyalty_points",
+          label: "Loyalty points",
+          pointsRedeemed: 500,
+          orderTotalPence: 990,
+          discountPence: 500,
+        });
+      });
+
+      it("should award loyalty points after creating a customer order", async () => {
+        sinon.stub(service.ordersDeps, "insertOrder").resolves(99);
+        sinon
+          .stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId")
+          .onFirstCall()
+          .resolves({ id: 10, points: 100, tier: "Silver" })
+          .onSecondCall()
+          .resolves({ id: 10, points: 100, tier: "Silver" });
+        sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
+          id: 10,
+          points: 121,
+          tier: "Silver",
+        });
+        sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+
+        const result = await service.createOrder(snapshot, deliveryInfo, 1);
+
+        expect(result).to.equal(99);
+        expect(service.ordersDeps.insertOrder.calledOnce).to.be.true;
+        expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 121, "Silver")).to.be
+          .true;
+        expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "purchase", 21)).to.be
+          .true;
+      });
+
+      it("should consume selected loyalty discounts when creating a customer order", async () => {
+        const discountedSnapshot = {
+          ...snapshot,
+          discountPence: 500,
+          totalPence: 799,
+          orderDiscounts: [
+            {
+              type: "loyalty_coupon",
+              couponCode: "LOYALTY-TEST",
+              discountPence: 300,
+              orderTotalPence: 1099,
+            },
+            {
+              type: "loyalty_points",
+              pointsRedeemed: 200,
+              discountPence: 200,
+              orderTotalPence: 799,
+            },
+          ],
         };
-        const deliveryInfo = {
-            addressLine: "1 Test Street",
-            town: "Testville",
-            county: "Testshire",
-            postcode: "TE1 1ST",
-        };
 
-        it("should include selected loyalty discounts in the checkout snapshot", async () => {
-            sinon.stub(service.ordersDeps, "selectBasketPriceLinesByCustomerId").resolves([
-                { product_id: 1, quantity: 1, price_pence: 1099, name: "Test Product" },
-            ]);
-            sinon.stub(service.ordersDeps, "selectActiveDiscountsForProducts").resolves([]);
-            sinon.stub(service.ordersDeps, "reserveStock").resolves({ reserved: true, unavailableItems: [] });
-            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves({
-                id: 10,
-                points: 500,
-                tier: "Bronze",
-            });
-            sinon.stub(service.ordersDeps, "selectUnusedLoyaltyCouponsByAccountId").resolves([
-                {
-                    id: 20,
-                    code: "LOYALTY-TEST",
-                    discount_percent: 10,
-                    min_spend_pence: 100,
-                },
-            ]);
+        sinon.stub(service.ordersDeps, "insertOrder").resolves(99);
+        sinon.stub(service.ordersDeps, "selectLoyaltyCouponByCode").resolves({
+          id: 20,
+          loyalty_account_id: 10,
+          code: "LOYALTY-TEST",
+          discount_percent: 27.3,
+          min_spend_pence: 100,
+          expires_at: new Date(Date.now() + 100000),
+          used_at: null,
+        });
+        sinon.stub(service.ordersDeps, "markLoyaltyCouponAsUsed").resolves({});
+        sinon
+          .stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId")
+          .onFirstCall()
+          .resolves({ id: 10, points: 500, tier: "Bronze" })
+          .onSecondCall()
+          .resolves({ id: 10, points: 500, tier: "Bronze" })
+          .onThirdCall()
+          .resolves({ id: 10, points: 300, tier: "Bronze" })
+          .onCall(3)
+          .resolves({ id: 10, points: 300, tier: "Bronze" });
+        sinon
+          .stub(service.ordersDeps, "updateLoyaltyAccountPoints")
+          .onFirstCall()
+          .resolves({ id: 10, points: 300, tier: "Bronze" })
+          .onSecondCall()
+          .resolves({ id: 10, points: 307, tier: "Bronze" });
+        sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
+        sinon.stub(service.ordersDeps, "selectLoyaltyTierBenefits").resolves(null);
 
-            const result = await service.getLoggedInCheckoutSnapshot(1, null, {
-                useLoyaltyCoupon: true,
-                useLoyaltyPoints: true,
-            });
+        const result = await service.createOrder(discountedSnapshot, deliveryInfo, 1);
 
-            expect(result.discountPence).to.equal(609);
-            expect(result.totalPence).to.equal(490);
-            expect(result.orderDiscounts).to.deep.include({
-                type: "loyalty_points",
-                label: "Loyalty points",
-                pointsRedeemed: 500,
-                orderTotalPence: 990,
-                discountPence: 500,
-            });
+        expect(result).to.equal(99);
+        expect(service.ordersDeps.markLoyaltyCouponAsUsed.calledWith(20)).to.be.true;
+        expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "redemption", -200))
+          .to.be.true;
+        expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "purchase", 7)).to.be
+          .true;
+      });
+
+      it("should not award loyalty points for guest orders", async () => {
+        sinon.stub(service.ordersDeps, "insertOrder").resolves(100);
+        sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves(null);
+
+        const result = await service.createOrder(snapshot, deliveryInfo, null, {
+          name: "Guest User",
+          email: "guest@example.com",
+          phone: "1234567890",
         });
 
-        it("should award loyalty points after creating a customer order", async () => {
-            sinon.stub(service.ordersDeps, "insertOrder").resolves(99);
-            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId")
-                .onFirstCall()
-                .resolves({ id: 10, points: 100, tier: "Silver" })
-                .onSecondCall()
-                .resolves({ id: 10, points: 100, tier: "Silver" });
-            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints").resolves({
-                id: 10,
-                points: 121,
-                tier: "Silver",
-            });
-            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
-
-            const result = await service.createOrder(snapshot, deliveryInfo, 1);
-
-            expect(result).to.equal(99);
-            expect(service.ordersDeps.insertOrder.calledOnce).to.be.true;
-            expect(service.ordersDeps.updateLoyaltyAccountPoints.calledWith(10, 121, "Silver")).to.be.true;
-            expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "purchase", 21)).to.be.true;
-        });
-
-        it("should consume selected loyalty discounts when creating a customer order", async () => {
-            const discountedSnapshot = {
-                ...snapshot,
-                discountPence: 500,
-                totalPence: 799,
-                orderDiscounts: [
-                    {
-                        type: "loyalty_coupon",
-                        couponCode: "LOYALTY-TEST",
-                        discountPence: 300,
-                        orderTotalPence: 1099,
-                    },
-                    {
-                        type: "loyalty_points",
-                        pointsRedeemed: 200,
-                        discountPence: 200,
-                        orderTotalPence: 799,
-                    },
-                ],
-            };
-
-            sinon.stub(service.ordersDeps, "insertOrder").resolves(99);
-            sinon.stub(service.ordersDeps, "selectLoyaltyCouponByCode").resolves({
-                id: 20,
-                loyalty_account_id: 10,
-                code: "LOYALTY-TEST",
-                discount_percent: 27.3,
-                min_spend_pence: 100,
-                expires_at: new Date(Date.now() + 100000),
-                used_at: null,
-            });
-            sinon.stub(service.ordersDeps, "markLoyaltyCouponAsUsed").resolves({});
-            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId")
-                .onFirstCall()
-                .resolves({ id: 10, points: 500, tier: "Bronze" })
-                .onSecondCall()
-                .resolves({ id: 10, points: 500, tier: "Bronze" })
-                .onThirdCall()
-                .resolves({ id: 10, points: 300, tier: "Bronze" })
-                .onCall(3)
-                .resolves({ id: 10, points: 300, tier: "Bronze" });
-            sinon.stub(service.ordersDeps, "updateLoyaltyAccountPoints")
-                .onFirstCall()
-                .resolves({ id: 10, points: 300, tier: "Bronze" })
-                .onSecondCall()
-                .resolves({ id: 10, points: 307, tier: "Bronze" });
-            sinon.stub(service.ordersDeps, "insertLoyaltyTransaction").resolves({});
-            sinon.stub(service.ordersDeps, "selectLoyaltyTierBenefits").resolves(null);
-
-            const result = await service.createOrder(discountedSnapshot, deliveryInfo, 1);
-
-            expect(result).to.equal(99);
-            expect(service.ordersDeps.markLoyaltyCouponAsUsed.calledWith(20)).to.be.true;
-            expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "redemption", -200)).to.be.true;
-            expect(service.ordersDeps.insertLoyaltyTransaction.calledWith(10, 99, "purchase", 7)).to.be.true;
-        });
-
-        it("should not award loyalty points for guest orders", async () => {
-            sinon.stub(service.ordersDeps, "insertOrder").resolves(100);
-            sinon.stub(service.ordersDeps, "selectLoyaltyAccountByCustomerId").resolves(null);
-
-            const result = await service.createOrder(snapshot, deliveryInfo, null, {
-                name: "Guest User",
-                email: "guest@example.com",
-                phone: "1234567890",
-            });
-
-            expect(result).to.equal(100);
-            expect(service.ordersDeps.insertOrder.calledOnce).to.be.true;
-            expect(service.ordersDeps.selectLoyaltyAccountByCustomerId.notCalled).to.be.true;
-        });
+        expect(result).to.equal(100);
+        expect(service.ordersDeps.insertOrder.calledOnce).to.be.true;
+        expect(service.ordersDeps.selectLoyaltyAccountByCustomerId.notCalled).to.be.true;
+      });
     });
 
     describe("registerNewUser", () => {
-        it("should reject duplicated emails", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves({id: 1});
-            await expect(service.registerNewUser({
-                email: "test@example.com",
-                password: "Password1!",
-                confirmPassword: "Password1!",
-                firstName: "Test",
-                lastName: "User",
-                phone: "1234567890",
-            })).to.be.rejectedWith(service.OrdersError, "Email is already in use");
+      it("should reject duplicated emails", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves({ id: 1 });
+        await expect(
+          service.registerNewUser({
+            email: "test@example.com",
+            password: "Password1!",
+            confirmPassword: "Password1!",
+            firstName: "Test",
+            lastName: "User",
+            phone: "1234567890",
+          })
+        ).to.be.rejectedWith(service.OrdersError, "Email is already in use");
+      });
+
+      it("should reject weak passwords", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+        await expect(
+          service.registerNewUser({
+            email: "test@example.com",
+            password: "weak",
+            confirmPassword: "weak",
+            firstName: "Test",
+            lastName: "User",
+            phone: "1234567890",
+          })
+        ).to.be.rejectedWith(service.OrdersError, "Password must be at least 8 characters long");
+
+        await expect(
+          service.registerNewUser({
+            email: "test@example.com",
+            password: "eightcharactersbutstillweak",
+            confirmPassword: "eightcharactersbutstillweak",
+            firstName: "Test",
+            lastName: "User",
+            phone: "1234567890",
+          })
+        ).to.be.rejectedWith(
+          service.OrdersError,
+          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+        );
+      });
+
+      it("should reject passwords that don't match", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+        await expect(
+          service.registerNewUser({
+            email: "test@example.com",
+            password: "Password1!",
+            confirmPassword: "Password2!",
+            firstName: "Test",
+            lastName: "User",
+            phone: "1234567890",
+          })
+        ).to.be.rejectedWith(service.OrdersError, "Passwords do not match");
+      });
+
+      it("should reject phone numbers with non-digit characters", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+
+        await expect(
+          service.registerNewUser({
+            email: "test@example.com",
+            password: "Password1!",
+            confirmPassword: "Password1!",
+            firstName: "Test",
+            lastName: "User",
+            phone: "+44 123",
+          })
+        ).to.be.rejectedWith(service.OrdersError, "Phone must contain digits only");
+      });
+
+      it("should register a new user with valid input", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+        sinon
+          .stub(service.ordersDeps, "insertNewCustomerWithLoyalty")
+          .resolves({ id: 1, email: "test@example.com" });
+        sinon.stub(service.ordersDeps, "hashPassword").resolves("hashedpassword");
+
+        const result = await service.registerNewUser({
+          email: "test@example.com",
+          password: "Password1!",
+          confirmPassword: "Password1!",
+          firstName: "Test",
+          lastName: "User",
+          phone: "1234567890",
         });
 
-        it("should reject weak passwords", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
-            await expect(service.registerNewUser({
-                email: "test@example.com",
-                password: "weak",
-                confirmPassword: "weak",
-                firstName: "Test",
-                lastName: "User",
-                phone: "1234567890",
-            })).to.be.rejectedWith(service.OrdersError, "Password must be at least 8 characters long");
+        expect(result).to.deep.equal({ id: 1, email: "test@example.com" });
+        expect(service.ordersDeps.insertNewCustomerWithLoyalty.calledOnce).to.be.true;
+        expect(
+          service.ordersDeps.insertNewCustomerWithLoyalty.calledWith(
+            "test@example.com",
+            "hashedpassword",
+            "Test",
+            "User",
+            "1234567890",
+            "Bronze",
+            0
+          )
+        ).to.be.true;
+        expect(service.ordersDeps.hashPassword.calledOnce).to.be.true;
+      });
 
-            await expect(service.registerNewUser({
-                email: "test@example.com",
-                password: "eightcharactersbutstillweak",
-                confirmPassword: "eightcharactersbutstillweak",
-                firstName: "Test",
-                lastName: "User",
-                phone: "1234567890",
-             })).to.be.rejectedWith(service.OrdersError, "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
+      it("should reject users registering a staff email", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+        sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
+
+        await expect(
+          service.registerNewUser({
+            email: "whatever@supermarket.com",
+            password: "Password1!",
+            confirmPassword: "Password1!",
+            firstName: "Test",
+            lastName: "User",
+            phone: "1234567890",
+          })
+        ).to.be.rejectedWith(
+          service.OrdersError,
+          "You cannot register with a staff email. If you are a staff member, contact your administrator to register you."
+        );
+      });
+
+      it("should register a new staff user", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+        sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
+        sinon
+          .stub(service.ordersDeps, "insertNewStaff")
+          .resolves({ id: 1, email: "test@supermarket.com" });
+        sinon.stub(service.ordersDeps, "hashPassword").resolves("hashedpassword");
+
+        const result = await service.registerNewUser({
+          email: "whatever@supermarket.com",
+          password: "Password1!",
+          confirmPassword: "Password1!",
+          firstName: "Test",
+          lastName: "Staff",
+          phone: "1234567890",
+          isStaff: true,
         });
 
-        it("should reject passwords that don't match", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
-            await expect(service.registerNewUser({
-                email: "test@example.com",
-                password: "Password1!",
-                confirmPassword: "Password2!",
-                firstName: "Test",
-                lastName: "User",
-                phone: "1234567890",
-            })).to.be.rejectedWith(service.OrdersError, "Passwords do not match");
-        });
+        expect(result).to.deep.equal({ id: 1, email: "test@supermarket.com" });
+        expect(service.ordersDeps.insertNewStaff.calledOnce).to.be.true;
+        expect(service.ordersDeps.hashPassword.calledOnce).to.be.true;
+      });
 
-        it("should reject phone numbers with non-digit characters", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+      it("should reject staff registration if email doesn't end with @supermarket.com", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+        sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
 
-            await expect(service.registerNewUser({
-                email: "test@example.com",
-                password: "Password1!",
-                confirmPassword: "Password1!",
-                firstName: "Test",
-                lastName: "User",
-                phone: "+44 123",
-            })).to.be.rejectedWith(service.OrdersError, "Phone must contain digits only");
-        });
+        await expect(
+          service.registerNewUser({
+            email: "whatever@rivalsupermarket.com",
+            password: "Password1!",
+            confirmPassword: "Password1!",
+            firstName: "Test",
+            lastName: "Staff",
+            phone: "1234567890",
+            isStaff: true,
+          })
+        ).to.be.rejectedWith(service.OrdersError, "Staff email must end with @supermarket.com");
+      });
 
-        it("should register a new user with valid input", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
-            sinon.stub(service.ordersDeps, "insertNewCustomerWithLoyalty").resolves({id: 1, email: "test@example.com"});
-            sinon.stub(service.ordersDeps, "hashPassword").resolves("hashedpassword");
+      it("should reject staff registration if email is already in use by another staff member", async () => {
+        sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
+        sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves({ id: 1 });
 
-            const result = await service.registerNewUser({
-                email: "test@example.com",
-                password: "Password1!",
-                confirmPassword: "Password1!",
-                firstName: "Test",
-                lastName: "User",
-                phone: "1234567890",
-            });
-
-            expect(result).to.deep.equal({id: 1, email: "test@example.com"});
-            expect(service.ordersDeps.insertNewCustomerWithLoyalty.calledOnce).to.be.true;
-            expect(
-                service.ordersDeps.insertNewCustomerWithLoyalty.calledWith(
-                    "test@example.com",
-                    "hashedpassword",
-                    "Test",
-                    "User",
-                    "1234567890",
-                    "Bronze",
-                    0
-                )
-            ).to.be.true;
-            expect(service.ordersDeps.hashPassword.calledOnce).to.be.true;
-        });
-
-        it("should reject users registering a staff email", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
-            sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
-
-            await expect(service.registerNewUser({
-                email: "whatever@supermarket.com",
-                password: "Password1!",
-                confirmPassword: "Password1!",
-                firstName: "Test",
-                lastName: "User",
-                phone: "1234567890",
-            })).to.be.rejectedWith(service.OrdersError, "You cannot register with a staff email. If you are a staff member, contact your administrator to register you.");
-        });
-
-        it("should register a new staff user", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
-            sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
-            sinon.stub(service.ordersDeps, "insertNewStaff").resolves({id: 1, email: "test@supermarket.com"});
-            sinon.stub(service.ordersDeps, "hashPassword").resolves("hashedpassword");
-
-            const result = await service.registerNewUser({
-                email: "whatever@supermarket.com",
-                password: "Password1!",
-                confirmPassword: "Password1!",
-                firstName: "Test",
-                lastName: "Staff",
-                phone: "1234567890",
-                isStaff: true
-            });
-
-            expect(result).to.deep.equal({id: 1, email: "test@supermarket.com"});
-            expect(service.ordersDeps.insertNewStaff.calledOnce).to.be.true;
-            expect(service.ordersDeps.hashPassword.calledOnce).to.be.true;
-        });
-
-        it("should reject staff registration if email doesn't end with @supermarket.com", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
-            sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves(null);
-
-            await expect(service.registerNewUser({
-                email: "whatever@rivalsupermarket.com",
-                password: "Password1!",
-                confirmPassword: "Password1!",
-                firstName: "Test",
-                lastName: "Staff",
-                phone: "1234567890",
-                isStaff: true
-            })).to.be.rejectedWith(service.OrdersError, "Staff email must end with @supermarket.com");
-        });
-
-        it("should reject staff registration if email is already in use by another staff member", async () => {
-            sinon.stub(service.ordersDeps, "selectCustomerByEmail").resolves(null);
-            sinon.stub(service.ordersDeps, "selectStaffByEmail").resolves({id: 1});
-
-            await expect(service.registerNewUser({
-                email: "ialreadyexist@supermarket.com",
-                password: "Password1!",
-                confirmPassword: "Password1!",
-                firstName: "Test",
-                lastName: "Staff",
-                phone: "1234567890",
-                isStaff: true
-            })).to.be.rejectedWith(service.OrdersError, "Email is already in use");
-        });
+        await expect(
+          service.registerNewUser({
+            email: "ialreadyexist@supermarket.com",
+            password: "Password1!",
+            confirmPassword: "Password1!",
+            firstName: "Test",
+            lastName: "Staff",
+            phone: "1234567890",
+            isStaff: true,
+          })
+        ).to.be.rejectedWith(service.OrdersError, "Email is already in use");
+      });
     });
 
     it("should resolve staff vs customer based on email domain", async () => {
