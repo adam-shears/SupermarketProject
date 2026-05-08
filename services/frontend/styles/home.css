@@ -77,14 +77,6 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
     border-color: #1f7a3d;
 }
 
-.placeholder-icon {
-  width: 40px;
-  height: 40px;
-  background-color: #e0e0e0;
-  margin: 0 auto 10px auto;
-  border-radius: 50%;
-}
-
 .grid-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
