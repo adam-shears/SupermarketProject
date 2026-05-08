@@ -17,7 +17,7 @@ export function filterRecommendations(recommendations, constraints) {
   const available = new Set((constraints.availableProducts || []).map(Number));
   const currentlyViewing = Number(constraints.currentlyViewing);
   const limit = constraints.limit || 4;
-  const seen = new Set();
+  const seen = constraints.seen || new Set();
   const filtered = [];
 
   for (const candidate of recommendations || []) {
@@ -39,9 +39,10 @@ export function filterRecommendations(recommendations, constraints) {
 
 export async function mergeRecommendations(recommendations, constraints) {
   const merged = [];
+  const seen = new Set();
 
   for (const productList of recommendations) {
-    const filtered = filterRecommendations(productList, constraints);
+    const filtered = filterRecommendations(productList, {...constraints, seen});
     merged.push(...filtered);
 
     if (merged.length >= constraints.limit) break;

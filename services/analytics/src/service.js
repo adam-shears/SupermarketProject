@@ -84,7 +84,7 @@ export async function getRecommendations(input) {
   const recommendationsFromFrequentlyBoughtTogether =
     await analyticsDeps.getFrequentlyBoughtTogether(productId, queryLimit);
 
-  const trendingItems = await analyticsDeps.getTrendingItems("week");
+  const trendingItems = await analyticsDeps.getTrendingItems("week", queryLimit);
   const trendingItemsWithinCategory = trendingItems
     .filter((item) => item.category_id === productContext.category_id)
     .map((item) => item.id);
