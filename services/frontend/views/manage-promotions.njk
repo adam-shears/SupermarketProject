@@ -98,6 +98,7 @@
                   <div class="category-action-group">
                     <button
                       type="button"
+                      aria-label="Select all products in {{ category }}"
                       class="category-select-button"
                       onclick="return setCategoryChecked(this, true)"
                     >
@@ -105,6 +106,7 @@
                     </button>
                     <button
                       type="button"
+                      aria-label="Clear selection of products in {{ category }}"
                       class="category-select-button"
                       onclick="return clearCategoryChecked(this)"
                     >
@@ -192,6 +194,7 @@
                     <button
                       type="button"
                       class="category-select-button"
+                      aria-label="Select all products in {{ category }}"
                       onclick="return setCategoryChecked(this, true)"
                     >
                       Select all
@@ -199,6 +202,7 @@
                     <button
                       type="button"
                       class="category-select-button"
+                      aria-label="Clear selection of products in {{ category }}"
                       onclick="return clearCategoryChecked(this)"
                     >
                       Clear
