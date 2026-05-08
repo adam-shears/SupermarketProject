@@ -6,11 +6,11 @@ This is a web-app built for an online only supermarket as part of UoL's COMP2850
 <p align="center">
   <img width="320" height="50" alt="SupermarketProjectTechStack" src="https://github.com/user-attachments/assets/5114b8d4-5887-4ee8-afc7-86c657c86605" />
 </p>
-We have chosen this tech stack as a team for multiple reasons, each unique to the specific language/framework chosen.  
+We have chosen this tech stack as a team for multiple reasons, each unique to the specific language/framework chosen.
 
 ### JS/Node.js
-On balance we felt more comfortable as a group working with JS. With JS being chosen as the backend language, Node.js became an obvious choice for the runtime environment.  
-Node.js is extremely well suited for I/O bound systems and with its large ecosystem and general simplicity for quicker development, we determined that it would be a better fit for a time-limited project with lots of API calls and DB lookups.  
+On balance we felt more comfortable as a group working with JS. With JS being chosen as the backend language, Node.js became an obvious choice for the runtime environment.
+Node.js is extremely well suited for I/O bound systems and with its large ecosystem and general simplicity for quicker development, we determined that it would be a better fit for a time-limited project with lots of API calls and DB lookups.
 
 ### PostgreSQL
 Postgres supports transactions, which is important for our system. Many DB operations in a supermarket system are likely to affect multiple tables and we don't want to leave tables in a half complete state. Additionally, MVCC allows Postgres to handle concurrent transactions without an abundance of locking, which increases performance. Furthermore, sometimes locking is necessary to prevent two users trying to write to the same row in common race conditions. Postgres allows for row-level locking while a transaction completes, so that multiple transactions cannot edit the same row at the same time.
@@ -33,7 +33,7 @@ The [Project Brief](https://github.com/adam-shears/SupermarketProject/Project_Br
 ## Building the Project
 
 > [!IMPORTANT]
-> This section outlines the steps to install our prerequisites, clone the repository, and build the project. Please read to the end and ensure you don't skip any steps.  
+> This section outlines the steps to install our prerequisites, clone the repository, and build the project. Please read to the end and ensure you don't skip any steps.
 > If you encounter difficulties, please refer to the [Troubleshooting](https://github.com/adam-shears/SupermarketProject/tree/main?tab=contributing-ov-file#troubleshooting) section of the contributing guidelines.
 
 > [!NOTE]
@@ -54,7 +54,7 @@ This is recommended for some users, but be aware that we can't make guarantees f
 #### Docker
 Below, you can find the links to Docker's installation guidelines. Please head to the link corresponding to your current operating system and follow the instructions there - we cannot guarantee a working environment if the Docker install steps aren't followed.
 
-**Windows**  
+**Windows**
 
 > https://docs.docker.com/desktop/setup/install/windows-install/
 
@@ -78,7 +78,7 @@ docker compose version
 You should see version numbers printed in the terminal. If you don't, or if you see errors, then Docker is not installed correctly and you should follow Docker's Troubleshooting Guidelines ([Windows/macOS](https://docs.docker.com/desktop/troubleshoot-and-support/troubleshoot/) | [Linux](https://docs.docker.com/engine/daemon/troubleshoot/))
 
 #### Visual Studio Code
-Installation link:  
+Installation link:
 > https://code.visualstudio.com/download
 
 > [!TIP]
@@ -113,15 +113,15 @@ If your terminal prompt shows you in `SupermarketProject`, please continue.
 > If you aren't given a prompt, you don't need to reopen the repository. Simply press `ctrl` + `shift` + `p` and look/search for `Dev Containers: Rebuild and Reopen in Container`
 
 > [!NOTE]
-> This will take a while to run. A new VS Code window with the repository should open.  
+> This will take a while to run. A new VS Code window with the repository should open.
 > If you encounter errors at this stage, you should refer to [Microsoft's guidelines for Dev Containers in VS Code](https://code.visualstudio.com/docs/devcontainers/containers)
 
-Once in the container, you will have access to a Debian-based environment with common tools for all team members.  
+Once in the container, you will have access to a Debian-based environment with common tools for all team members.
 You may need to create a new terminal (`ctrl` + `shift` + `'` by default) to be able to use commands, if you don't see one when the container finishes loading.
 
 ### Configuring Environment Variables
 > [!IMPORTANT]
-> The build scripts rely on having a `.env` file configured in your workspace. The project will not function without a `.env`.  
+> The build scripts rely on having a `.env` file configured in your workspace. The project will not function without a `.env`.
 > We provide `.env.example` to facilitate this.
 
 In the VS Code terminal, execute the following command:
@@ -140,12 +140,12 @@ After running this command, wait until you see the following line in the termina
 ```bash
 db-1    | ... [1] LOG: database system is ready to accept connections
 ```
-This means that the database has built successfully.  
+This means that the database has built successfully.
 If you don't see this or see errors instead, please ensure the command was executed from the repo root and that you created a `.env` file.
 
 At this point, head to http://localhost:3000 in your regular browser to access the site.
 
---- 
+---
 
 To stop the services, you can run:
 ```bash
@@ -172,8 +172,8 @@ docker compose down -v
 > ```
 
 ## Accessing Restricted Features
-To maintain security, some API endpoints and views require administrator access and will return a `403` error to a user without proper authorisation. To access these features for testing, we provide a seeded superuser account with access to everything:  
-Email: `root@supermarket.com`  
+To maintain security, some API endpoints and views require administrator access and will return a `403` error to a user without proper authorisation. To access these features for testing, we provide a seeded superuser account with access to everything:
+Email: `root@supermarket.com`
 Password: `Password1!`
 
 Upon logging in, you'll have access to the staff portal ([`/staff-portal`](http://localhost:3000/staff-portal)), where you can access restricted views:
@@ -191,7 +191,20 @@ The view for Warehouse Pickers is located at [`/picker`](http://localhost:3000/p
 
 Orders cannot be assigned to a Manager or above. To assign an order to your picker, head to [`/staff-management`](http://localhost:3000/staff-management) and pick any order in the "Assign Picker to Order" section. Use the drop down to assign it to a picker, and then that order will appear in the corresponding picker's personal picker view.
 
-## Notes
+## Testing
+Unit tests are implemented with mocha, using sinon for stubs and chai for assertions.
+
+To run the full test suite:
+```bash
+npm run test
+```
+
+To run the test suite for a specific service:
+```bash
+npm run test:<service name>
+```
+
+# Notes
 
 > [!WARNING]
 > Never commit .env files or credentials
