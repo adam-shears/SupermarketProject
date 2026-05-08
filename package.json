@@ -16,7 +16,11 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "mocha --file services/*/test/setup.js \"services/*/test/**/*.test.js\""
+    "test": "mocha --file services/*/test/setup.js \"services/*/test/**/*.test.js\"",
+    "test:analytics": "mocha --file services/analytics/test/setup.js \"services/analytics/test/**/*.test.js\"",
+    "test:catalogue": "mocha --file services/catalogue/test/setup.js \"services/catalogue/test/**/*.test.js\"",
+    "test:orders": "mocha --file services/orders/test/setup.js \"services/orders/test/**/*.test.js\"",
+    "test:warehouse": "mocha --file services/warehouse/test/setup.js \"services/warehouse/test/**/*.test.js\""
   },
   "devDependencies": {
     "chai": "^6.2.2",
