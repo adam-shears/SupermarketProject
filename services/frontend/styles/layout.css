@@ -102,10 +102,21 @@ body {
 }
 
 @keyframes slide-trust {
-  0%, 28% { transform: translateY(0); }
-  33%, 61% { transform: translateY(-30px); }
-  66%, 94% { transform: translateY(-60px); }
-  100% { transform: translateY(0); }
+  0%,
+  28% {
+    transform: translateY(0);
+  }
+  33%,
+  61% {
+    transform: translateY(-30px);
+  }
+  66%,
+  94% {
+    transform: translateY(-60px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 .header form[role="search"] {
@@ -273,7 +284,10 @@ body {
 
 .search:focus {
   border-right: none;
-  box-shadow: 0 2px 0 1px #005fcc, 0 -2px 0 1px #005fcc, -2px 0 0 1px #005fcc;
+  box-shadow:
+    0 2px 0 1px #005fcc,
+    0 -2px 0 1px #005fcc,
+    -2px 0 0 1px #005fcc;
   outline: none;
   position: relative;
   z-index: 2;

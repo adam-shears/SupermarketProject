@@ -127,7 +127,7 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 
 .quantity-minus,
 .quantity-plus {
-  background-color: #0071EB;
+  background-color: #0071eb;
   color: white;
   border: none;
   cursor: pointer;
@@ -173,7 +173,9 @@ https://github.com/adam-shears/SupermarketProject/pull/72#issuecomment-428478570
 .add-btn,
 .quantity-minus,
 .quantity-plus {
-  transition: background-color 0.3s ease-in-out, transform 0.1s ease;
+  transition:
+    background-color 0.3s ease-in-out,
+    transform 0.1s ease;
 }
 
 .add-btn:hover {

@@ -38,11 +38,7 @@ router.get("/stock-issues", async (req, res) => {
 router.post("/stock-issues", async (req, res) => {
   try {
     const { productId, reporterId, notes } = req.body;
-    const issue = await service.reportStockIssue(
-      Number(productId),
-      Number(reporterId),
-      notes
-    );
+    const issue = await service.reportStockIssue(Number(productId), Number(reporterId), notes);
     res.status(201).json(issue);
   } catch (error) {
     console.error(error);

@@ -140,7 +140,8 @@ router.get("/nojs", (req, res) => {
   res.render("4xx.njk", {
     title: "JavaScript Required",
     status: "JavaScript is Disabled",
-    message: "This site requires JavaScript to function properly. Please enable JavaScript in your browser settings.",
+    message:
+      "This site requires JavaScript to function properly. Please enable JavaScript in your browser settings.",
     user: req.session.user || null,
   });
 });
@@ -254,8 +255,7 @@ router.get("/products", async (req, res) => {
 
     if (category) {
       products = products.filter(
-        (product) =>
-          (product.category_name || "").toLowerCase() === category.toLowerCase()
+        (product) => (product.category_name || "").toLowerCase() === category.toLowerCase()
       );
       title += ` in "${category}"`;
     }
@@ -346,7 +346,7 @@ router.post("/login", async (req, res) => {
 
     req.session.user = user;
 
-    if(user.admin_level > 0) {
+    if (user.admin_level > 0) {
       res.redirect("/staff-portal");
     } else {
       res.redirect("/");
@@ -611,10 +611,12 @@ router.get("/staff-management", requireAuth(2), async (req, res) => {
   try {
     const staff = await api.getStaffMembers();
     const assignmentOrders = await api.getPendingOrders();
-    const pickerOptions = staff.filter((member) => member.admin_level === 1).map((picker) => ({
-      value: picker.id,
-      label: `${picker.first_name} ${picker.last_name} (${picker.email})`,
-    }));
+    const pickerOptions = staff
+      .filter((member) => member.admin_level === 1)
+      .map((picker) => ({
+        value: picker.id,
+        label: `${picker.first_name} ${picker.last_name} (${picker.email})`,
+      }));
 
     res.render("staff-management.njk", {
       title: "Staff Management",
@@ -985,7 +987,9 @@ router.post("/api/orders/repeat", requireAuth(0), async (req, res) => {
     res.status(200).redirect("/basket");
   } catch (error) {
     console.error(error);
-    res.status(error.status || 500).json({ message: error.message || "Failed to repeat last order" });
+    res
+      .status(error.status || 500)
+      .json({ message: error.message || "Failed to repeat last order" });
   }
 });
 
@@ -1144,16 +1148,20 @@ router.get("/picker", requireAuth(1), async (req, res) => {
   }
 });
 
-router.post("/picker/orders/:orderId/items/:productId/complete", requireAuth(1), async (req, res) => {
-  try {
-    const { orderId, productId } = req.params;
-    await api.completePickerItem(orderId, productId);
-    res.redirect("/picker?completed=1");
-  } catch (error) {
-    console.error("Failed to complete picker item:", error);
-    res.redirect(`/picker?error=${encodeURIComponent(error.message)}`);
+router.post(
+  "/picker/orders/:orderId/items/:productId/complete",
+  requireAuth(1),
+  async (req, res) => {
+    try {
+      const { orderId, productId } = req.params;
+      await api.completePickerItem(orderId, productId);
+      res.redirect("/picker?completed=1");
+    } catch (error) {
+      console.error("Failed to complete picker item:", error);
+      res.redirect(`/picker?error=${encodeURIComponent(error.message)}`);
+    }
   }
-});
+);
 
 router.post("/picker/orders/:orderId/items/:productId/issue", requireAuth(1), async (req, res) => {
   try {

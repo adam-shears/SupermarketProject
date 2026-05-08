@@ -338,7 +338,11 @@ export async function searchProducts(term) {
   return res.json();
 }
 
-export async function reportStockIssue(productId, reporterId, notes = "Marked unavailable by staff") {
+export async function reportStockIssue(
+  productId,
+  reporterId,
+  notes = "Marked unavailable by staff"
+) {
   const res = await fetch(`/api/stock-issues`, {
     method: "POST",
     headers: {

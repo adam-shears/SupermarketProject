@@ -705,7 +705,10 @@ export async function getCustomerOrderHistory(customerId) {
 
     const substituted = order.substituted_product_id ? true : false;
     orderToUpdate.lineDiscountPence += Number(order.line_discount_pence || 0);
-    orderToUpdate.orderDiscountPence = Math.max(0, Number(orderToUpdate.discountPence || 0) - orderToUpdate.lineDiscountPence);
+    orderToUpdate.orderDiscountPence = Math.max(
+      0,
+      Number(orderToUpdate.discountPence || 0) - orderToUpdate.lineDiscountPence
+    );
     orderToUpdate.items.push({
       productId: order.product_id,
       productName: order.product_name,
@@ -923,7 +926,12 @@ export async function getGuestCheckoutSnapshot(items, promoCode = null) {
 }
 
 export async function createOrder(snapshot, deliveryInfo, customerId = null, guestDetails = null) {
-  if (!deliveryInfo.addressLine || !deliveryInfo.town || !deliveryInfo.county || !deliveryInfo.postcode) {
+  if (
+    !deliveryInfo.addressLine ||
+    !deliveryInfo.town ||
+    !deliveryInfo.county ||
+    !deliveryInfo.postcode
+  ) {
     throw new OrdersError("Missing delivery info", 400);
   }
 
@@ -931,7 +939,7 @@ export async function createOrder(snapshot, deliveryInfo, customerId = null, gue
     throw new OrdersError("Missing guest details", 400);
   }
 
-  if(!customerId && !guestDetails) {
+  if (!customerId && !guestDetails) {
     throw new OrdersError("No customer or guest details provided", 400);
   }
 
@@ -953,17 +961,15 @@ export async function createOrder(snapshot, deliveryInfo, customerId = null, gue
       }
 
       if (discount.type === "loyalty_points") {
-        await redeemPoints(
-          customerId,
-          discount.pointsRedeemed,
-          discount.orderTotalPence,
-          orderId
-        );
+        await redeemPoints(customerId, discount.pointsRedeemed, discount.orderTotalPence, orderId);
       }
     }
 
     const account = await ordersDeps.selectLoyaltyAccountByCustomerId(customerId);
-    const purchasePoints = calculatePointsFromPurchase(snapshot.totalPence, account?.tier || "Bronze");
+    const purchasePoints = calculatePointsFromPurchase(
+      snapshot.totalPence,
+      account?.tier || "Bronze"
+    );
 
     if (purchasePoints > 0) {
       await addLoyaltyPoints(customerId, {
@@ -1055,7 +1061,10 @@ async function addCheckoutLoyaltyDiscounts(snapshot, customerId, options = {}) {
     totalPence = Math.max(0, totalPence - pointsRedeemed);
   }
 
-  const orderDiscountPence = orderDiscounts.reduce((sum, discount) => sum + discount.discountPence, 0);
+  const orderDiscountPence = orderDiscounts.reduce(
+    (sum, discount) => sum + discount.discountPence,
+    0
+  );
 
   return {
     ...snapshot,
