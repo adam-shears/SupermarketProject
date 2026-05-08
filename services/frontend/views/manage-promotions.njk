@@ -30,9 +30,11 @@
     </div>
   {% endif %}
 
+  <a href="#promotion-settings" class="skip-link">Skip to promotion settings</a>
+  <a href="#discount-settings" class="skip-link">Skip to discount settings</a>
   <h1>Manage Promotions</h1>
   <div class="management-section-grid">
-    <section class="management-card">
+    <section id="promotion-settings" tabindex="-1" class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Add Promo Code</h2>
@@ -132,7 +134,7 @@
       </form>
     </section>
 
-    <section class="management-card">
+    <section id="discount-settings" tabindex="-1" class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Add Discount</h2>
