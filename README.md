@@ -162,6 +162,12 @@ If you need a hard reset (i.e. resetting the DB), you can run:
 docker compose down -v
 ```
 
+Alternatively, to hard reset and rebuild in one command, you can run:
+```bash
+scripts/rebuild.sh
+```
+This command also lints and runs unit tests before rebuilding.
+
 > [!TIP]
 > npm wrappers are provided for these commands in `root/package.json`
 >
