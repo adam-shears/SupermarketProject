@@ -56,18 +56,18 @@
 }
 
 .tier-bronze {
-  background: #cd7f32;
+  background: #8c5e30;
   color: white;
 }
 
 .tier-silver {
   background: #c0c0c0;
-  color: #222;
+  color: #333;
 }
 
 .tier-gold {
   background: #ffd700;
-  color: #222;
+  color: #333;
 }
 
 .loyalty-progress {
