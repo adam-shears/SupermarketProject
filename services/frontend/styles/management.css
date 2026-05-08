@@ -4,6 +4,28 @@
   padding: 0 1rem 2rem;
 }
 
+.skip-link {
+  position: fixed; 
+  top: 0;
+  left: 1rem;
+  padding: 10px 15px;
+  background: #005fcc;
+  color: #ffffff;
+  font-weight: bold;
+  z-index: 999999;
+  transform: translateY(-100%); 
+  transition: transform 0.2s ease; 
+}
+
+.skip-link:focus {
+  transform: translateY(10px); 
+}
+
+#promotion-settings:focus,
+#discount-settings:focus {
+  outline: none;
+}
+
 .management-header {
   display: flex;
   justify-content: space-between;

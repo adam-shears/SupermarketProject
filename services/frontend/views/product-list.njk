@@ -8,7 +8,7 @@
 
 <div class="product-list-page">
   <div class="hero-banner">
-    <h2>Fresh Groceries, Delivered.</h2>
+    <p class="banner-text">Fresh Groceries, Delivered.</p>
     <p>Shop our latest arrivals and seasonal favorites.</p>
   </div>
 
@@ -124,11 +124,11 @@
 
         const originalText = btn.textContent;
         btn.textContent = 'Added!';
-        btn.disabled = true;
+
 
         setTimeout(() => {
           btn.textContent = originalText;
-          btn.disabled = false;
+
         }, 800);
       });
     });

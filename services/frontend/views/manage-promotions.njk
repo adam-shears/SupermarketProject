@@ -30,8 +30,11 @@
     </div>
   {% endif %}
 
+  <a href="#promotion-settings" class="skip-link">Skip to promotion settings</a>
+  <a href="#discount-settings" class="skip-link">Skip to discount settings</a>
+  <h1>Manage Promotions</h1>
   <div class="management-section-grid">
-    <section class="management-card">
+    <section id="promotion-settings" tabindex="-1" class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Add Promo Code</h2>
@@ -97,6 +100,7 @@
                   <div class="category-action-group">
                     <button
                       type="button"
+                      aria-label="Select all products in {{ category }}"
                       class="category-select-button"
                       onclick="return setCategoryChecked(this, true)"
                     >
@@ -104,6 +108,7 @@
                     </button>
                     <button
                       type="button"
+                      aria-label="Clear selection of products in {{ category }}"
                       class="category-select-button"
                       onclick="return clearCategoryChecked(this)"
                     >
@@ -129,7 +134,7 @@
       </form>
     </section>
 
-    <section class="management-card">
+    <section id="discount-settings" tabindex="-1" class="management-card">
       <div class="card-header-row">
         <div>
           <h2>Add Discount</h2>
@@ -191,6 +196,7 @@
                     <button
                       type="button"
                       class="category-select-button"
+                      aria-label="Select all products in {{ category }}"
                       onclick="return setCategoryChecked(this, true)"
                     >
                       Select all
@@ -198,6 +204,7 @@
                     <button
                       type="button"
                       class="category-select-button"
+                      aria-label="Clear selection of products in {{ category }}"
                       onclick="return clearCategoryChecked(this)"
                     >
                       Clear
